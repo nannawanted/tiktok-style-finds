@@ -17,6 +17,8 @@ import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as CreatorUsernameRouteImport } from './routes/creator.$username'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
+import { Route as AuthenticatedDashboardPostNewRouteImport } from './routes/_authenticated/dashboard/post/new'
+import { Route as AuthenticatedDashboardPostIdEditRouteImport } from './routes/_authenticated/dashboard/post/$id.edit'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -59,6 +61,18 @@ const AuthenticatedDashboardSettingsRoute =
     path: '/dashboard/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDashboardPostNewRoute =
+  AuthenticatedDashboardPostNewRouteImport.update({
+    id: '/dashboard/post/new',
+    path: '/dashboard/post/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardPostIdEditRoute =
+  AuthenticatedDashboardPostIdEditRouteImport.update({
+    id: '/dashboard/post/$id/edit',
+    path: '/dashboard/post/$id/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +82,8 @@ export interface FileRoutesByFullPath {
   '/post/$id': typeof PostIdRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
+  '/dashboard/post/$id/edit': typeof AuthenticatedDashboardPostIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,6 +93,8 @@ export interface FileRoutesByTo {
   '/post/$id': typeof PostIdRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
+  '/dashboard/post/$id/edit': typeof AuthenticatedDashboardPostIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,6 +106,8 @@ export interface FileRoutesById {
   '/post/$id': typeof PostIdRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
+  '/_authenticated/dashboard/post/$id/edit': typeof AuthenticatedDashboardPostIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,6 +119,8 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/dashboard/settings'
     | '/dashboard/'
+    | '/dashboard/post/new'
+    | '/dashboard/post/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,6 +130,8 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/dashboard/settings'
     | '/dashboard'
+    | '/dashboard/post/new'
+    | '/dashboard/post/$id/edit'
   id:
     | '__root__'
     | '/'
@@ -118,6 +142,8 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/post/new'
+    | '/_authenticated/dashboard/post/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -187,17 +213,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard/post/new': {
+      id: '/_authenticated/dashboard/post/new'
+      path: '/dashboard/post/new'
+      fullPath: '/dashboard/post/new'
+      preLoaderRoute: typeof AuthenticatedDashboardPostNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/post/$id/edit': {
+      id: '/_authenticated/dashboard/post/$id/edit'
+      path: '/dashboard/post/$id/edit'
+      fullPath: '/dashboard/post/$id/edit'
+      preLoaderRoute: typeof AuthenticatedDashboardPostIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedDashboardPostNewRoute: typeof AuthenticatedDashboardPostNewRoute
+  AuthenticatedDashboardPostIdEditRoute: typeof AuthenticatedDashboardPostIdEditRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+  AuthenticatedDashboardPostNewRoute: AuthenticatedDashboardPostNewRoute,
+  AuthenticatedDashboardPostIdEditRoute: AuthenticatedDashboardPostIdEditRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -214,3 +258,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
