@@ -1,6 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -8,17 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { PostForm, type PostFormData } from "@/components/PostForm";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   head: () => ({ meta: [{ title: "Paramètres — Wanted Fashion" }] }),
   component: Settings,
 });
-
-// Note: PostForm import is unused here — left for code-splitting parity. Removing:
-// (We won't actually use PostForm here.)
-void PostForm; void Textarea; void Input; void Label; void Button; void useNavigate; void useQuery; void useEffect; void useState; void supabase; void useAuth; void toast;
-type _ = PostFormData;
 
 function Settings() {
   const { user } = useAuth();
@@ -42,7 +35,7 @@ function Settings() {
     if (!user) return;
     const clean = form.username.trim().toLowerCase().replace(/^@/, "");
     if (!/^[a-z0-9_.]{3,30}$/.test(clean)) {
-      toast.error("Username invalide");
+      toast.error("Username invalide (3-30 caractères : lettres, chiffres, _ ou .)");
       return;
     }
     setLoading(true);
@@ -53,7 +46,6 @@ function Settings() {
       banner_image: form.banner_image || null,
     }).eq("id", user.id);
     if (!error) {
-      // also propagate username on posts
       await supabase.from("posts").update({ creator_username: clean }).eq("creator_id", user.id);
     }
     setLoading(false);
