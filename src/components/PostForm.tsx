@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  fetchProductMetadata,
+  fetchTikTokOembed,
+  isHttpUrl,
+  isTikTokUrl,
+} from "@/lib/url-metadata";
 
 export type ProductDraft = {
   id?: string;
@@ -19,6 +26,8 @@ export type PostFormData = {
   products: ProductDraft[];
 };
 
+const URL_DEBOUNCE_MS = 600;
+
 export function PostForm({
   initial,
   onSubmit,
@@ -31,8 +40,13 @@ export function PostForm({
   loading?: boolean;
 }) {
   const [data, setData] = useState<PostFormData>(
-    initial ?? { title: "", tiktok_url: "", cover_image: "", products: [] }
+    initial ?? { title: "", tiktok_url: "", cover_image: "", products: [] },
   );
+  const [tiktokLoading, setTiktokLoading] = useState(false);
+  const [productLoading, setProductLoading] = useState<Record<number, boolean>>({});
+
+  const tiktokDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const productDebounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   function updateProduct(idx: number, patch: Partial<ProductDraft>) {
     setData((d) => ({
@@ -49,7 +63,65 @@ export function PostForm({
   }
 
   function removeProduct(idx: number) {
+    clearTimeout(productDebounceRef.current[idx]);
+    delete productDebounceRef.current[idx];
+    setProductLoading((prev) => {
+      const next = { ...prev };
+      delete next[idx];
+      return next;
+    });
     setData((d) => ({ ...d, products: d.products.filter((_, i) => i !== idx) }));
+  }
+
+  function handleTikTokUrlChange(url: string) {
+    setData((d) => ({ ...d, tiktok_url: url }));
+
+    clearTimeout(tiktokDebounceRef.current);
+    if (!isTikTokUrl(url)) {
+      setTiktokLoading(false);
+      return;
+    }
+
+    tiktokDebounceRef.current = setTimeout(async () => {
+      setTiktokLoading(true);
+      try {
+        const result = await fetchTikTokOembed({ data: { url } });
+        if (result.thumbnail_url) {
+          setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
+        }
+      } catch {
+        // Le créateur peut toujours saisir l'image manuellement.
+      } finally {
+        setTiktokLoading(false);
+      }
+    }, URL_DEBOUNCE_MS);
+  }
+
+  function handleAffiliateLinkChange(idx: number, url: string) {
+    updateProduct(idx, { affiliate_link: url });
+
+    clearTimeout(productDebounceRef.current[idx]);
+    if (!isHttpUrl(url)) {
+      setProductLoading((prev) => ({ ...prev, [idx]: false }));
+      return;
+    }
+
+    productDebounceRef.current[idx] = setTimeout(async () => {
+      setProductLoading((prev) => ({ ...prev, [idx]: true }));
+      try {
+        const meta = await fetchProductMetadata({ data: { url } });
+        updateProduct(idx, {
+          ...(meta.name ? { name: meta.name } : {}),
+          ...(meta.image_url ? { image_url: meta.image_url } : {}),
+          ...(meta.price ? { price: meta.price } : {}),
+          ...(meta.brand ? { brand: meta.brand } : {}),
+        });
+      } catch {
+        // Le créateur peut toujours remplir les champs manuellement.
+      } finally {
+        setProductLoading((prev) => ({ ...prev, [idx]: false }));
+      }
+    }, URL_DEBOUNCE_MS);
   }
 
   function submit(e: React.FormEvent) {
@@ -68,9 +140,21 @@ export function PostForm({
         </div>
         <div>
           <Label htmlFor="tt">URL TikTok</Label>
-          <Input id="tt" type="url" value={data.tiktok_url}
-            onChange={(e) => setData({ ...data, tiktok_url: e.target.value })}
-            placeholder="https://www.tiktok.com/@user/video/..." />
+          <div className="relative">
+            <Input
+              id="tt"
+              type="url"
+              value={data.tiktok_url}
+              onChange={(e) => handleTikTokUrlChange(e.target.value)}
+              placeholder="https://www.tiktok.com/@user/video/..."
+            />
+            {tiktokLoading && (
+              <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Colle l&apos;URL TikTok : la miniature se remplit automatiquement.
+          </p>
         </div>
         <div>
           <Label htmlFor="cv">URL image de couverture</Label>
@@ -89,7 +173,7 @@ export function PostForm({
 
         {data.products.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Aucun produit. Clique sur "Ajouter un produit".
+            Aucun produit. Clique sur &quot;Ajouter un produit&quot;.
           </p>
         ) : (
           <ul className="space-y-4">
@@ -102,9 +186,23 @@ export function PostForm({
                   </Button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label>Marque</Label>
-                    <Input value={p.brand} onChange={(e) => updateProduct(i, { brand: e.target.value })} />
+                  <div className="sm:col-span-2">
+                    <Label>Lien d&apos;achat *</Label>
+                    <div className="relative">
+                      <Input
+                        required
+                        type="url"
+                        value={p.affiliate_link}
+                        onChange={(e) => handleAffiliateLinkChange(i, e.target.value)}
+                        placeholder="https://www.zara.com/..."
+                      />
+                      {productLoading[i] && (
+                        <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Colle l&apos;URL produit : nom, image et prix se remplissent automatiquement.
+                    </p>
                   </div>
                   <div>
                     <Label>Nom *</Label>
@@ -118,10 +216,9 @@ export function PostForm({
                     <Label>URL image</Label>
                     <Input type="url" value={p.image_url} onChange={(e) => updateProduct(i, { image_url: e.target.value })} />
                   </div>
-                  <div className="sm:col-span-2">
-                    <Label>Lien d'achat *</Label>
-                    <Input required type="url" value={p.affiliate_link}
-                      onChange={(e) => updateProduct(i, { affiliate_link: e.target.value })} />
+                  <div>
+                    <Label>Marque</Label>
+                    <Input value={p.brand} onChange={(e) => updateProduct(i, { brand: e.target.value })} />
                   </div>
                 </div>
               </li>
