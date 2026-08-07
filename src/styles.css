@@ -1,9 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -33,33 +31,47 @@
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
 }
-
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.145 0 0);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.145 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.145 0 0);
+  --radius: 0.75rem;
+
+  /* Fond sable chaud inspiré LTK */
+  --background: oklch(0.97 0.012 80);
+  --foreground: oklch(0.18 0.02 60);
+
+  /* Cards légèrement plus claires que le fond */
+  --card: oklch(0.99 0.008 80);
+  --card-foreground: oklch(0.18 0.02 60);
+
+  --popover: oklch(0.99 0.008 80);
+  --popover-foreground: oklch(0.18 0.02 60);
+
+  --primary: oklch(0.18 0.02 60);
+  --primary-foreground: oklch(0.99 0.008 80);
+
+  /* Secondaire sable plus prononcé */
+  --secondary: oklch(0.93 0.02 75);
+  --secondary-foreground: oklch(0.18 0.02 60);
+
+  --muted: oklch(0.93 0.018 78);
+  --muted-foreground: oklch(0.52 0.025 70);
+
+  --accent: oklch(0.91 0.025 75);
+  --accent-foreground: oklch(0.18 0.02 60);
+
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
+
+  /* Bordures sable */
+  --border: oklch(0.88 0.022 75);
+  --input: oklch(0.88 0.022 75);
   --ring: oklch(0.65 0.22 17);
-  /* Wanted Fashion brand red #FF3B5C */
-  --brand: oklch(0.658 0.231 17.5);
+
+  /* Wanted Fashion brand — rouge doux */
+  --brand: oklch(0.62 0.2 17.5);
   --brand-foreground: oklch(1 0 0);
-  --shadow-card: 0 1px 2px 0 oklch(0 0 0 / 0.04);
-  --shadow-card-hover: 0 8px 24px -6px oklch(0 0 0 / 0.12);
+
+  --shadow-card: 0 1px 4px 0 oklch(0.18 0.02 60 / 0.06);
+  --shadow-card-hover: 0 8px 32px -6px oklch(0.18 0.02 60 / 0.14);
 }
 
 @layer base {
@@ -69,6 +81,12 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Georgia", "Times New Roman", ui-serif, serif;
+    letter-spacing: 0.01em;
+  }
+  h1, h2, h3, h4 {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }
