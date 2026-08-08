@@ -24,7 +24,7 @@ function Feed() {
     queryFn: async () => {
       const { data: posts, error } = await supabase
         .from("posts")
-        .select("id, title, cover_image, creator_username, created_at, products(id)")
+        .select("id, title, cover_image, creator_username, tiktok_url, created_at, products(id)")
         .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw error;
@@ -32,69 +32,125 @@ function Feed() {
     },
   });
 
+  const { data: topCreators } = useQuery({
+    queryKey: ["top-creators"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clicks")
+        .select("creator_username")
+        .limit(500);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        counts[row.creator_username] = (counts[row.creator_username] ?? 0) + 1;
+      }
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([username, clicks]) => ({ username, clicks }));
+    },
+  });
+
   return (
     <main>
-      {/* HERO SECTION */}
+      {/* HERO */}
       <section
         style={{ background: "linear-gradient(135deg, #6b5240 0%, #8b6b52 50%, #a67c5b 100%)" }}
-        className="px-4 py-16 text-center"
+        className="px-4 py-12 text-center"
       >
-        <h1 className="mb-3 text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
+        <h1 className="mb-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
           Trouve les pièces de tes créateurs
         </h1>
-        <p className="mb-8 text-base text-white/70">
+        <p className="mb-6 text-sm text-white/70">
           Vidéo → références → achat en 1 clic
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <a
             href="#feed"
             style={{ backgroundColor: "#c0392b" }}
-            className="rounded-full px-7 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+            className="rounded-full px-7 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
           >
             Explorer les looks
           </a>
           <Link
             to="/signup"
-            className="rounded-full border border-white/60 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            className="rounded-full border border-white/60 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             Devenir créateur
           </Link>
         </div>
       </section>
 
-      {/* FEED */}
-      <div id="feed" className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6">
-          <h2 className="text-xl font-black sm:text-2xl">Les derniers outfits</h2>
-          <p className="text-sm text-muted-foreground">Shop les looks de tes créateurs préférés.</p>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-8">
 
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/5] w-full rounded-xl" />
-            ))}
-          </div>
-        ) : !data || data.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-            Aucun post pour le moment.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {data.map((p) => (
-              <PostCard key={p.id} post={p} />
-            ))}
-          </div>
+        {/* CRÉATEURS POPULAIRES */}
+        {topCreators && topCreators.length > 0 && (
+          <section className="mb-10">
+            <h2 className="mb-4 text-lg font-black">Créateurs populaires</h2>
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {topCreators.map((c) => (
+                <Link
+                  key={c.username}
+                  to="/creator/$username"
+                  params={{ username: c.username }}
+                  className="flex flex-col items-center gap-2 text-center"
+                >
+                  <div
+                    style={{ background: "linear-gradient(135deg, #8b6b52, #c0392b)" }}
+                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-lg font-black text-white ring-2 ring-brand ring-offset-2"
+                  >
+                    {c.username[0].toUpperCase()}
+                  </div>
+                  <span className="text-xs text-muted-foreground">@{c.username}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
+
+        {/* FEED */}
+        <div id="feed">
+          <div className="mb-4">
+            <h2 className="text-xl font-black sm:text-2xl">Les derniers outfits</h2>
+            <p className="text-sm text-muted-foreground">Shop les looks de tes créateurs préférés.</p>
+          </div>
+
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-[4/5] w-full rounded-xl" />
+              ))}
+            </div>
+          ) : !data || data.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
+              Aucun post pour le moment.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {data.map((p) => (
+                <PostCard key={p.id} post={p} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
 }
 
-function PostCard({ post }: { post: { id: string; title: string; cover_image: string | null; creator_username: string; products: { id: string }[] } }) {
+function PostCard({ post }: {
+  post: {
+    id: string;
+    title: string;
+    cover_image: string | null;
+    creator_username: string;
+    tiktok_url: string | null;
+    products: { id: string }[];
+  }
+}) {
   return (
     <div className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover">
-      <Link to="/post/$id" params={{ id: post.id }} className="block">
+      <Link to="/post/$id" params={{ id: post.id }} className="relative block">
         <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
           {post.cover_image ? (
             <img
@@ -109,6 +165,16 @@ function PostCard({ post }: { post: { id: string; title: string; cover_image: st
             </div>
           )}
         </div>
+        {post.tiktok_url && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+            <span
+              style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+              className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm"
+            >
+              ▶ Voir la vidéo
+            </span>
+          </div>
+        )}
       </Link>
       <div className="space-y-1 p-3">
         <Link to="/post/$id" params={{ id: post.id }} className="block">
