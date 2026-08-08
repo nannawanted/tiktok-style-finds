@@ -35,19 +35,13 @@ function Feed() {
   const { data: topCreators } = useQuery({
     queryKey: ["top-creators"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clicks")
-        .select("creator_username")
-        .limit(500);
+      // Récupère directement tous les créateurs avec leur photo
+      const { data: creators, error } = await supabase
+        .from("creators")
+        .select("username, profile_image")
+        .limit(6);
       if (error) throw error;
-      const counts: Record<string, number> = {};
-      for (const row of data ?? []) {
-        counts[row.creator_username] = (counts[row.creator_username] ?? 0) + 1;
-      }
-      return Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
-        .map(([username, clicks]) => ({ username, clicks }));
+      return creators ?? [];
     },
   });
 
@@ -83,7 +77,7 @@ function Feed() {
 
       <div className="mx-auto max-w-6xl px-4 py-8">
 
-        {/* CRÉATEURS POPULAIRES */}
+        {/* CRÉATEURS */}
         {topCreators && topCreators.length > 0 && (
           <section className="mb-10">
             <h2 className="mb-4 text-lg font-black">Créateurs populaires</h2>
@@ -95,11 +89,17 @@ function Feed() {
                   params={{ username: c.username }}
                   className="flex flex-col items-center gap-2 text-center"
                 >
-                  <div
-                    style={{ background: "linear-gradient(135deg, #8b6b52, #c0392b)" }}
-                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-lg font-black text-white ring-2 ring-brand ring-offset-2"
-                  >
-                    {c.username[0].toUpperCase()}
+                  <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-brand ring-offset-2">
+                    {c.profile_image ? (
+                      <img src={c.profile_image} alt={c.username} className="h-full w-full object-cover" />
+                    ) : (
+                      <div
+                        style={{ background: "linear-gradient(135deg, #8b6b52, #c0392b)" }}
+                        className="flex h-full w-full items-center justify-center text-lg font-black text-white"
+                      >
+                        {c.username[0].toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground">@{c.username}</span>
                 </Link>
