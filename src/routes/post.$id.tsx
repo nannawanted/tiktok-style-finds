@@ -156,7 +156,13 @@ function PostPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {products.map((p) => (
-            <article key={p.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover">
+            key={p.id}
+  href={p.affiliate_link}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={() => trackClick(post.id, p.id, post.creator_username)}
+  className="overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover block"
+>
               <div className="aspect-square w-full overflow-hidden bg-muted">
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
