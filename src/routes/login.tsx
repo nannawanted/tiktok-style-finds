@@ -38,7 +38,7 @@ function LoginPage() {
   }
 
  return (
-    <main className="mx-auto max-w-sm px-4 py-10" style={{ minHeight: "100vh", backgroundColor: "#6b5240" }}>
+    <main className="mx-auto max-w-sm px-4 py-10">
       <div className="rounded-xl bg-white p-6 shadow-card">
         <h1 className="text-2xl font-black">Connexion</h1>
         <p className="mt-1 text-sm text-muted-foreground">Connecte-toi pour gérer tes posts.</p>
