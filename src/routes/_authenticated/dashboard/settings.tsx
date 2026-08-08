@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function Settings() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "" });
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -29,6 +32,32 @@ function Settings() {
       });
     });
   }, [user]);
+
+  async function uploadAvatar(file: File) {
+    if (!user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Erreur upload photo"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    setForm((f) => ({ ...f, profile_image: urlData.publicUrl }));
+    toast.success("Photo chargée !");
+    setUploading(false);
+  }
+
+  async function uploadBanner(file: File) {
+    if (!user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Erreur upload bannière"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
+    setForm((f) => ({ ...f, banner_image: urlData.publicUrl }));
+    toast.success("Bannière chargée !");
+    setUploading(false);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,30 +79,67 @@ function Settings() {
     }
     setLoading(false);
     if (error) toast.error(error.message);
-    else toast.success("Paramètres enregistrés");
+    else toast.success("Paramètres enregistrés !");
   }
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6">
       <h1 className="mb-6 text-2xl font-black">Paramètres</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-6">
+
+        {/* PHOTO DE PROFIL */}
+        <div>
+          <Label>Photo de profil</Label>
+          <div className="mt-2 flex items-center gap-4">
+            <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-border bg-muted">
+              {form.profile_image ? (
+                <img src={form.profile_image} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl font-bold text-muted-foreground">
+                  {form.username[0]?.toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => avatarInputRef.current?.click()}>
+                {uploading ? "Upload..." : "Choisir une photo"}
+              </Button>
+              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }} />
+            </div>
+          </div>
+        </div>
+
+        {/* BANNIÈRE */}
+        <div>
+          <Label>Bannière</Label>
+          <div className="mt-2 overflow-hidden rounded-xl border border-border bg-muted" style={{ aspectRatio: "5/1" }}>
+            {form.banner_image ? (
+              <img src={form.banner_image} alt="Banner" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full" style={{ background: "linear-gradient(135deg, #6b5240, #a67c5b)" }} />
+            )}
+          </div>
+          <Button type="button" variant="outline" size="sm" className="mt-2" disabled={uploading} onClick={() => bannerInputRef.current?.click()}>
+            {uploading ? "Upload..." : "Choisir une bannière"}
+          </Button>
+          <input ref={bannerInputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); }} />
+        </div>
+
+        {/* USERNAME */}
         <div>
           <Label htmlFor="u">Username</Label>
           <Input id="u" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
         </div>
+
+        {/* BIO */}
         <div>
           <Label htmlFor="b">Bio</Label>
-          <Textarea id="b" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} />
+          <Textarea id="b" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} placeholder="Parle-toi en quelques mots..." />
         </div>
-        <div>
-          <Label htmlFor="p">URL photo de profil</Label>
-          <Input id="p" type="url" value={form.profile_image} onChange={(e) => setForm({ ...form, profile_image: e.target.value })} />
-        </div>
-        <div>
-          <Label htmlFor="bn">URL banner</Label>
-          <Input id="bn" type="url" value={form.banner_image} onChange={(e) => setForm({ ...form, banner_image: e.target.value })} />
-        </div>
-        <Button type="submit" disabled={loading} className="bg-brand text-brand-foreground hover:bg-brand/90">
+
+        <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
           {loading ? "Sauvegarde..." : "Sauvegarder"}
         </Button>
       </form>
