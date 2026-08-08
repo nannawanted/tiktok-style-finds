@@ -75,29 +75,31 @@ function SignupPage() {
 
   return (
     <main className="mx-auto max-w-sm px-4 py-10">
-      <h1 className="text-2xl font-black">Inscription</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Crée ton compte créateur Wanted Fashion.</p>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <div>
-          <Label htmlFor="username">Username</Label>
-          <Input id="username" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ton_username" />
-        </div>
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div>
-          <Label htmlFor="password">Mot de passe</Label>
-          <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
-          {loading ? "Création..." : "Créer mon compte"}
-        </Button>
-      </form>
-      <p className="mt-4 text-center text-sm text-muted-foreground">
-        Déjà un compte ?{" "}
-        <Link to="/login" className="font-semibold text-brand hover:underline">Connecte-toi</Link>
-      </p>
+      <div className="rounded-xl bg-white p-6 shadow-card">
+        <h1 className="text-2xl font-black">Inscription</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Crée ton compte créateur Wanted Fashion.</p>
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <div>
+            <Label htmlFor="username">Username</Label>
+            <Input id="username" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ton_username" />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="password">Mot de passe</Label>
+            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
+            {loading ? "Création..." : "Créer mon compte"}
+          </Button>
+        </form>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Déjà un compte ?{" "}
+          <Link to="/login" className="font-semibold text-brand hover:underline">Connecte-toi</Link>
+        </p>
+      </div>
     </main>
   );
 }
