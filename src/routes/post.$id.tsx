@@ -156,16 +156,17 @@ function PostPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {products.map((p) => (
-            key={p.id}
-  href={p.affiliate_link}
-  target="_blank"
-  rel="noopener noreferrer"
-  onClick={() => trackClick(post.id, p.id, post.creator_username)}
-  className="overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover block"
->
+            <a
+              key={p.id}
+              href={p.affiliate_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackClick(post.id, p.id, post.creator_username)}
+              className="group block overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover cursor-pointer"
+            >
               <div className="aspect-square w-full overflow-hidden bg-muted">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
+                  <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Pas d'image</div>
                 )}
@@ -174,17 +175,11 @@ function PostPage() {
                 {p.brand && <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{p.brand}</p>}
                 <h3 className="line-clamp-2 text-sm font-semibold leading-snug">{p.name}</h3>
                 {p.price && <p className="text-base font-black text-brand">{p.price}</p>}
-                <a
-                  href={p.affiliate_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackClick(post.id, p.id, post.creator_username)}
-                  className="mt-2 block w-full rounded-lg bg-brand py-2.5 text-center text-xs font-semibold text-brand-foreground transition hover:bg-brand/90"
-                >
+                <p className="mt-1 text-xs text-muted-foreground group-hover:text-brand transition">
                   Voir le produit →
-                </a>
+                </p>
               </div>
-            </article>
+            </a>
           ))}
         </div>
       )}
