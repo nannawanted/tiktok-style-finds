@@ -21,6 +21,14 @@ export const Route = createFileRoute("/post/$id")({
   ),
 });
 
+async function trackClick(postId: string, productId: string, creatorUsername: string) {
+  await supabase.from("clicks").insert({
+    post_id: postId,
+    product_id: productId,
+    creator_username: creatorUsername,
+  });
+}
+
 function PostPage() {
   const { id } = Route.useParams();
 
@@ -45,12 +53,10 @@ function PostPage() {
     },
   });
 
-  // Load TikTok embed script when post has a tiktok_url
   useEffect(() => {
     if (!data?.post.tiktok_url) return;
     const existing = document.querySelector('script[src="https://www.tiktok.com/embed.js"]');
     if (existing) {
-      // re-trigger embed parsing
       (window as unknown as { tiktokEmbedLoad?: () => void }).tiktokEmbedLoad?.();
       return;
     }
@@ -111,11 +117,12 @@ function PostPage() {
               <div className="space-y-1 p-3">
                 {p.brand && <p className="text-xs uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
                 <h3 className="line-clamp-2 text-sm font-semibold">{p.name}</h3>
-                {p.price && <p className="font-bold">{p.price}</p>}
+                {p.price && <p className="font-bold text-brand">{p.price}</p>}
                 <a
                   href={p.affiliate_link}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackClick(post.id, p.id, post.creator_username)}
                   className="mt-2 block w-full rounded-md bg-brand py-2 text-center text-xs font-semibold text-brand-foreground transition hover:bg-brand/90"
                 >
                   Voir le produit →
@@ -125,18 +132,23 @@ function PostPage() {
           ))}
         </div>
       )}
+
+      <div className="mt-8 text-center text-xs text-muted-foreground">
+        Créé avec <span className="font-semibold text-brand">WantedFashion</span>
+      </div>
     </main>
   );
 }
 
 function TikTokEmbed({ url }: { url: string }) {
-  // Extract video id from URL like https://www.tiktok.com/@user/video/1234567890
   const m = url.match(/\/video\/(\d+)/);
   const videoId = m?.[1];
   if (!videoId) {
     return (
-      <Button asChild variant="outline">
-        <a href={url} target="_blank" rel="noopener noreferrer">Voir la vidéo TikTok</a>
+      <Button asChild variant="outline" className="rounded-full px-6">
+        <a href={url} target="_blank" rel="noopener noreferrer">
+          ▶ Voir la vidéo
+        </a>
       </Button>
     );
   }
@@ -148,7 +160,7 @@ function TikTokEmbed({ url }: { url: string }) {
       style={{ maxWidth: 605, minWidth: 280 }}
     >
       <section>
-        <a href={url} target="_blank" rel="noopener noreferrer">Voir la vidéo TikTok</a>
+        <a href={url} target="_blank" rel="noopener noreferrer">▶ Voir la vidéo</a>
       </section>
     </blockquote>
   );
