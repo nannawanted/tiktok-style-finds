@@ -8,9 +8,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Wanted Fashion — Feed" },
-      { name: "description", content: "Découvre les outfits TikTok shoppables des créateurs francophones." },
+      { name: "description", content: "Découvre les outfits shoppables des créateurs francophones." },
       { property: "og:title", content: "Wanted Fashion" },
-      { property: "og:description", content: "Découvre les outfits TikTok shoppables." },
+      { property: "og:description", content: "Découvre les outfits shoppables." },
       { property: "og:url", content: "/" },
     ],
     links: [{ rel: "canonical", href: "/" }],
@@ -33,29 +33,60 @@ function Feed() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black sm:text-3xl">Les derniers outfits</h1>
-        <p className="text-sm text-muted-foreground">Shop les looks de tes créateurs préférés.</p>
-      </div>
+    <main>
+      {/* HERO SECTION */}
+      <section
+        style={{ background: "linear-gradient(135deg, #6b5240 0%, #8b6b52 50%, #a67c5b 100%)" }}
+        className="px-4 py-16 text-center"
+      >
+        <h1 className="mb-3 text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
+          Trouve les pièces de tes créateurs
+        </h1>
+        <p className="mb-8 text-base text-white/70">
+          Vidéo → références → achat en 1 clic
+        </p>
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <a
+            href="#feed"
+            style={{ backgroundColor: "#c0392b" }}
+            className="rounded-full px-7 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Explorer les looks
+          </a>
+          <Link
+            to="/signup"
+            className="rounded-full border border-white/60 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            Devenir créateur
+          </Link>
+        </div>
+      </section>
 
-      {isLoading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[4/5] w-full rounded-xl" />
-          ))}
+      {/* FEED */}
+      <div id="feed" className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mb-6">
+          <h2 className="text-xl font-black sm:text-2xl">Les derniers outfits</h2>
+          <p className="text-sm text-muted-foreground">Shop les looks de tes créateurs préférés.</p>
         </div>
-      ) : !data || data.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          Aucun post pour le moment.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {data.map((p) => (
-            <PostCard key={p.id} post={p} />
-          ))}
-        </div>
-      )}
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[4/5] w-full rounded-xl" />
+            ))}
+          </div>
+        ) : !data || data.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
+            Aucun post pour le moment.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {data.map((p) => (
+              <PostCard key={p.id} post={p} />
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }
