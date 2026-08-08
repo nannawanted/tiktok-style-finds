@@ -35,11 +35,11 @@
   --radius: 0.75rem;
 
   /* Fond sable chaud inspiré LTK */
-  --background: oklch(0.97 0.012 80);
+  --background: #e3d0b5;
   --foreground: oklch(0.18 0.02 60);
 
   /* Cards légèrement plus claires que le fond */
-  --card: oklch(0.99 0.008 80);
+  --card: #f0e4d0;
   --card-foreground: oklch(0.18 0.02 60);
 
   --popover: oklch(0.99 0.008 80);
