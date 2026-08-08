@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/creator/$username")({
@@ -29,10 +29,9 @@ export const Route = createFileRoute("/creator/$username")({
 function CreatorPage() {
   const { username } = Route.useParams();
   const { user } = useAuth();
-  const [editingBanner, setEditingBanner] = useState(false);
-  const [editingAvatar, setEditingAvatar] = useState(false);
-  const [bannerUrl, setBannerUrl] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["creator", username],
@@ -55,31 +54,37 @@ function CreatorPage() {
     },
   });
 
-  async function saveBanner() {
-    if (!data?.creator?.id) return;
-    const { error } = await supabase
-      .from("creators")
-      .update({ banner_image: bannerUrl })
-      .eq("id", data.creator.id);
-    if (error) { toast.error("Erreur"); return; }
-    toast.success("Bannière mise à jour !");
-    setEditingBanner(false);
-    refetch();
-  }
-
-  async function saveAvatar() {
-    if (!data?.creator?.id) return;
-    const { error } = await supabase
-      .from("creators")
-      .update({ profile_image: avatarUrl })
-      .eq("id", data.creator.id);
-    if (error) { toast.error("Erreur"); return; }
-    toast.success("Photo de profil mise à jour !");
-    setEditingAvatar(false);
-    refetch();
-  }
-
   const isOwner = user && data?.creator && user.id === data.creator.id;
+
+  async function uploadAvatar(file: File) {
+    if (!data?.creator?.id) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${data.creator.id}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Erreur upload"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { error: dbErr } = await supabase.from("creators").update({ profile_image: urlData.publicUrl }).eq("id", data.creator.id);
+    if (dbErr) { toast.error("Erreur sauvegarde"); setUploading(false); return; }
+    toast.success("Photo de profil mise à jour !");
+    setUploading(false);
+    refetch();
+  }
+
+  async function uploadBanner(file: File) {
+    if (!data?.creator?.id) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${data.creator.id}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Erreur upload"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
+    const { error: dbErr } = await supabase.from("creators").update({ banner_image: urlData.publicUrl }).eq("id", data.creator.id);
+    if (dbErr) { toast.error("Erreur sauvegarde"); setUploading(false); return; }
+    toast.success("Bannière mise à jour !");
+    setUploading(false);
+    refetch();
+  }
 
   if (isLoading) {
     return (
@@ -107,34 +112,24 @@ function CreatorPage() {
           <div className="h-full w-full" style={{ background: "linear-gradient(135deg, #6b5240, #a67c5b)" }} />
         )}
         {isOwner && (
-          <button
-            onClick={() => { setBannerUrl(creator.banner_image ?? ""); setEditingBanner(true); }}
-            className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/70"
-          >
-            ✏️ Modifier la bannière
-          </button>
+          <>
+            <button
+              onClick={() => bannerInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/70"
+            >
+              {uploading ? "Upload..." : "✏️ Modifier la bannière"}
+            </button>
+            <input
+              ref={bannerInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); }}
+            />
+          </>
         )}
       </div>
-
-      {/* MODAL BANNIÈRE */}
-      {editingBanner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="mb-3 font-bold">URL de la bannière</h3>
-            <input
-              type="url"
-              value={bannerUrl}
-              onChange={(e) => setBannerUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            />
-            <div className="mt-4 flex gap-2">
-              <button onClick={saveBanner} className="flex-1 rounded-lg bg-brand py-2 text-sm font-semibold text-white">Sauvegarder</button>
-              <button onClick={() => setEditingBanner(false)} className="flex-1 rounded-lg border py-2 text-sm">Annuler</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* AVATAR + INFOS */}
       <div className="mt-4 flex flex-col items-center gap-3 px-4 text-center">
@@ -149,12 +144,22 @@ function CreatorPage() {
             )}
           </div>
           {isOwner && (
-            <button
-              onClick={() => { setAvatarUrl(creator.profile_image ?? ""); setEditingAvatar(true); }}
-              className="absolute bottom-0 right-0 rounded-full bg-brand p-1.5 text-xs text-white shadow"
-            >
-              ✏️
-            </button>
+            <>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 rounded-full bg-brand p-1.5 text-xs text-white shadow"
+              >
+                ✏️
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }}
+              />
+            </>
           )}
         </div>
         <h1 className="text-xl font-black sm:text-2xl">@{creator.username}</h1>
@@ -162,26 +167,6 @@ function CreatorPage() {
           <p className="max-w-md text-sm text-muted-foreground">{creator.bio}</p>
         )}
       </div>
-
-      {/* MODAL AVATAR */}
-      {editingAvatar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="mb-3 font-bold">URL de la photo de profil</h3>
-            <input
-              type="url"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            />
-            <div className="mt-4 flex gap-2">
-              <button onClick={saveAvatar} className="flex-1 rounded-lg bg-brand py-2 text-sm font-semibold text-white">Sauvegarder</button>
-              <button onClick={() => setEditingAvatar(false)} className="flex-1 rounded-lg border py-2 text-sm">Annuler</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* POSTS */}
       <div className="mt-8">
