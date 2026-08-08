@@ -18,7 +18,7 @@ export function Header() {
   return (
     <header
       className="sticky top-0 z-40 w-full border-b border-border backdrop-blur"
-      style={{ backgroundColor: "rgba(227, 208, 181, 0.95)" }}
+      style={{ backgroundColor: "#e3d0b5" }}
     >
       <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="text-xl">
