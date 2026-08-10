@@ -48,18 +48,21 @@ function Dashboard() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black sm:text-3xl">Mes posts</h1>
-          <p className="text-sm text-muted-foreground">Gère tes outfits Wanted Fashion.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/dashboard/settings">
-            <Button variant="outline" size="sm">Paramètres</Button>
-          </Link>
-          <Link to="/dashboard/post/new">
-            <Button size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">+ Nouveau post</Button>
-          </Link>
+      {/* HEADER */}
+      <div className="mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-black sm:text-3xl">Mes posts</h1>
+            <p className="text-sm text-muted-foreground">Gère tes outfits Wanted Fashion.</p>
+          </div>
+          <div className="flex gap-2">
+            <Link to="/dashboard/settings">
+              <Button variant="outline" size="sm">Paramètres</Button>
+            </Link>
+            <Link to="/dashboard/post/new">
+              <Button size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">+ Nouveau post</Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -77,19 +80,24 @@ function Dashboard() {
       ) : (
         <ul className="space-y-3">
           {data.map((p) => (
-            <li key={p.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-3 shadow-card">
-              <div className="h-20 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
-                {p.cover_image ? (
-                  <img src={p.cover_image} alt="" className="h-full w-full object-cover" />
-                ) : null}
+            <li key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
+              <div className="flex items-center gap-3">
+                {/* IMAGE */}
+                <div className="h-16 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
+                  {p.cover_image ? (
+                    <img src={p.cover_image} alt="" className="h-full w-full object-cover" />
+                  ) : null}
+                </div>
+                {/* TITRE + PRODUITS */}
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-semibold">{p.title}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {p.products?.length ?? 0} produit{(p.products?.length ?? 0) > 1 ? "s" : ""}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate font-semibold">{p.title}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {p.products?.length ?? 0} produit{(p.products?.length ?? 0) > 1 ? "s" : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
+              {/* ACTIONS sur une ligne séparée sur mobile */}
+              <div className="mt-2 flex flex-wrap gap-1 border-t border-border pt-2">
                 <Link to="/post/$id" params={{ id: p.id }}>
                   <Button variant="ghost" size="sm">Aperçu</Button>
                 </Link>
