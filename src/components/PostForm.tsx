@@ -136,3 +136,95 @@ export function PostForm({
         <div>
           <Label htmlFor="tt">URL TikTok</Label>
           <div className="relative">
+            <Input
+              id="tt"
+              type="url"
+              value={data.tiktok_url}
+              onChange={(e) => handleTikTokUrlChange(e.target.value)}
+              placeholder="https://www.tiktok.com/@user/video/..."
+            />
+            {tiktokLoading && (
+              <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Colle l&apos;URL TikTok : la miniature se remplit automatiquement.
+          </p>
+        </div>
+        <div>
+          <Label htmlFor="cv">URL image de couverture</Label>
+          <Input id="cv" type="url" value={data.cover_image}
+            onChange={(e) => setData({ ...data, cover_image: e.target.value })} />
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-card">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold">Produits ({data.products.length})</h2>
+          <Button type="button" variant="outline" size="sm" onClick={addProduct}>
+            + Ajouter un produit
+          </Button>
+        </div>
+
+        {data.products.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Aucun produit. Clique sur &quot;Ajouter un produit&quot;.
+          </p>
+        ) : (
+          <ul className="space-y-4">
+            {data.products.map((p, i) => (
+              <li key={i} className="space-y-3 rounded-lg border border-border bg-background p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Produit {i + 1}</span>
+                  <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => removeProduct(i)}>
+                    Retirer
+                  </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <Label>Lien d&apos;achat *</Label>
+                    <div className="relative">
+                      <Input
+                        required
+                        type="url"
+                        value={p.affiliate_link}
+                        onChange={(e) => handleAffiliateLinkChange(i, e.target.value)}
+                        placeholder="https://www.zara.com/..."
+                      />
+                      {productLoading[i] && (
+                        <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Colle l&apos;URL produit : nom, image et prix se remplissent automatiquement.
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Nom *</Label>
+                    <Input required value={p.name} onChange={(e) => updateProduct(i, { name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Prix</Label>
+                    <Input value={p.price} onChange={(e) => updateProduct(i, { price: e.target.value })} placeholder="29,90 €" />
+                  </div>
+                  <div>
+                    <Label>URL image</Label>
+                    <Input type="url" value={p.image_url} onChange={(e) => updateProduct(i, { image_url: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Marque</Label>
+                    <Input value={p.brand} onChange={(e) => updateProduct(i, { brand: e.target.value })} />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <Button type="submit" disabled={loading} className="bg-brand text-brand-foreground hover:bg-brand/90">
+        {loading ? "Sauvegarde..." : submitLabel}
+      </Button>
+    </form>
+  );
+}
