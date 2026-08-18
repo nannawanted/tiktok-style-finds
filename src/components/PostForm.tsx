@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchProductMetadata, fetchTikTokOembed, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
 
 export type ProductDraft = {
   id?: string;
@@ -21,39 +22,6 @@ export type PostFormData = {
 };
 
 const URL_DEBOUNCE_MS = 600;
-
-function isHttpUrl(url: string) {
-  return url.startsWith("http://") || url.startsWith("https://");
-}
-
-function isTikTokUrl(url: string) {
-  return url.includes("tiktok.com");
-}
-
-async function fetchProductMetadata(url: string) {
-  try {
-    const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`);
-    const data = await res.json();
-    if (data.status === "success") {
-      return {
-        name: data.data.title ?? "",
-        image_url: data.data.image?.url ?? "",
-        price: data.data.price ?? "",
-        brand: data.data.publisher ?? "",
-      };
-    }
-  } catch {}
-  return {};
-}
-
-async function fetchTikTokOembed(url: string) {
-  try {
-    const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`);
-    const data = await res.json();
-    return { thumbnail_url: data.thumbnail_url ?? "" };
-  } catch {}
-  return {};
-}
 
 export function PostForm({
   initial,
@@ -112,7 +80,7 @@ export function PostForm({
     tiktokDebounceRef.current = setTimeout(async () => {
       setTiktokLoading(true);
       try {
-        const result = await fetchTikTokOembed(url);
+        const result = await fetchTikTokOembed({ data: { url } });
         if (result.thumbnail_url) {
           setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
         }
@@ -136,7 +104,7 @@ export function PostForm({
     productDebounceRef.current[idx] = setTimeout(async () => {
       setProductLoading((prev) => ({ ...prev, [idx]: true }));
       try {
-        const meta = await fetchProductMetadata(url);
+        const meta = await fetchProductMetadata({ data: { url } });
         updateProduct(idx, {
           ...(meta.name ? { name: meta.name } : {}),
           ...(meta.image_url ? { image_url: meta.image_url } : {}),
