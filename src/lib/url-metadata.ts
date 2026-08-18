@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type ProductMetadata = {
   name: string;
@@ -276,7 +275,6 @@ async function resolveProductMetadata(
 }
 
 export const fetchProductMetadata = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: { url: string }) => {
     parseHttpUrl(data.url);
     return data;
@@ -284,7 +282,6 @@ export const fetchProductMetadata = createServerFn({ method: "POST" })
   .handler(async ({ data }) => resolveProductMetadata(data.url));
 
 export const fetchTikTokOembed = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: { url: string }) => {
     const parsed = parseHttpUrl(data.url);
     if (!parsed.hostname.includes("tiktok.com")) {
