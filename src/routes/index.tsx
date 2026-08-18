@@ -1,7 +1,22 @@
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  Play,
+  ShoppingBag,
+  Tag,
+  Video,
+  ArrowRight,
+  Sparkles,
+  TrendingUp,
+  Users,
+  Crown,
+  Heart,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -17,6 +32,356 @@ export const Route = createFileRoute("/")({
   }),
   component: Feed,
 });
+
+// Reproduit l'animation au scroll du design Base44, sans dépendance supplémentaire
+function AnimatedElement({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight) {
+      setIsVisible(true);
+      return;
+    }
+    const fallback = setTimeout(() => setIsVisible(true), 800 + delay);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          clearTimeout(fallback);
+          setTimeout(() => setIsVisible(true), delay);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px 200px 0px" }
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallback);
+    };
+  }, [delay]);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-1000 ease-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+      } ${className ?? ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function formatCount(n: number | null | undefined) {
+  if (!n) return "0";
+  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
+  return `${n}`;
+}
+
+function platformButtonClass(url: string | null) {
+  if (!url) return "bg-foreground text-background";
+  if (url.includes("tiktok")) return "bg-foreground text-background";
+  if (url.includes("instagram")) return "bg-gradient-to-tr from-accent via-primary to-secondary text-primary-foreground";
+  if (url.includes("youtube")) return "bg-destructive text-destructive-foreground";
+  return "bg-foreground text-background";
+}
+
+function HeroSection() {
+  return (
+    <section className="relative w-full bg-gradient-to-b from-secondary to-foreground pt-24 pb-32 sm:pt-32 sm:pb-40 rounded-b-[2.5rem] shadow-2xl overflow-hidden">
+      <div
+        className="absolute -top-32 -left-20 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none"
+        style={{ animation: "floatA 10s ease-in-out infinite" }}
+      />
+      <div
+        className="absolute -bottom-40 -right-20 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[140px] pointer-events-none"
+        style={{ animation: "floatB 12s ease-in-out 2s infinite" }}
+      />
+
+      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col items-center"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/10 backdrop-blur-md border border-background/20 text-sm font-medium mb-8">
+            <Sparkles className="w-4 h-4 text-primary-foreground" />
+            <span className="text-background">Le social shopping made in France</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] text-background max-w-4xl">
+            Trouve les pièces{" "}
+            <span className="bg-gradient-to-r from-primary-foreground via-accent to-primary-foreground bg-clip-text text-transparent">
+              de tes créateurs
+            </span>
+          </h1>
+
+          <p className="mt-8 text-lg sm:text-xl text-background/80 max-w-2xl mx-auto font-medium">
+            Vidéo <ArrowRight className="inline w-4 h-4 mx-1 opacity-50" />
+            références <ArrowRight className="inline w-4 h-4 mx-1 opacity-50" />
+            achat en 1 clic
+          </p>
+
+          <div className="mt-12 flex flex-col sm:flex-row items-center gap-5 justify-center w-full">
+            <a href="#feed" className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 h-14 text-lg font-bold hover:-translate-y-1 transition-all duration-300 group"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  Explorer les looks <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Button>
+            </a>
+            <Link to="/signup" className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto rounded-full px-10 h-14 text-lg font-bold border-background/30 text-foreground bg-background/5 backdrop-blur-sm hover:bg-background/15 hover:text-background hover:border-background/50 transition-all duration-300"
+              >
+                Devenir créateur
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function HowItWorksSection() {
+  const steps = [
+    { icon: Video, title: "La vidéo", description: "Le créateur poste sa tenue en vidéo sur TikTok, Instagram ou YouTube." },
+    { icon: Tag, title: "Les références", description: "Chaque pièce portée est identifiée et listée sur la page du post." },
+    { icon: ShoppingBag, title: "L'achat", description: "Un clic sur la carte produit et tu es redirigé chez le vendeur." },
+  ];
+
+  return (
+    <section className="relative w-full bg-background pt-32 pb-20 -mt-10">
+      <div className="max-w-6xl mx-auto px-6">
+        <AnimatedElement className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Comment ça marche</h2>
+          <p className="text-lg text-foreground/60 mt-3 font-medium">Trois étapes, zéro friction.</p>
+        </AnimatedElement>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          {steps.map((step, i) => (
+            <AnimatedElement key={step.title} delay={i * 150}>
+              <div className="relative group bg-card hover:bg-card/80 border border-border/50 rounded-[2rem] p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/5 hover:-translate-y-2 h-full flex flex-col items-center text-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner">
+                  <step.icon className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-card-foreground mb-3">{step.title}</h3>
+                <p className="text-card-foreground/70 leading-relaxed font-medium">{step.description}</p>
+              </div>
+            </AnimatedElement>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PopularCreatorsSection({
+  creators,
+}: {
+  creators: { username: string; profile_image: string | null }[];
+}) {
+  return (
+    <section className="relative w-full bg-background py-16 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6">
+        <AnimatedElement className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-primary" />
+            </span>
+            <h2 className="text-3xl font-black text-foreground tracking-tight">Créateurs populaires</h2>
+          </div>
+          <a href="#feed" className="text-sm font-bold text-primary hover:text-primary/80 flex items-center gap-1 group">
+            Voir tous <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </a>
+        </AnimatedElement>
+
+        <AnimatedElement delay={200}>
+          <div className="flex gap-8 overflow-x-auto pb-8 pt-4 px-4 -mx-4 hide-scrollbar">
+            {creators.map((creator, index) => (
+              <Link
+                key={creator.username}
+                to="/creator/$username"
+                params={{ username: creator.username }}
+                className="flex flex-col items-center gap-4 text-center shrink-0 group"
+              >
+                <div className="relative">
+                  {index === 0 && (
+                    <div className="absolute -top-3 -right-2 z-10 w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/40">
+                      <Crown className="w-4 h-4 text-accent-foreground" />
+                    </div>
+                  )}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-accent via-primary to-secondary group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-xl shadow-foreground/10">
+                    <div className="w-full h-full rounded-full border-[3px] border-background overflow-hidden bg-muted">
+                      {creator.profile_image ? (
+                        <img
+                          src={creator.profile_image}
+                          alt={creator.username}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-lg font-black text-muted-foreground">
+                          {creator.username[0]?.toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-base font-bold text-foreground block group-hover:text-primary transition-colors">
+                  @{creator.username}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </AnimatedElement>
+      </div>
+    </section>
+  );
+}
+
+function FeedSection({
+  posts,
+  isLoading,
+}: {
+  posts: {
+    id: string;
+    title: string;
+    cover_image: string | null;
+    creator_username: string;
+    tiktok_url: string | null;
+    products: { id: string }[];
+  }[];
+  isLoading: boolean;
+}) {
+  return (
+    <section id="feed" className="relative w-full bg-background py-24">
+      <div className="max-w-6xl mx-auto px-6">
+        <AnimatedElement className="mb-14">
+          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Les derniers outfits</h2>
+          <p className="text-lg text-foreground/60 mt-3 font-medium">Shop les looks de tes créateurs préférés.</p>
+        </AnimatedElement>
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] w-full rounded-3xl" />
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
+            Aucun post pour le moment.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {posts.map((post, index) => (
+              <AnimatedElement key={post.id} delay={index * 60}>
+                <Link
+                  to="/post/$id"
+                  params={{ id: post.id }}
+                  className="group flex flex-col rounded-3xl overflow-hidden bg-card border border-border/40 shadow-sm hover:shadow-2xl hover:shadow-foreground/10 hover:-translate-y-2 transition-all duration-500"
+                >
+                  <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted">
+                    {post.cover_image && (
+                      <img
+                        src={post.cover_image}
+                        alt={post.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80" />
+                    {post.tiktok_url && (
+                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                        <span
+                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-lg ${platformButtonClass(
+                            post.tiktok_url
+                          )} group-hover:scale-105 transition-transform duration-300`}
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" /> Voir la vidéo
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-5 flex-1 flex flex-col justify-between bg-card">
+                    <h3 className="font-bold text-lg text-card-foreground leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                      {post.title}
+                    </h3>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                      <span className="text-sm font-bold text-card-foreground/80 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px]">
+                          @
+                        </div>
+                        {post.creator_username}
+                      </span>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-muted text-muted-foreground flex items-center gap-1.5">
+                        <ShoppingBag className="w-3 h-3" />
+                        {post.products?.length ?? 0} produit{(post.products?.length ?? 0) > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </AnimatedElement>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function CreatorCTASection() {
+  return (
+    <section className="relative w-full bg-secondary py-32 overflow-hidden rounded-t-[3rem] mt-12">
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none -translate-x-1/2 translate-y-1/2" />
+
+      <AnimatedElement className="relative max-w-4xl mx-auto px-6 text-center z-10">
+        <div className="w-20 h-20 rounded-3xl bg-background shadow-xl shadow-foreground/5 flex items-center justify-center mx-auto mb-8 rotate-3 hover:rotate-6 hover:scale-110 transition-all duration-500">
+          <Users className="w-10 h-10 text-primary" />
+        </div>
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-secondary-foreground tracking-tight leading-tight">
+          Deviens créateur, <br className="hidden sm:block" />
+          <span className="text-background bg-foreground px-4 py-1 rounded-xl inline-block mt-2 rotate-[-1deg]">
+            monétise ton style
+          </span>
+        </h2>
+        <p className="mt-8 text-xl text-secondary-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed">
+          Rejoins Wanted Fashion, poste tes tenues, tague tes pièces et touche une commission sur chaque vente générée par ta communauté.
+        </p>
+        <Link to="/signup">
+          <Button
+            size="lg"
+            className="relative overflow-hidden mt-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-12 h-16 text-xl font-black shadow-2xl shadow-primary/30 hover:-translate-y-2 hover:shadow-primary/50 transition-all duration-300 group"
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              Créer mon compte créateur <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+            </span>
+          </Button>
+        </Link>
+      </AnimatedElement>
+    </section>
+  );
+}
 
 function Feed() {
   const { data, isLoading } = useQuery({
@@ -35,7 +400,6 @@ function Feed() {
   const { data: topCreators } = useQuery({
     queryKey: ["top-creators"],
     queryFn: async () => {
-      // Récupère directement tous les créateurs avec leur photo
       const { data: creators, error } = await supabase
         .from("creators")
         .select("username, profile_image")
@@ -46,213 +410,24 @@ function Feed() {
   });
 
   return (
-    <main>
-      {/* HERO */}
-      <section
-        style={{ background: "linear-gradient(160deg, #8b6b52 0%, #6b5240 55%, #2b211a 100%)" }}
-        className="px-4 py-20 text-center sm:py-28"
-      >
-        <span
-          style={{ backgroundColor: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)" }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium text-white/90"
-        >
-          ✨ Le social shopping made in France
-        </span>
-        <h1 className="mx-auto mb-4 max-w-3xl text-4xl font-black leading-[1.1] tracking-tight text-white sm:text-5xl">
-          Trouve les pièces{" "}
-          <span style={{ color: "#e3d0b5" }}>de tes</span>{" "}
-          <span style={{ color: "#c98a7d" }}>créateurs</span>
-        </h1>
-        <p className="mb-8 text-sm text-white/70 sm:text-base">
-          Vidéo <span className="mx-1">→</span> références <span className="mx-1">→</span> achat en 1 clic
-        </p>
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <a
-            href="#feed"
-            style={{ backgroundColor: "#c0392b" }}
-            className="rounded-full px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
-          >
-            Explorer les looks →
-          </a>
-          <Link
-            to="/signup"
-            style={{ backgroundColor: "rgba(0,0,0,0.25)", borderColor: "rgba(255,255,255,0.3)" }}
-            className="rounded-full border px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-          >
-            Devenir créateur
-          </Link>
-        </div>
-      </section>
-
-      {/* COMMENT ÇA MARCHE */}
-      <section style={{ backgroundColor: "#e3d0b5" }} className="px-4 py-16 text-center">
-        <h2 className="text-2xl font-black sm:text-3xl">Comment ça marche</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Trois étapes, zéro friction.</p>
-        <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
-          {[
-            { icon: "🎥", title: "La vidéo", desc: "Le créateur poste sa tenue en vidéo sur TikTok, Instagram ou YouTube." },
-            { icon: "🏷️", title: "Les références", desc: "Chaque pièce portée est identifiée et listée sur la page du post." },
-            { icon: "🛍️", title: "L'achat", desc: "Un clic sur la carte produit et tu es redirigé chez le vendeur." },
-          ].map((step) => (
-            <div
-              key={step.title}
-              style={{ backgroundColor: "rgba(255,255,255,0.4)" }}
-              className="rounded-2xl p-6 text-left"
-            >
-              <div
-                style={{ backgroundColor: "rgba(192,57,43,0.12)" }}
-                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-lg"
-              >
-                {step.icon}
-              </div>
-              <h3 className="mb-1.5 text-base font-bold">{step.title}</h3>
-              <p className="text-sm text-muted-foreground">{step.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-6xl px-4 py-8">
-
-        {/* CRÉATEURS */}
-        {topCreators && topCreators.length > 0 && (
-          <section className="mb-12">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-black">
-                <span style={{ color: "#c0392b" }}>↗</span> Créateurs populaires
-              </h2>
-              <a href="/#feed" className="text-sm font-semibold" style={{ color: "#c0392b" }}>
-                Voir tous →
-              </a>
-            </div>
-            <div className="flex gap-5 overflow-x-auto pb-2">
-              {topCreators.map((c, i) => (
-                <Link
-                  key={c.username}
-                  to="/creator/$username"
-                  params={{ username: c.username }}
-                  className="flex flex-shrink-0 flex-col items-center gap-2 text-center"
-                >
-                  <div className="relative">
-                    <div className="h-16 w-16 overflow-hidden rounded-full ring-[3px] ring-brand ring-offset-2 ring-offset-background">
-                      {c.profile_image ? (
-                        <img src={c.profile_image} alt={c.username} className="h-full w-full object-cover" />
-                      ) : (
-                        <div
-                          style={{ background: "linear-gradient(135deg, #8b6b52, #c0392b)" }}
-                          className="flex h-full w-full items-center justify-center text-lg font-black text-white"
-                        >
-                          {c.username[0].toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    {i === 0 && (
-                      <span
-                        style={{ backgroundColor: "#c0392b" }}
-                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-white"
-                      >
-                        👑
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs font-semibold">@{c.username}</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* FEED */}
-        <div id="feed">
-          <div className="mb-4">
-            <h2 className="text-xl font-black sm:text-2xl">Les derniers outfits</h2>
-            <p className="text-sm text-muted-foreground">Shop les looks de tes créateurs préférés.</p>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-[4/5] w-full rounded-xl" />
-              ))}
-            </div>
-          ) : !data || data.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-              Aucun post pour le moment.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {data.map((p) => (
-                <PostCard key={p.id} post={p} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+    <main className="bg-background min-h-screen">
+      <style>{`
+        @keyframes floatA {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          50% { transform: translateY(-30px) rotate(5deg) scale(1.05); }
+        }
+        @keyframes floatB {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          50% { transform: translateY(-40px) rotate(-5deg) scale(1.1); }
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+      <HeroSection />
+      <HowItWorksSection />
+      {topCreators && topCreators.length > 0 && <PopularCreatorsSection creators={topCreators} />}
+      <FeedSection posts={data ?? []} isLoading={isLoading} />
+      <CreatorCTASection />
     </main>
-  );
-}
-
-function PostCard({ post }: {
-  post: {
-    id: string;
-    title: string;
-    cover_image: string | null;
-    creator_username: string;
-    tiktok_url: string | null;
-    products: { id: string }[];
-  }
-}) {
-  return (
-    <div
-      style={{ backgroundColor: "#f4ead9" }}
-      className="group overflow-hidden rounded-2xl border border-black/5 transition hover:-translate-y-0.5 hover:shadow-lg"
-    >
-      <Link to="/post/$id" params={{ id: post.id }} className="relative block">
-        <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
-          {post.cover_image ? (
-            <img
-              src={post.cover_image}
-              alt={post.title}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-              Pas d'image
-            </div>
-          )}
-        </div>
-        {post.tiktok_url && (
-          <div className="absolute bottom-3 left-3">
-            <span
-              style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
-              className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm"
-            >
-              ▶ Voir la vidéo
-            </span>
-          </div>
-        )}
-      </Link>
-      <div className="space-y-1.5 border-t border-black/5 p-3">
-        <Link to="/post/$id" params={{ id: post.id }} className="block">
-          <h3 className="line-clamp-2 text-sm font-bold leading-tight">{post.title}</h3>
-        </Link>
-        <div className="flex items-center justify-between text-xs">
-          <Link
-            to="/creator/$username"
-            params={{ username: post.creator_username }}
-            className="font-medium text-muted-foreground hover:text-brand"
-          >
-            @{post.creator_username}
-          </Link>
-          <span
-            style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
-            className="rounded-full px-2 py-0.5 text-muted-foreground"
-          >
-            {post.products?.length ?? 0} produit{(post.products?.length ?? 0) > 1 ? "s" : ""}
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }
