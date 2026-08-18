@@ -34,7 +34,7 @@ function detectPlatform(url: string): "tiktok" | "instagram" | "youtube" | "othe
   return "other";
 }
 
-function PlatformButton({ url }: { url: string }) {
+function PlatformButton({ url, compact }: { url: string; compact?: boolean }) {
   const platform = detectPlatform(url);
 
   const configs = {
@@ -79,11 +79,13 @@ function PlatformButton({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+      className={`inline-flex items-center gap-2 rounded-full font-semibold text-white shadow-md transition hover:opacity-90 ${
+        compact ? "px-4 py-2 text-xs" : "px-6 py-3 text-sm"
+      }`}
       style={{ background: config.bg }}
     >
       {config.icon}
-      {config.label}
+      {compact ? "Voir la vidéo" : config.label}
     </a>
   );
 }
@@ -126,66 +128,142 @@ function PostPage() {
   const { post, products } = data;
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-6">
+    <main className="mx-auto max-w-5xl px-4 py-6">
+      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand">
+        ← Retour au feed
+      </Link>
 
-      {/* HEADER POST */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-black sm:text-3xl">{post.title}</h1>
-        <Link
-          to="/creator/$username"
-          params={{ username: post.creator_username }}
-          className="text-sm text-muted-foreground hover:text-brand"
-        >
-          @{post.creator_username}
-        </Link>
-      </div>
+      <div className="grid gap-8 sm:grid-cols-[minmax(0,380px)_1fr]">
 
-      {/* BOUTON VIDÉO */}
-      {post.tiktok_url && (
-        <div className="mb-8 flex justify-center">
-          <PlatformButton url={post.tiktok_url} />
-        </div>
-      )}
+        {/* VIDÉO */}
+        <div>
+          <div
+            className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-muted shadow-card"
+            style={{ background: "linear-gradient(180deg, #e3d0b5 0%, #6b5240 100%)" }}
+          >
+            {post.cover_image && (
+              <img src={post.cover_image} alt={post.title} className="h-full w-full object-cover" />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/25 backdrop-blur">
+                <span className="ml-1 text-2xl text-white">▶</span>
+              </div>
+            </div>
+            {post.tiktok_url && (
+              <div className="absolute bottom-4 left-4">
+                <PlatformButton url={post.tiktok_url} compact />
+              </div>
+            )}
+            <div className="absolute bottom-4 right-4 flex gap-2">
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30">
+                ♡
+              </button>
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30">
+                ⤴
+              </button>
+            </div>
+          </div>
 
-      {/* PRODUITS */}
-      <h2 className="mb-4 text-lg font-bold">Les produits</h2>
-      {products.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          Aucun produit ajouté.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          {products.map((p) => (
-            <a
-              key={p.id}
-              href={p.affiliate_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackClick(post.id, p.id, post.creator_username)}
-              className="group block overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover cursor-pointer"
+          {/* CRÉATEUR (sous la vidéo, desktop) */}
+          <div
+            style={{ backgroundColor: "#6b5240" }}
+            className="mt-3 hidden items-center justify-between rounded-2xl p-4 sm:flex"
+          >
+            <Link
+              to="/creator/$username"
+              params={{ username: post.creator_username }}
+              className="flex items-center gap-3"
             >
-              <div className="aspect-square w-full overflow-hidden bg-muted">
-                {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Pas d'image</div>
-                )}
+              <div className="h-9 w-9 overflow-hidden rounded-full bg-white/20 text-center text-sm font-black leading-9 text-white">
+                {post.creator_username[0]?.toUpperCase()}
               </div>
-              <div className="space-y-1.5 p-3">
-                {p.brand && <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{p.brand}</p>}
-                <h3 className="line-clamp-2 text-sm font-semibold leading-snug">{p.name}</h3>
-                {p.price && <p className="text-base font-black text-brand">{p.price}</p>}
-                <p className="mt-1 text-xs text-muted-foreground group-hover:text-brand transition">
-                  Voir le produit →
-                </p>
+              <div>
+                <p className="text-sm font-bold text-white">{post.creator_username}</p>
+                <p className="text-xs text-white/60">@{post.creator_username}</p>
               </div>
-            </a>
-          ))}
+            </Link>
+            <Link
+              to="/creator/$username"
+              params={{ username: post.creator_username }}
+              className="rounded-full border border-white/30 px-4 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+            >
+              Voir le profil ↗
+            </Link>
+          </div>
         </div>
-      )}
 
-      <div className="mt-10 text-center text-xs text-muted-foreground">
-        Créé avec <span className="font-semibold text-brand">WantedFashion</span>
+        {/* INFOS + PRODUITS */}
+        <div>
+          <h1 className="text-2xl font-black sm:text-3xl">{post.title}</h1>
+          <Link
+            to="/creator/$username"
+            params={{ username: post.creator_username }}
+            className="mt-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand"
+          >
+            @{post.creator_username} ✓
+          </Link>
+
+          <div
+            style={{ backgroundColor: "#6b5240" }}
+            className="mt-5 flex items-start gap-2.5 rounded-xl p-4 text-sm text-white"
+          >
+            <span>🏷️</span>
+            <span>
+              {products.length} pièce{products.length > 1 ? "s" : ""} identifiée{products.length > 1 ? "s" : ""} dans cette vidéo — clique sur une carte pour acheter.
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {products.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
+                Aucun produit ajouté.
+              </div>
+            ) : (
+              products.map((p) => (
+                <a
+                  key={p.id}
+                  href={p.affiliate_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackClick(post.id, p.id, post.creator_username)}
+                  style={{ backgroundColor: "#f4ead9" }}
+                  className="group flex items-center gap-4 rounded-xl border border-black/5 p-3 transition hover:shadow-card cursor-pointer"
+                >
+                  <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">—</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {p.brand && <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#c0392b" }}>{p.brand}</p>}
+                    <h3 className="truncate text-sm font-semibold leading-snug">{p.name}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {p.price && <span className="text-sm font-black text-brand">{p.price}</span>}
+                      {p.price && " · "}
+                      {(() => { try { return new URL(p.affiliate_link).hostname.replace("www.", ""); } catch { return ""; } })()}
+                    </p>
+                  </div>
+                  <span
+                    style={{ backgroundColor: "rgba(192,57,43,0.12)" }}
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-brand transition group-hover:bg-brand group-hover:text-white"
+                  >
+                    ↗
+                  </span>
+                </a>
+              ))
+            )}
+          </div>
+
+          <Link
+            to="/"
+            style={{ backgroundColor: "#c0392b" }}
+            className="mt-5 flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white hover:opacity-90"
+          >
+            🛍️ Envie de shopper plus de looks ? <span className="underline">Voir le feed</span>
+          </Link>
+        </div>
       </div>
     </main>
   );
