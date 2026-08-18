@@ -162,14 +162,44 @@ function CreatorPage() {
             </>
           )}
         </div>
-        <h1 className="text-xl font-black sm:text-2xl">@{creator.username}</h1>
+        <h1 className="text-xl font-black sm:text-2xl">{creator.username}</h1>
+        <p className="text-sm font-medium" style={{ color: "#c0392b" }}>@{creator.username}</p>
         {creator.bio && (
           <p className="max-w-md text-sm text-muted-foreground">{creator.bio}</p>
         )}
+        {!isOwner && (
+          <button
+            style={{ backgroundColor: "#c0392b" }}
+            className="mt-1 rounded-full px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Suivre
+          </button>
+        )}
+      </div>
+
+      {/* STATS */}
+      <div className="mt-6 grid grid-cols-3 gap-3 rounded-2xl p-4 text-center sm:p-6" style={{ backgroundColor: "#6b5240" }}>
+        <div>
+          <p className="text-2xl font-black text-white sm:text-3xl">{posts.length}</p>
+          <p className="mt-0.5 text-xs text-white/60">Posts</p>
+        </div>
+        <div className="border-x border-white/15">
+          <p className="text-2xl font-black text-white sm:text-3xl">
+            {posts.reduce((n, p) => n + (p.products?.length ?? 0), 0)}
+          </p>
+          <p className="mt-0.5 text-xs text-white/60">Produits taggés</p>
+        </div>
+        <div>
+          <p className="text-2xl font-black text-white sm:text-3xl">🛍️</p>
+          <p className="mt-0.5 text-xs text-white/60">Shoppable</p>
+        </div>
       </div>
 
       {/* POSTS */}
-      <div className="mt-8">
+      <div className="mt-10">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-black">
+          <span style={{ color: "#c0392b" }}>▦</span> Les looks de @{creator.username}
+        </h2>
         {posts.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
             Ce créateur n'a pas encore publié.
