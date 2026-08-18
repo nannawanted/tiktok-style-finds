@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Logo } from "./Logo";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, Sparkles, User, ShoppingBag } from "lucide-react";
 
 export function Header() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -16,48 +20,122 @@ export function Header() {
   }
 
   return (
-    <header
-      className="sticky top-0 z-40 w-full border-b border-border backdrop-blur"
-      style={{ backgroundColor: "#e3d0b5" }}
-    >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="text-xl">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md border-b border-border/40 transition-all duration-300">
+      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-20">
+        <Link to="/" className="flex items-center gap-1.5 group">
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-medium text-foreground/80 sm:flex">
-          <a href="/#feed" className="transition hover:text-foreground">Explorer</a>
-          <Link to="/" className="transition hover:text-foreground">Créateurs</Link>
-          <Link to="/" className="transition hover:text-foreground">Un look</Link>
+        <nav className="hidden sm:flex items-center gap-8">
+          <a
+            href="#feed"
+            className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+          >
+            Explorer
+          </a>
+          <a
+            href="#feed"
+            className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+          >
+            Créateurs
+          </a>
+          <a
+            href="#feed"
+            className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+          >
+            Un look
+          </a>
         </nav>
 
-        <nav className="flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-4">
           {loading ? null : user ? (
             <>
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm">Dashboard</Button>
+                <Button variant="ghost" className="text-foreground hover:text-primary hover:bg-primary/10 font-semibold">
+                  Dashboard
+                </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={signOut}>
+              <Button variant="outline" onClick={signOut} className="font-semibold">
                 Déconnexion
               </Button>
             </>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-medium text-foreground/80 hover:text-foreground">
-                Connexion
+              <Link to="/login">
+                <Button variant="ghost" className="text-foreground hover:text-primary hover:bg-primary/10 font-semibold">
+                  Connexion
+                </Button>
               </Link>
               <Link to="/signup">
-                <Button
-                  size="sm"
-                  style={{ backgroundColor: "#c0392b" }}
-                  className="rounded-full px-5 text-white hover:opacity-90"
-                >
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300 font-semibold">
                   Inscription
                 </Button>
               </Link>
             </>
           )}
-        </nav>
+        </div>
+
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild className="sm:hidden">
+            <Button variant="ghost" size="icon" className="text-foreground">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="bg-background border-border">
+            <nav className="flex flex-col gap-6 mt-12">
+              <div className="mb-6">
+                <Logo />
+              </div>
+              <a
+                href="#feed"
+                onClick={() => setOpen(false)}
+                className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
+              >
+                <ShoppingBag className="w-5 h-5 text-primary" /> Explorer
+              </a>
+              <a
+                href="#feed"
+                onClick={() => setOpen(false)}
+                className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
+              >
+                <User className="w-5 h-5 text-primary" /> Créateurs
+              </a>
+              <a
+                href="#feed"
+                onClick={() => setOpen(false)}
+                className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
+              >
+                <Sparkles className="w-5 h-5 text-primary" /> Un look
+              </a>
+              <div className="h-px bg-border my-4" />
+              {loading ? null : user ? (
+                <>
+                  <Link to="/dashboard" onClick={() => setOpen(false)}>
+                    <Button variant="outline" className="w-full border-border text-foreground font-bold h-12 rounded-xl">
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button onClick={() => { setOpen(false); signOut(); }} className="w-full font-bold h-12 rounded-xl">
+                    Déconnexion
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setOpen(false)}>
+                    <Button variant="outline" className="w-full border-border text-foreground font-bold h-12 rounded-xl">
+                      Connexion
+                    </Button>
+                  </Link>
+                  <Link to="/signup" onClick={() => setOpen(false)}>
+                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold h-12 rounded-xl shadow-lg shadow-primary/20">
+                      Inscription
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </nav>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );
