@@ -49,29 +49,66 @@ function Feed() {
     <main>
       {/* HERO */}
       <section
-        style={{ background: "linear-gradient(135deg, #6b5240 0%, #8b6b52 50%, #a67c5b 100%)" }}
-        className="px-4 py-12 text-center"
+        style={{ background: "linear-gradient(160deg, #8b6b52 0%, #6b5240 55%, #2b211a 100%)" }}
+        className="px-4 py-20 text-center sm:py-28"
       >
-        <h1 className="mb-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
-          Trouve les pièces de tes créateurs
+        <span
+          style={{ backgroundColor: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)" }}
+          className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium text-white/90"
+        >
+          ✨ Le social shopping made in France
+        </span>
+        <h1 className="mx-auto mb-4 max-w-3xl text-4xl font-black leading-[1.1] tracking-tight text-white sm:text-5xl">
+          Trouve les pièces{" "}
+          <span style={{ color: "#e3d0b5" }}>de tes</span>{" "}
+          <span style={{ color: "#c98a7d" }}>créateurs</span>
         </h1>
-        <p className="mb-6 text-sm text-white/70">
-          Vidéo → références → achat en 1 clic
+        <p className="mb-8 text-sm text-white/70 sm:text-base">
+          Vidéo <span className="mx-1">→</span> références <span className="mx-1">→</span> achat en 1 clic
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <a
             href="#feed"
             style={{ backgroundColor: "#c0392b" }}
-            className="rounded-full px-7 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="rounded-full px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
           >
-            Explorer les looks
+            Explorer les looks →
           </a>
           <Link
             to="/signup"
-            className="rounded-full border border-white/60 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+            style={{ backgroundColor: "rgba(0,0,0,0.25)", borderColor: "rgba(255,255,255,0.3)" }}
+            className="rounded-full border px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             Devenir créateur
           </Link>
+        </div>
+      </section>
+
+      {/* COMMENT ÇA MARCHE */}
+      <section style={{ backgroundColor: "#e3d0b5" }} className="px-4 py-16 text-center">
+        <h2 className="text-2xl font-black sm:text-3xl">Comment ça marche</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Trois étapes, zéro friction.</p>
+        <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+          {[
+            { icon: "🎥", title: "La vidéo", desc: "Le créateur poste sa tenue en vidéo sur TikTok, Instagram ou YouTube." },
+            { icon: "🏷️", title: "Les références", desc: "Chaque pièce portée est identifiée et listée sur la page du post." },
+            { icon: "🛍️", title: "L'achat", desc: "Un clic sur la carte produit et tu es redirigé chez le vendeur." },
+          ].map((step) => (
+            <div
+              key={step.title}
+              style={{ backgroundColor: "rgba(255,255,255,0.4)" }}
+              className="rounded-2xl p-6 text-left"
+            >
+              <div
+                style={{ backgroundColor: "rgba(192,57,43,0.12)" }}
+                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-lg"
+              >
+                {step.icon}
+              </div>
+              <h3 className="mb-1.5 text-base font-bold">{step.title}</h3>
+              <p className="text-sm text-muted-foreground">{step.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -79,29 +116,46 @@ function Feed() {
 
         {/* CRÉATEURS */}
         {topCreators && topCreators.length > 0 && (
-          <section className="mb-10">
-            <h2 className="mb-4 text-lg font-black">Créateurs populaires</h2>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {topCreators.map((c) => (
+          <section className="mb-12">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-black">
+                <span style={{ color: "#c0392b" }}>↗</span> Créateurs populaires
+              </h2>
+              <a href="/#feed" className="text-sm font-semibold" style={{ color: "#c0392b" }}>
+                Voir tous →
+              </a>
+            </div>
+            <div className="flex gap-5 overflow-x-auto pb-2">
+              {topCreators.map((c, i) => (
                 <Link
                   key={c.username}
                   to="/creator/$username"
                   params={{ username: c.username }}
-                  className="flex flex-col items-center gap-2 text-center"
+                  className="flex flex-shrink-0 flex-col items-center gap-2 text-center"
                 >
-                  <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-brand ring-offset-2">
-                    {c.profile_image ? (
-                      <img src={c.profile_image} alt={c.username} className="h-full w-full object-cover" />
-                    ) : (
-                      <div
-                        style={{ background: "linear-gradient(135deg, #8b6b52, #c0392b)" }}
-                        className="flex h-full w-full items-center justify-center text-lg font-black text-white"
+                  <div className="relative">
+                    <div className="h-16 w-16 overflow-hidden rounded-full ring-[3px] ring-brand ring-offset-2 ring-offset-background">
+                      {c.profile_image ? (
+                        <img src={c.profile_image} alt={c.username} className="h-full w-full object-cover" />
+                      ) : (
+                        <div
+                          style={{ background: "linear-gradient(135deg, #8b6b52, #c0392b)" }}
+                          className="flex h-full w-full items-center justify-center text-lg font-black text-white"
+                        >
+                          {c.username[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    {i === 0 && (
+                      <span
+                        style={{ backgroundColor: "#c0392b" }}
+                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-white"
                       >
-                        {c.username[0].toUpperCase()}
-                      </div>
+                        👑
+                      </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">@{c.username}</span>
+                  <span className="text-xs font-semibold">@{c.username}</span>
                 </Link>
               ))}
             </div>
@@ -149,7 +203,10 @@ function PostCard({ post }: {
   }
 }) {
   return (
-    <div className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition hover:shadow-card-hover">
+    <div
+      style={{ backgroundColor: "#f4ead9" }}
+      className="group overflow-hidden rounded-2xl border border-black/5 transition hover:-translate-y-0.5 hover:shadow-lg"
+    >
       <Link to="/post/$id" params={{ id: post.id }} className="relative block">
         <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
           {post.cover_image ? (
@@ -166,7 +223,7 @@ function PostCard({ post }: {
           )}
         </div>
         {post.tiktok_url && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+          <div className="absolute bottom-3 left-3">
             <span
               style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
               className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm"
@@ -176,19 +233,22 @@ function PostCard({ post }: {
           </div>
         )}
       </Link>
-      <div className="space-y-1 p-3">
+      <div className="space-y-1.5 border-t border-black/5 p-3">
         <Link to="/post/$id" params={{ id: post.id }} className="block">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-tight">{post.title}</h3>
+          <h3 className="line-clamp-2 text-sm font-bold leading-tight">{post.title}</h3>
         </Link>
         <div className="flex items-center justify-between text-xs">
           <Link
             to="/creator/$username"
             params={{ username: post.creator_username }}
-            className="text-muted-foreground hover:text-brand"
+            className="font-medium text-muted-foreground hover:text-brand"
           >
             @{post.creator_username}
           </Link>
-          <span className="text-muted-foreground">
+          <span
+            style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+            className="rounded-full px-2 py-0.5 text-muted-foreground"
+          >
             {post.products?.length ?? 0} produit{(post.products?.length ?? 0) > 1 ? "s" : ""}
           </span>
         </div>
