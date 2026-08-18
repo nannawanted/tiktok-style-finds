@@ -20,11 +20,18 @@ export function Header() {
       className="sticky top-0 z-40 w-full border-b border-border backdrop-blur"
       style={{ backgroundColor: "#e3d0b5" }}
     >
-      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="text-xl">
           <Logo />
         </Link>
-        <nav className="flex items-center gap-2">
+
+        <nav className="hidden items-center gap-8 text-sm font-medium text-foreground/80 sm:flex">
+          <a href="/#feed" className="transition hover:text-foreground">Explorer</a>
+          <Link to="/" className="transition hover:text-foreground">Créateurs</Link>
+          <Link to="/" className="transition hover:text-foreground">Un look</Link>
+        </nav>
+
+        <nav className="flex items-center gap-3">
           {loading ? null : user ? (
             <>
               <Link to="/dashboard">
@@ -36,11 +43,15 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link to="/login">
-                <Button variant="ghost" size="sm">Connexion</Button>
+              <Link to="/login" className="text-sm font-medium text-foreground/80 hover:text-foreground">
+                Connexion
               </Link>
               <Link to="/signup">
-                <Button size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">
+                <Button
+                  size="sm"
+                  style={{ backgroundColor: "#c0392b" }}
+                  className="rounded-full px-5 text-white hover:opacity-90"
+                >
                   Inscription
                 </Button>
               </Link>
