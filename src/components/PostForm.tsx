@@ -38,6 +38,7 @@ export function PostForm({
     initial ?? { title: "", tiktok_url: "", cover_image: "", products: [] },
   );
   const [tiktokLoading, setTiktokLoading] = useState(false);
+  const [tiktokNotice, setTiktokNotice] = useState<string | null>(null);
   const [productLoading, setProductLoading] = useState<Record<number, boolean>>({});
 
   const tiktokDebounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -72,6 +73,7 @@ export function PostForm({
     setData((d) => ({ ...d, tiktok_url: url }));
 
     clearTimeout(tiktokDebounceRef.current);
+    setTiktokNotice(null);
     if (!isTikTokUrl(url)) {
       setTiktokLoading(false);
       return;
@@ -83,9 +85,15 @@ export function PostForm({
         const result = await fetchTikTokOembed({ data: { url } });
         if (result.thumbnail_url) {
           setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
+        } else {
+          setTiktokNotice(
+            "Miniature non trouvée automatiquement (souvent le cas pour les posts carrousel/photo TikTok). Colle l'URL de l'image de couverture manuellement ci-dessous.",
+          );
         }
       } catch {
-        // Le créateur peut toujours saisir l'image manuellement.
+        setTiktokNotice(
+          "Impossible de récupérer la miniature automatiquement. Colle l'URL de l'image de couverture manuellement ci-dessous.",
+        );
       } finally {
         setTiktokLoading(false);
       }
@@ -150,6 +158,11 @@ export function PostForm({
           <p className="mt-1 text-xs text-muted-foreground">
             Colle l&apos;URL TikTok : la miniature se remplit automatiquement.
           </p>
+          {tiktokNotice && (
+            <p className="mt-1.5 rounded-md bg-accent/40 px-2.5 py-1.5 text-xs text-foreground">
+              {tiktokNotice}
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="cv">URL image de couverture</Label>
