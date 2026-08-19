@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchProductMetadata, fetchTikTokOembed, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
+import { supabase } from "@/integrations/supabase/client";
 
 export type ProductDraft = {
   id?: string;
@@ -40,6 +41,8 @@ export function PostForm({
   const [tiktokLoading, setTiktokLoading] = useState(false);
   const [tiktokNotice, setTiktokNotice] = useState<string | null>(null);
   const [productLoading, setProductLoading] = useState<Record<number, boolean>>({});
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   const tiktokDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const productDebounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
@@ -71,6 +74,24 @@ export function PostForm({
 
   function isInstagramUrl(url: string) {
     return url.includes("instagram.com");
+  }
+
+  async function uploadCoverImage(file: File) {
+    setCoverUploading(true);
+    setTiktokNotice(null);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true });
+      if (upErr) {
+        setTiktokNotice("Échec de l'import de la photo. Réessaie ou colle une URL d'image manuellement.");
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("covers").getPublicUrl(path);
+      setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
+    } finally {
+      setCoverUploading(false);
+    }
   }
 
   function handleTikTokUrlChange(url: string) {
@@ -186,8 +207,32 @@ export function PostForm({
         </div>
         <div>
           <Label htmlFor="cv">URL image de couverture</Label>
-          <Input id="cv" type="url" value={data.cover_image}
-            onChange={(e) => setData({ ...data, cover_image: e.target.value })} />
+          <div className="flex gap-2">
+            <Input id="cv" type="url" value={data.cover_image} className="flex-1"
+              onChange={(e) => setData({ ...data, cover_image: e.target.value })} />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={coverUploading}
+              onClick={() => coverFileInputRef.current?.click()}
+              title="Importer une photo"
+            >
+              {coverUploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            </Button>
+            <input
+              ref={coverFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCoverImage(f); }}
+            />
+          </div>
+          {data.cover_image && (
+            <div className="mt-2 h-24 w-24 overflow-hidden rounded-lg border border-border bg-muted">
+              <img src={data.cover_image} alt="Aperçu couverture" className="h-full w-full object-cover" />
+            </div>
+          )}
         </div>
       </section>
 
