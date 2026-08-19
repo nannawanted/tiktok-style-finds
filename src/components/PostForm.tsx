@@ -87,12 +87,12 @@ export function PostForm({
           setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
         } else {
           setTiktokNotice(
-            "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), TikTok ne fournit pas d'image via ce système : fais un clic droit sur une des photos du slide → \"Copier l'adresse de l'image\" → colle-la dans le champ \"URL image de couverture\" ci-dessous.",
+            "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), importe une photo directement pour l'image de couverture.",
           );
         }
       } catch {
         setTiktokNotice(
-          "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), TikTok ne fournit pas d'image via ce système : fais un clic droit sur une des photos du slide → \"Copier l'adresse de l'image\" → colle-la dans le champ \"URL image de couverture\" ci-dessous.",
+          "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), importe une photo directement pour l'image de couverture.",
         );
       } finally {
         setTiktokLoading(false);
