@@ -290,10 +290,26 @@ export const fetchTikTokOembed = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }) => {
+    // TikTok's oEmbed endpoint can fail to parse URLs with extra tracking
+    // query params (is_from_webapp, sender_device, web_id, etc). Strip them
+    // and keep only the clean post path before requesting the embed.
+    const cleanUrl = (() => {
+      try {
+        const u = new URL(data.url);
+        return `${u.origin}${u.pathname}`;
+      } catch {
+        return data.url;
+      }
+    })();
+
     const res = await fetch(
-      `https://www.tiktok.com/oembed?url=${encodeURIComponent(data.url)}`,
+      `https://www.tiktok.com/oembed?url=${encodeURIComponent(cleanUrl)}`,
+      { headers: { Accept: "application/json", "User-Agent": BROWSER_USER_AGENT } },
     );
+
     if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[TikTok oEmbed] ${res.status} for ${cleanUrl}: ${body.slice(0, 300)}`);
       throw new Error("Impossible de récupérer la miniature TikTok");
     }
 
