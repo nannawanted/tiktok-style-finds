@@ -69,12 +69,19 @@ export function PostForm({
     setData((d) => ({ ...d, products: d.products.filter((_, i) => i !== idx) }));
   }
 
+  function isInstagramUrl(url: string) {
+    return url.includes("instagram.com");
+  }
+
   function handleTikTokUrlChange(url: string) {
     setData((d) => ({ ...d, tiktok_url: url }));
 
     clearTimeout(tiktokDebounceRef.current);
     setTiktokNotice(null);
-    if (!isTikTokUrl(url)) {
+
+    const isTikTok = isTikTokUrl(url);
+    const isInstagram = isInstagramUrl(url);
+    if (!isTikTok && !isInstagram) {
       setTiktokLoading(false);
       return;
     }
@@ -82,17 +89,30 @@ export function PostForm({
     tiktokDebounceRef.current = setTimeout(async () => {
       setTiktokLoading(true);
       try {
-        const result = await fetchTikTokOembed({ data: { url } });
-        if (result.thumbnail_url) {
-          setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
+        if (isTikTok) {
+          const result = await fetchTikTokOembed({ data: { url } });
+          if (result.thumbnail_url) {
+            setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
+          } else {
+            setTiktokNotice(
+              "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), importe une photo directement pour l'image de couverture.",
+            );
+          }
         } else {
-          setTiktokNotice(
-            "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), importe une photo directement pour l'image de couverture.",
-          );
+          const meta = await fetchProductMetadata({ data: { url } });
+          if (meta.image_url) {
+            setData((d) => ({ ...d, cover_image: meta.image_url }));
+          } else {
+            setTiktokNotice(
+              "Impossible de récupérer automatiquement l'image de ce post Instagram. Importe une photo directement pour l'image de couverture.",
+            );
+          }
         }
       } catch {
         setTiktokNotice(
-          "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), importe une photo directement pour l'image de couverture.",
+          isTikTok
+            ? "La miniature automatique ne marche que pour les vraies vidéos TikTok. Pour un post en slide (photos), importe une photo directement pour l'image de couverture."
+            : "Impossible de récupérer automatiquement l'image de ce post Instagram. Importe une photo directement pour l'image de couverture.",
         );
       } finally {
         setTiktokLoading(false);
@@ -142,21 +162,21 @@ export function PostForm({
             onChange={(e) => setData({ ...data, title: e.target.value })} />
         </div>
         <div>
-          <Label htmlFor="tt">URL TikTok</Label>
+          <Label htmlFor="tt">URL TikTok ou Instagram</Label>
           <div className="relative">
             <Input
               id="tt"
               type="url"
               value={data.tiktok_url}
               onChange={(e) => handleTikTokUrlChange(e.target.value)}
-              placeholder="https://www.tiktok.com/@user/video/..."
+              placeholder="https://www.tiktok.com/@user/video/... ou https://www.instagram.com/p/..."
             />
             {tiktokLoading && (
               <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
             )}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Colle l&apos;URL TikTok : la miniature se remplit automatiquement.
+            Colle l&apos;URL TikTok ou Instagram : la miniature se remplit automatiquement.
           </p>
           {tiktokNotice && (
             <p className="mt-1.5 rounded-md bg-accent/40 px-2.5 py-1.5 text-xs text-foreground">
