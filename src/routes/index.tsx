@@ -426,8 +426,8 @@ function Feed() {
       <HeroSection />
       {topCreators && topCreators.length > 0 && <PopularCreatorsSection creators={topCreators} />}
       <FeedSection posts={data ?? []} isLoading={isLoading} />
-      <CreatorCTASection />
       <HowItWorksSection />
+      <CreatorCTASection />
     </main>
   );
 }
