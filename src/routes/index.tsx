@@ -170,22 +170,22 @@ function HowItWorksSection() {
   ];
 
   return (
-    <section className="relative w-full bg-background pt-32 pb-20 -mt-10">
+    <section className="relative w-full bg-background pt-20 pb-24">
       <div className="max-w-6xl mx-auto px-6">
         <AnimatedElement className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Comment ça marche</h2>
           <p className="text-lg text-foreground/60 mt-3 font-medium">Trois étapes, zéro friction.</p>
         </AnimatedElement>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <div className="grid grid-cols-3 gap-3 sm:gap-8 relative">
           {steps.map((step, i) => (
             <AnimatedElement key={step.title} delay={i * 150}>
-              <div className="relative group bg-card hover:bg-card/80 border border-border/50 rounded-[2rem] p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/5 hover:-translate-y-2 h-full flex flex-col items-center text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner">
-                  <step.icon className="w-10 h-10 text-primary" />
+              <div className="relative group bg-card hover:bg-card/80 border border-border/50 rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/5 hover:-translate-y-2 h-full flex flex-col items-center text-center">
+                <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3 sm:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner">
+                  <step.icon className="w-6 h-6 sm:w-10 sm:h-10 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-card-foreground mb-3">{step.title}</h3>
-                <p className="text-card-foreground/70 leading-relaxed font-medium">{step.description}</p>
+                <h3 className="text-sm sm:text-xl font-bold text-card-foreground mb-1 sm:mb-3">{step.title}</h3>
+                <p className="text-xs sm:text-base text-card-foreground/70 leading-relaxed font-medium">{step.description}</p>
               </div>
             </AnimatedElement>
           ))}
@@ -201,7 +201,7 @@ function PopularCreatorsSection({
   creators: { username: string; profile_image: string | null }[];
 }) {
   return (
-    <section className="relative w-full bg-background py-16 overflow-hidden">
+    <section className="relative w-full bg-background pt-16 pb-4 overflow-hidden">
       <div className="max-w-6xl mx-auto px-6">
         <AnimatedElement className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div className="flex items-center gap-3">
@@ -216,7 +216,7 @@ function PopularCreatorsSection({
         </AnimatedElement>
 
         <AnimatedElement delay={200}>
-          <div className="flex gap-8 overflow-x-auto pb-8 pt-4 px-4 -mx-4 hide-scrollbar">
+          <div className="flex flex-nowrap gap-8 overflow-x-auto pb-2 pt-4 px-4 -mx-4 hide-scrollbar">
             {creators.map((creator, index) => (
               <Link
                 key={creator.username}
@@ -281,9 +281,9 @@ function FeedSection({
         </AnimatedElement>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-[3/4] w-full rounded-3xl" />
+          <div className="flex gap-4 overflow-x-hidden pb-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] w-40 sm:w-52 shrink-0 rounded-2xl" />
             ))}
           </div>
         ) : posts.length === 0 ? (
@@ -291,13 +291,13 @@ function FeedSection({
             Aucun post pour le moment.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-4 -mx-4 hide-scrollbar">
             {posts.map((post, index) => (
-              <AnimatedElement key={post.id} delay={index * 60}>
+              <AnimatedElement key={post.id} delay={index * 40} className="shrink-0">
                 <Link
                   to="/post/$id"
                   params={{ id: post.id }}
-                  className="group flex flex-col rounded-3xl overflow-hidden bg-card border border-border/40 shadow-sm hover:shadow-2xl hover:shadow-foreground/10 hover:-translate-y-2 transition-all duration-500"
+                  className="group flex flex-col w-40 sm:w-52 rounded-2xl overflow-hidden bg-card border border-border/40 shadow-sm hover:shadow-2xl hover:shadow-foreground/10 hover:-translate-y-2 transition-all duration-500"
                 >
                   <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted">
                     {post.cover_image && (
@@ -310,32 +310,32 @@ function FeedSection({
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80" />
                     {post.tiktok_url && (
-                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
                         <span
-                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-lg ${platformButtonClass(
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-bold shadow-lg ${platformButtonClass(
                             post.tiktok_url
                           )} group-hover:scale-105 transition-transform duration-300`}
                         >
-                          <Play className="w-3.5 h-3.5 fill-current" /> Voir la vidéo
+                          <Play className="w-3 h-3 fill-current" /> Voir la vidéo
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="p-5 flex-1 flex flex-col justify-between bg-card">
-                    <h3 className="font-bold text-lg text-card-foreground leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                  <div className="p-3 flex-1 flex flex-col justify-between bg-card">
+                    <h3 className="font-bold text-sm text-card-foreground leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
                       {post.title}
                     </h3>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-                      <span className="text-sm font-bold text-card-foreground/80 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px]">
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                      <span className="text-xs font-bold text-card-foreground/80 flex items-center gap-1.5 truncate">
+                        <div className="w-4 h-4 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[8px]">
                           @
                         </div>
-                        {post.creator_username}
+                        <span className="truncate">{post.creator_username}</span>
                       </span>
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-muted text-muted-foreground flex items-center gap-1.5">
-                        <ShoppingBag className="w-3 h-3" />
-                        {post.products?.length ?? 0} produit{(post.products?.length ?? 0) > 1 ? "s" : ""}
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground flex items-center gap-1 shrink-0">
+                        <ShoppingBag className="w-2.5 h-2.5" />
+                        {post.products?.length ?? 0}
                       </span>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ function Feed() {
         .from("posts")
         .select("id, title, cover_image, creator_username, tiktok_url, created_at, products(id)")
         .order("created_at", { ascending: false })
-        .limit(60);
+        .limit(20);
       if (error) throw error;
       return posts ?? [];
     },
@@ -403,7 +403,7 @@ function Feed() {
       const { data: creators, error } = await supabase
         .from("creators")
         .select("username, profile_image")
-        .limit(6);
+        .limit(20);
       if (error) throw error;
       return creators ?? [];
     },
@@ -424,10 +424,10 @@ function Feed() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
       <HeroSection />
-      <HowItWorksSection />
       {topCreators && topCreators.length > 0 && <PopularCreatorsSection creators={topCreators} />}
       <FeedSection posts={data ?? []} isLoading={isLoading} />
       <CreatorCTASection />
+      <HowItWorksSection />
     </main>
   );
 }
