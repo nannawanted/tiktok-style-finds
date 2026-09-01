@@ -21,12 +21,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md border-b border-border/40 transition-all duration-300">
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-[auto_1fr_auto] items-center h-20">
+      <div className="relative max-w-6xl mx-auto px-6 grid grid-cols-[auto_1fr_auto] items-center h-20">
         <Link to="/" className="flex items-center gap-1.5 group justify-self-start">
           <Logo />
         </Link>
 
-        <nav className="hidden sm:flex items-center justify-center gap-8">
+        <nav className="hidden sm:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <a
             href="/#feed"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
