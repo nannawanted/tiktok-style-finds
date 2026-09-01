@@ -409,6 +409,17 @@ function Feed() {
     },
   });
 
+  useEffect(() => {
+    if (isLoading) return;
+    const hash = window.location.hash;
+    if (!hash) return;
+    const id = hash.replace("#", "");
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [isLoading]);
+
   return (
     <main className="bg-background min-h-screen">
       <style>{`
