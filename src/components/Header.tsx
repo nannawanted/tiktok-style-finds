@@ -21,12 +21,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md border-b border-border/40 transition-all duration-300">
-      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-20">
-        <Link to="/" className="flex items-center gap-1.5 group">
+      <div className="max-w-6xl mx-auto px-6 grid grid-cols-[auto_1fr_auto] items-center h-20">
+        <Link to="/" className="flex items-center gap-1.5 group justify-self-start">
           <Logo />
         </Link>
 
-        <nav className="hidden sm:flex items-center gap-8">
+        <nav className="hidden sm:flex items-center justify-center gap-8">
           <a
             href="/#feed"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
@@ -41,7 +41,7 @@ export function Header() {
           </a>
         </nav>
 
-        <div className="hidden sm:flex items-center gap-4">
+        <div className="hidden sm:flex items-center gap-4 justify-self-end">
           {loading ? null : user ? (
             <>
               <Link to="/dashboard">
@@ -70,7 +70,7 @@ export function Header() {
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild className="sm:hidden">
+          <SheetTrigger asChild className="sm:hidden col-start-3 justify-self-end">
             <Button variant="ghost" size="icon" className="text-foreground">
               <Menu className="h-6 w-6" />
             </Button>
