@@ -119,7 +119,7 @@ function HeroSection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/10 backdrop-blur-md border border-background/20 text-sm font-medium mb-8">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
-            <span className="text-background">Le social shopping made in France</span>
+            <span className="text-background">Le social shopping made for you</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] text-background max-w-4xl">
@@ -201,7 +201,7 @@ function PopularCreatorsSection({
   creators: { username: string; profile_image: string | null }[];
 }) {
   return (
-    <section className="relative w-full bg-background pt-16 pb-4 overflow-hidden">
+    <section id="creators" className="relative w-full bg-background pt-16 pb-4 overflow-hidden">
       <div className="max-w-6xl mx-auto px-6">
         <AnimatedElement className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div className="flex items-center gap-3">

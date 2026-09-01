@@ -28,23 +28,23 @@ export function Header() {
 
         <nav className="hidden sm:flex items-center gap-8">
           <a
-            href="#feed"
+            href="/#feed"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
           >
             Explorer
           </a>
           <a
-            href="#feed"
+            href="/#creators"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
           >
             Créateurs
           </a>
-          <a
-            href="#feed"
+          <Link
+            to="/dashboard/post/new"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
           >
             Un look
-          </a>
+          </Link>
         </nav>
 
         <div className="hidden sm:flex items-center gap-4">
@@ -87,26 +87,26 @@ export function Header() {
                 <Logo />
               </div>
               <a
-                href="#feed"
+                href="/#feed"
                 onClick={() => setOpen(false)}
                 className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
               >
                 <ShoppingBag className="w-5 h-5 text-primary" /> Explorer
               </a>
               <a
-                href="#feed"
+                href="/#creators"
                 onClick={() => setOpen(false)}
                 className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
               >
                 <User className="w-5 h-5 text-primary" /> Créateurs
               </a>
-              <a
-                href="#feed"
+              <Link
+                to="/dashboard/post/new"
                 onClick={() => setOpen(false)}
                 className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
               >
                 <Sparkles className="w-5 h-5 text-primary" /> Un look
-              </a>
+              </Link>
               <div className="h-px bg-border my-4" />
               {loading ? null : user ? (
                 <>
