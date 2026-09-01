@@ -230,7 +230,7 @@ export function PostForm({
           </div>
           {data.cover_image && (
             <div className="mt-2 h-24 w-24 overflow-hidden rounded-lg border border-border bg-muted">
-              <img src={data.cover_image} alt="Aperçu couverture" className="h-full w-full object-cover" />
+              <img src={data.cover_image} alt="Aperçu couverture" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
             </div>
           )}
         </div>

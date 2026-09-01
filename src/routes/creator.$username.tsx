@@ -248,6 +248,7 @@ function CreatorPage() {
                         src={post.cover_image}
                         alt={post.title}
                         loading="lazy"
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     )}

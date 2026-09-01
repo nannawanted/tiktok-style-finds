@@ -80,7 +80,7 @@ function VideoColumn({ post }: {
     >
       <div className="relative w-full aspect-[9/16] max-h-[70vh] mx-auto rounded-3xl overflow-hidden bg-muted shadow-xl">
         {post.cover_image && (
-          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
+          <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/10" />
         {post.tiktok_url && (
