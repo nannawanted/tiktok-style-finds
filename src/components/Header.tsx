@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Sparkles, User, ShoppingBag } from "lucide-react";
+import { Menu, User, ShoppingBag } from "lucide-react";
 
 export function Header() {
   const { user, loading } = useAuth();
@@ -39,12 +39,6 @@ export function Header() {
           >
             Créateurs
           </a>
-          <Link
-            to="/dashboard/post/new"
-            className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
-          >
-            Un look
-          </Link>
         </nav>
 
         <div className="hidden sm:flex items-center gap-4">
@@ -100,13 +94,6 @@ export function Header() {
               >
                 <User className="w-5 h-5 text-primary" /> Créateurs
               </a>
-              <Link
-                to="/dashboard/post/new"
-                onClick={() => setOpen(false)}
-                className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
-              >
-                <Sparkles className="w-5 h-5 text-primary" /> Un look
-              </Link>
               <div className="h-px bg-border my-4" />
               {loading ? null : user ? (
                 <>
