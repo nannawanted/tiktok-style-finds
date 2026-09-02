@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Logo } from "./Logo";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,6 +12,7 @@ import { Menu, User, ShoppingBag } from "lucide-react";
 
 export function Header() {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -31,38 +34,39 @@ export function Header() {
             href="/#feed"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
           >
-            Explorer
+            {t("nav.explore")}
           </a>
           <a
             href="/#creators"
             className="text-sm font-semibold text-foreground/80 hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
           >
-            Créateurs
+            {t("nav.creators")}
           </a>
         </nav>
 
         <div className="hidden sm:flex items-center gap-4 justify-self-end">
+          <LanguageSwitch />
           {loading ? null : user ? (
             <>
               <Link to="/dashboard">
                 <Button variant="ghost" className="text-foreground hover:text-primary hover:bg-primary/10 font-semibold">
-                  Dashboard
+                  {t("nav.dashboard")}
                 </Button>
               </Link>
               <Button variant="outline" onClick={signOut} className="font-semibold">
-                Déconnexion
+                {t("nav.logout")}
               </Button>
             </>
           ) : (
             <>
               <Link to="/login">
                 <Button variant="ghost" className="text-foreground hover:text-primary hover:bg-primary/10 font-semibold">
-                  Connexion
+                  {t("nav.login")}
                 </Button>
               </Link>
               <Link to="/signup">
                 <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300 font-semibold">
-                  Inscription
+                  {t("nav.signup")}
                 </Button>
               </Link>
             </>
@@ -77,45 +81,46 @@ export function Header() {
           </SheetTrigger>
           <SheetContent side="right" className="bg-background border-border">
             <nav className="flex flex-col gap-6 mt-12">
-              <div className="mb-6">
+              <div className="mb-2 flex items-center justify-between">
                 <Logo />
+                <LanguageSwitch />
               </div>
               <a
                 href="/#feed"
                 onClick={() => setOpen(false)}
                 className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
               >
-                <ShoppingBag className="w-5 h-5 text-primary" /> Explorer
+                <ShoppingBag className="w-5 h-5 text-primary" /> {t("nav.explore")}
               </a>
               <a
                 href="/#creators"
                 onClick={() => setOpen(false)}
                 className="text-lg font-bold text-foreground hover:text-primary transition-colors flex items-center gap-3"
               >
-                <User className="w-5 h-5 text-primary" /> Créateurs
+                <User className="w-5 h-5 text-primary" /> {t("nav.creators")}
               </a>
               <div className="h-px bg-border my-4" />
               {loading ? null : user ? (
                 <>
                   <Link to="/dashboard" onClick={() => setOpen(false)}>
                     <Button variant="outline" className="w-full border-border text-foreground font-bold h-12 rounded-xl">
-                      Dashboard
+                      {t("nav.dashboard")}
                     </Button>
                   </Link>
                   <Button onClick={() => { setOpen(false); signOut(); }} className="w-full font-bold h-12 rounded-xl">
-                    Déconnexion
+                    {t("nav.logout")}
                   </Button>
                 </>
               ) : (
                 <>
                   <Link to="/login" onClick={() => setOpen(false)}>
                     <Button variant="outline" className="w-full border-border text-foreground font-bold h-12 rounded-xl">
-                      Connexion
+                      {t("nav.login")}
                     </Button>
                   </Link>
                   <Link to="/signup" onClick={() => setOpen(false)}>
                     <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold h-12 rounded-xl shadow-lg shadow-primary/20">
-                      Inscription
+                      {t("nav.signup")}
                     </Button>
                   </Link>
                 </>

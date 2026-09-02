@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,6 +100,7 @@ function platformButtonClass(url: string | null) {
 }
 
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative w-full bg-gradient-to-b from-secondary to-foreground pt-24 pb-32 sm:pt-32 sm:pb-40 rounded-b-[2.5rem] shadow-2xl overflow-hidden">
       <div
@@ -119,20 +121,18 @@ function HeroSection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/10 backdrop-blur-md border border-background/20 text-sm font-medium mb-8">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
-            <span className="text-background">Le social shopping made for you</span>
+            <span className="text-background">{t("hero.badge")}</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] text-background max-w-4xl">
-            Trouve les pièces{" "}
+            {t("hero.titlePart1")}{" "}
             <span className="bg-gradient-to-r from-primary-foreground via-accent to-primary-foreground bg-clip-text text-transparent">
-              de tes créateurs
+              {t("hero.titlePart2")} {t("hero.titlePart3")}
             </span>
           </h1>
 
           <p className="mt-8 text-lg sm:text-xl text-background/80 max-w-2xl mx-auto font-medium">
-            Vidéo <ArrowRight className="inline w-4 h-4 mx-1 opacity-50" />
-            références <ArrowRight className="inline w-4 h-4 mx-1 opacity-50" />
-            achat en 1 clic
+            {t("hero.steps")}
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row items-center gap-5 justify-center w-full">
@@ -142,7 +142,7 @@ function HeroSection() {
                 className="w-full sm:w-auto relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 h-14 text-lg font-bold hover:-translate-y-1 transition-all duration-300 group"
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  Explorer les looks <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  {t("hero.ctaExplore")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
               </Button>
             </a>
@@ -152,7 +152,7 @@ function HeroSection() {
                 variant="outline"
                 className="w-full sm:w-auto rounded-full px-10 h-14 text-lg font-bold border-background/30 text-foreground bg-background/5 backdrop-blur-sm hover:bg-background/15 hover:text-background hover:border-background/50 transition-all duration-300"
               >
-                Devenir créateur
+                {t("hero.ctaCreator")}
               </Button>
             </Link>
           </div>
@@ -163,18 +163,19 @@ function HeroSection() {
 }
 
 function HowItWorksSection() {
+  const { t } = useTranslation();
   const steps = [
-    { icon: Video, title: "La vidéo", description: "Le créateur poste sa tenue en vidéo sur TikTok, Instagram ou YouTube." },
-    { icon: Tag, title: "Les références", description: "Chaque pièce portée est identifiée et listée sur la page du post." },
-    { icon: ShoppingBag, title: "L'achat", description: "Un clic sur la carte produit et tu es redirigé chez le vendeur." },
+    { icon: Video, title: t("howItWorks.step1Title"), description: t("howItWorks.step1Desc") },
+    { icon: Tag, title: t("howItWorks.step2Title"), description: t("howItWorks.step2Desc") },
+    { icon: ShoppingBag, title: t("howItWorks.step3Title"), description: t("howItWorks.step3Desc") },
   ];
 
   return (
     <section className="relative w-full bg-background pt-20 pb-24">
       <div className="max-w-6xl mx-auto px-6">
         <AnimatedElement className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Comment ça marche</h2>
-          <p className="text-lg text-foreground/60 mt-3 font-medium">Trois étapes, zéro friction.</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">{t("howItWorks.title")}</h2>
+          <p className="text-lg text-foreground/60 mt-3 font-medium">{t("howItWorks.subtitle")}</p>
         </AnimatedElement>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-8 relative">
@@ -200,6 +201,7 @@ function PopularCreatorsSection({
 }: {
   creators: { username: string; profile_image: string | null }[];
 }) {
+  const { t } = useTranslation();
   return (
     <section id="creators" className="relative w-full bg-background pt-16 pb-4 overflow-hidden">
       <div className="max-w-6xl mx-auto px-6">
@@ -208,10 +210,10 @@ function PopularCreatorsSection({
             <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-primary" />
             </span>
-            <h2 className="text-3xl font-black text-foreground tracking-tight">Créateurs populaires</h2>
+            <h2 className="text-3xl font-black text-foreground tracking-tight">{t("popularCreators.title")}</h2>
           </div>
           <a href="#feed" className="text-sm font-bold text-primary hover:text-primary/80 flex items-center gap-1 group">
-            Voir tous <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {t("popularCreators.seeAll")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </a>
         </AnimatedElement>
 
@@ -272,12 +274,13 @@ function FeedSection({
   }[];
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <section id="feed" className="relative w-full bg-background py-24">
       <div className="max-w-6xl mx-auto px-6">
         <AnimatedElement className="mb-14">
-          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Les derniers outfits</h2>
-          <p className="text-lg text-foreground/60 mt-3 font-medium">Shop les looks de tes créateurs préférés.</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">{t("feed.title")}</h2>
+          <p className="text-lg text-foreground/60 mt-3 font-medium">{t("feed.subtitle")}</p>
         </AnimatedElement>
 
         {isLoading ? (
@@ -288,7 +291,7 @@ function FeedSection({
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-            Aucun post pour le moment.
+            {t("feed.empty")}
           </div>
         ) : (
           <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-4 -mx-4 hide-scrollbar">
@@ -317,7 +320,7 @@ function FeedSection({
                             post.tiktok_url
                           )} group-hover:scale-105 transition-transform duration-300`}
                         >
-                          <Play className="w-3 h-3 fill-current" /> Voir la vidéo
+                          <Play className="w-3 h-3 fill-current" /> {t("feed.watchVideo")}
                         </span>
                       </div>
                     )}
@@ -351,6 +354,7 @@ function FeedSection({
 }
 
 function CreatorCTASection() {
+  const { t } = useTranslation();
   return (
     <section className="relative w-full bg-secondary py-32 overflow-hidden rounded-t-[3rem] mt-12">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2" />
@@ -361,13 +365,13 @@ function CreatorCTASection() {
           <Users className="w-10 h-10 text-primary" />
         </div>
         <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-secondary-foreground tracking-tight leading-tight">
-          Deviens créateur, <br className="hidden sm:block" />
+          {t("creatorCta.title1")} <br className="hidden sm:block" />
           <span className="text-background bg-foreground px-4 py-1 rounded-xl inline-block mt-2 rotate-[-1deg]">
-            monétise ton style
+            {t("creatorCta.title2")}
           </span>
         </h2>
         <p className="mt-8 text-xl text-secondary-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed">
-          Rejoins Wanted Fashion, poste tes tenues, tague tes pièces et touche une commission sur chaque vente générée par ta communauté.
+          {t("creatorCta.desc")}
         </p>
         <Link to="/signup">
           <Button
@@ -375,7 +379,7 @@ function CreatorCTASection() {
             className="relative overflow-hidden mt-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-12 h-16 text-xl font-black shadow-2xl shadow-primary/30 hover:-translate-y-2 hover:shadow-primary/50 transition-all duration-300 group"
           >
             <span className="relative z-10 flex items-center gap-3">
-              Créer mon compte créateur <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              {t("creatorCta.cta")} <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
             </span>
           </Button>
         </Link>
