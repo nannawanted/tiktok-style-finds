@@ -181,12 +181,12 @@ function HowItWorksSection() {
         <div className="grid grid-cols-3 gap-3 sm:gap-8 relative">
           {steps.map((step, i) => (
             <AnimatedElement key={step.title} delay={i * 150}>
-              <div className="relative group bg-card hover:bg-card/80 border border-border/50 rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/5 hover:-translate-y-2 h-full flex flex-col items-center text-center">
+              <div className="relative group bg-card hover:bg-card/80 border border-border/50 rounded-2xl sm:rounded-[2rem] px-2 py-4 sm:p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/5 hover:-translate-y-2 h-full flex flex-col items-center text-center">
                 <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3 sm:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner">
                   <step.icon className="w-6 h-6 sm:w-10 sm:h-10 text-primary" />
                 </div>
                 <h3 className="text-sm sm:text-xl font-bold text-card-foreground mb-1 sm:mb-3">{step.title}</h3>
-                <p className="text-xs sm:text-base text-card-foreground/70 leading-relaxed font-medium">{step.description}</p>
+                <p className="text-[11px] sm:text-base text-card-foreground/70 leading-snug sm:leading-relaxed font-normal tracking-tight">{step.description}</p>
               </div>
             </AnimatedElement>
           ))}
@@ -373,13 +373,13 @@ function CreatorCTASection() {
         <p className="mt-8 text-xl text-secondary-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed">
           {t("creatorCta.desc")}
         </p>
-        <Link to="/signup">
+        <Link to="/signup" className="inline-block mx-auto">
           <Button
             size="lg"
-            className="relative overflow-hidden mt-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-12 h-16 text-xl font-black shadow-2xl shadow-primary/30 hover:-translate-y-2 hover:shadow-primary/50 transition-all duration-300 group"
+            className="relative overflow-hidden mt-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 sm:px-12 h-14 sm:h-16 text-base sm:text-xl font-black shadow-2xl shadow-primary/30 hover:-translate-y-2 hover:shadow-primary/50 transition-all duration-300 group"
           >
-            <span className="relative z-10 flex items-center gap-3">
-              {t("creatorCta.cta")} <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+            <span className="relative z-10 flex items-center justify-center gap-3">
+              {t("creatorCta.cta")} <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-2 transition-transform shrink-0" />
             </span>
           </Button>
         </Link>
