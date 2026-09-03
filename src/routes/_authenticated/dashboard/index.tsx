@@ -35,6 +35,15 @@ function Dashboard() {
     },
   });
 
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("creators").select("is_admin").eq("id", user!.id).maybeSingle();
+      return Boolean(data?.is_admin);
+    },
+  });
+
   const del = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("products").delete().eq("post_id", id);
@@ -58,6 +67,11 @@ function Dashboard() {
             <p className="text-sm text-muted-foreground">{t("dashboard.manageOutfits")}</p>
           </div>
           <div className="flex gap-2">
+            {isAdmin && (
+              <Link to="/dashboard/brands">
+                <Button variant="outline" size="sm">Marques</Button>
+              </Link>
+            )}
             <Link to="/dashboard/settings">
               <Button variant="outline" size="sm">{t("dashboard.settings")}</Button>
             </Link>
