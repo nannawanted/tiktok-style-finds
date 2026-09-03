@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslation } from "@/lib/i18n";
 import { PostForm, type PostFormData } from "@/components/PostForm";
 import { toast } from "sonner";
 
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/post/new")({
 
 function NewPost() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,7 @@ function NewPost() {
     const { data: creator } = await supabase.from("creators").select("username").eq("id", user.id).maybeSingle();
     if (!creator) {
       setLoading(false);
-      toast.error("Profil créateur introuvable");
+      toast.error(t("newPost.creatorProfileNotFound"));
       return;
     }
 
@@ -37,7 +39,7 @@ function NewPost() {
 
     if (error || !post) {
       setLoading(false);
-      toast.error(error?.message ?? "Erreur");
+      toast.error(error?.message ?? t("newPost.genericError"));
       return;
     }
 
@@ -55,20 +57,20 @@ function NewPost() {
       );
       if (e2) {
         setLoading(false);
-        toast.error("Post créé mais produits échoués : " + e2.message);
+        toast.error(t("newPost.postCreatedProductsFailed") + " " + e2.message);
         return;
       }
     }
 
     setLoading(false);
-    toast.success("Post publié !");
+    toast.success(t("newPost.postPublished"));
     navigate({ to: "/dashboard" });
   }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="mb-6 text-2xl font-black">Nouveau post</h1>
-      <PostForm onSubmit={onSubmit} submitLabel="Publier" loading={loading} />
+      <h1 className="mb-6 text-2xl font-black">{t("newPost.title")}</h1>
+      <PostForm onSubmit={onSubmit} submitLabel={t("newPost.publish")} loading={loading} />
     </main>
   );
 }

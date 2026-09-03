@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslation } from "@/lib/i18n";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { Play, Camera, Instagram, Youtube, Music2, Video, Users, Grid3x3, BadgeCheck, Heart, Sparkles, ArrowLeft } from "lucide-react";
@@ -24,9 +25,10 @@ export const Route = createFileRoute("/creator/$username")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl p-10 text-center text-muted-foreground">{error.message}</div>
   ),
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl p-10 text-center text-muted-foreground">Créateur introuvable.</div>
-  ),
+  notFoundComponent: () => {
+    const { t } = useTranslation();
+    return <div className="mx-auto max-w-2xl p-10 text-center text-muted-foreground">{t("creatorPage.notFound")}</div>;
+  },
 });
 
 function platformButtonClass(url: string | null) {
@@ -38,6 +40,7 @@ function platformButtonClass(url: string | null) {
 }
 
 function CreatorPage() {
+  const { t } = useTranslation();
   const { username } = Route.useParams();
   const { user } = useAuth();
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -73,11 +76,11 @@ function CreatorPage() {
     const ext = file.name.split(".").pop();
     const path = `${data.creator.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (upErr) { toast.error("Erreur upload"); setUploading(false); return; }
+    if (upErr) { toast.error(t("creatorPage.uploadError")); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     const { error: dbErr } = await supabase.from("creators").update({ profile_image: urlData.publicUrl }).eq("id", data.creator.id);
-    if (dbErr) { toast.error("Erreur sauvegarde"); setUploading(false); return; }
-    toast.success("Photo de profil mise à jour !");
+    if (dbErr) { toast.error(t("creatorPage.saveError")); setUploading(false); return; }
+    toast.success(t("creatorPage.avatarUpdated"));
     setUploading(false);
     refetch();
   }
@@ -88,11 +91,11 @@ function CreatorPage() {
     const ext = file.name.split(".").pop();
     const path = `${data.creator.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true });
-    if (upErr) { toast.error("Erreur upload"); setUploading(false); return; }
+    if (upErr) { toast.error(t("creatorPage.uploadError")); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
     const { error: dbErr } = await supabase.from("creators").update({ banner_image: urlData.publicUrl }).eq("id", data.creator.id);
-    if (dbErr) { toast.error("Erreur sauvegarde"); setUploading(false); return; }
-    toast.success("Bannière mise à jour !");
+    if (dbErr) { toast.error(t("creatorPage.saveError")); setUploading(false); return; }
+    toast.success(t("creatorPage.bannerUpdated"));
     setUploading(false);
     refetch();
   }
@@ -126,7 +129,7 @@ function CreatorPage() {
             to="/"
             className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-2 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium text-foreground hover:bg-background transition-colors duration-300"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Accueil
+            <ArrowLeft className="w-3.5 h-3.5" /> {t("creatorPage.home")}
           </Link>
           {isOwner && (
             <>
@@ -135,7 +138,7 @@ function CreatorPage() {
                 disabled={uploading}
                 className="absolute top-4 right-4 flex items-center gap-2 px-3 py-2 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium text-foreground hover:bg-background transition-colors duration-300"
               >
-                <Camera className="w-3.5 h-3.5" /> {uploading ? "Upload..." : "Changer la bannière"}
+                <Camera className="w-3.5 h-3.5" /> {uploading ? t("creatorPage.uploading") : t("creatorPage.changeBanner")}
               </button>
               <input
                 ref={bannerInputRef}
@@ -194,7 +197,7 @@ function CreatorPage() {
             </div>
             {!isOwner && (
               <div className="flex sm:flex-col gap-3 justify-center">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6">Suivre</Button>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6">{t("creatorPage.follow")}</Button>
               </div>
             )}
           </motion.div>
@@ -207,17 +210,17 @@ function CreatorPage() {
           <div className="rounded-2xl bg-secondary-foreground/5 backdrop-blur-sm p-5 text-center hover:-translate-y-1 transition-all duration-300">
             <Grid3x3 className="w-5 h-5 text-primary-foreground/80 mx-auto mb-2" />
             <div className="text-xl font-bold text-primary-foreground">{posts.length}</div>
-            <div className="text-xs text-secondary-foreground/70">Posts</div>
+            <div className="text-xs text-secondary-foreground/70">{t("creatorPage.posts")}</div>
           </div>
           <div className="rounded-2xl bg-secondary-foreground/5 backdrop-blur-sm p-5 text-center hover:-translate-y-1 transition-all duration-300">
             <Users className="w-5 h-5 text-primary-foreground/80 mx-auto mb-2" />
             <div className="text-xl font-bold text-primary-foreground">{productsCount}</div>
-            <div className="text-xs text-secondary-foreground/70">Produits taggés</div>
+            <div className="text-xs text-secondary-foreground/70">{t("creatorPage.productsTagged")}</div>
           </div>
           <div className="rounded-2xl bg-secondary-foreground/5 backdrop-blur-sm p-5 text-center hover:-translate-y-1 transition-all duration-300">
             <Heart className="w-5 h-5 text-primary-foreground/80 mx-auto mb-2" />
-            <div className="text-xl font-bold text-primary-foreground">Shoppable</div>
-            <div className="text-xs text-secondary-foreground/70">100% des looks</div>
+            <div className="text-xl font-bold text-primary-foreground">{t("creatorPage.shoppable")}</div>
+            <div className="text-xs text-secondary-foreground/70">{t("creatorPage.allLooks")}</div>
           </div>
         </div>
       </section>
@@ -227,11 +230,11 @@ function CreatorPage() {
         <div className="relative max-w-5xl mx-auto px-6">
           <div className="mb-10 flex items-center gap-2">
             <Grid3x3 className="w-5 h-5 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">Les looks de @{creator.username}</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t("creatorPage.looksOf")} @{creator.username}</h2>
           </div>
           {posts.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-              Ce créateur n'a pas encore publié.
+              {t("creatorPage.notPublishedYet")}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -259,7 +262,7 @@ function CreatorPage() {
                           post.tiktok_url
                         )}`}
                       >
-                        <Play className="w-3 h-3 fill-current" /> Voir la vidéo
+                        <Play className="w-3 h-3 fill-current" /> {t("creatorPage.watchVideo")}
                       </span>
                     )}
                   </div>
@@ -268,7 +271,7 @@ function CreatorPage() {
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-muted-foreground">@{creator.username}</span>
                       <span className="text-xs text-muted-foreground">
-                        {post.products?.length ?? 0} produit{(post.products?.length ?? 0) > 1 ? "s" : ""}
+                        {post.products?.length ?? 0} {(post.products?.length ?? 0) > 1 ? t("creatorPage.products") : t("creatorPage.product")}
                       </span>
                     </div>
                   </div>
@@ -285,11 +288,11 @@ function CreatorPage() {
           <div className="relative max-w-2xl mx-auto px-6 text-center">
             <Sparkles className="w-8 h-8 text-primary mx-auto mb-4" />
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              Toi aussi, partage tes tenues et gagne des commissions
+              {t("creatorPage.ctaTitle")}
             </h2>
             <Link to="/signup">
               <Button className="mt-6 bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8 h-11">
-                Devenir créateur
+                {t("creatorPage.ctaButton")}
               </Button>
             </Link>
           </div>

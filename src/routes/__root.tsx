@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth-context";
-import { LanguageProvider } from "../lib/i18n";
+import { LanguageProvider, useTranslation } from "../lib/i18n";
 import { Header } from "../components/Header";
 import { Toaster } from "../components/ui/sonner";
 

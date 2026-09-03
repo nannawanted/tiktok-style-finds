@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,9 +32,10 @@ export const Route = createFileRoute("/post/$id")({
     links: [{ rel: "canonical", href: `/post/${params.id}` }],
   }),
   component: PostPage,
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl p-10 text-center text-muted-foreground">Post introuvable.</div>
-  ),
+  notFoundComponent: () => {
+    const { t } = useTranslation();
+    return <div className="mx-auto max-w-2xl p-10 text-center text-muted-foreground">{t("postPage.notFound")}</div>;
+  },
 });
 
 async function trackClick(postId: string, productId: string, creatorUsername: string) {
@@ -70,6 +72,7 @@ function PlatformIcon({ platform, className }: { platform: string; className?: s
 function VideoColumn({ post }: {
   post: { title: string; cover_image: string | null; tiktok_url: string | null; creator_username: string };
 }) {
+  const { t } = useTranslation();
   const platform = detectPlatform(post.tiktok_url);
   return (
     <motion.div
@@ -89,7 +92,7 @@ function VideoColumn({ post }: {
             target="_blank"
             rel="noopener noreferrer"
             className="absolute inset-0 flex items-center justify-center group"
-            aria-label="Voir la vidéo"
+            aria-label={t("postPage.watchVideo")}
           >
             <span className="w-16 h-16 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary-foreground/40">
               <Play className="w-6 h-6 text-primary-foreground fill-current" />
@@ -103,7 +106,7 @@ function VideoColumn({ post }: {
                 platform
               )}`}
             >
-              <PlatformIcon platform={platform} className="w-3 h-3" /> Voir la vidéo
+              <PlatformIcon platform={platform} className="w-3 h-3" /> {t("postPage.watchVideo")}
             </span>
           )}
           <div className="flex items-center gap-2">
@@ -170,6 +173,7 @@ function ProductRow({
 }
 
 function PostPage() {
+  const { t } = useTranslation();
   const { id } = Route.useParams();
 
   const { data, isLoading, error } = useQuery({
@@ -224,7 +228,7 @@ function PostPage() {
                 to="/"
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors duration-300 mb-2"
               >
-                <ArrowLeft className="w-4 h-4" /> Retour au feed
+                <ArrowLeft className="w-4 h-4" /> {t("postPage.backToFeed")}
               </Link>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{post.title}</h1>
               <Link to="/creator/$username" params={{ username: post.creator_username }} className="mt-3 inline-flex items-center gap-2 group">
@@ -243,15 +247,17 @@ function PostPage() {
             <div className="flex items-center gap-2 p-4 rounded-2xl bg-secondary text-secondary-foreground">
               <Tag className="w-4 h-4" />
               <p className="text-sm">
-                <span className="font-semibold">{products.length}</span> pièce{products.length > 1 ? "s" : ""}{" "}
-                identifiée{products.length > 1 ? "s" : ""} dans cette vidéo — clique sur une carte pour acheter.
+                <span className="font-semibold">{products.length}</span>{" "}
+                {products.length > 1 ? t("postPage.piecePlural") : t("postPage.pieceSingular")}{" "}
+                {products.length > 1 ? t("postPage.identifiedPlural") : t("postPage.identifiedSingular")}{" "}
+                {t("postPage.inThisVideo")}
               </p>
             </div>
 
             <div className="flex flex-col gap-3">
               {products.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-                  Aucun produit ajouté.
+                  {t("postPage.noProduct")}
                 </div>
               ) : (
                 products.map((p) => (
@@ -265,10 +271,10 @@ function PostPage() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <ShoppingBag className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-sm text-foreground font-medium">Envie de shopper plus de looks ?</p>
+                <p className="text-sm text-foreground font-medium">{t("postPage.wantMoreLooks")}</p>
               </div>
               <Link to="/">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">Voir le feed</Button>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">{t("postPage.seeFeed")}</Button>
               </Link>
             </div>
           </div>
@@ -295,7 +301,7 @@ function PostPage() {
               variant="outline"
               className="rounded-full border-primary-foreground/40 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 hover:text-primary-foreground"
             >
-              Voir le profil <ExternalLink className="w-4 h-4 ml-2" />
+              {t("postPage.seeProfile")} <ExternalLink className="w-4 h-4 ml-2" />
             </Button>
           </Link>
         </div>

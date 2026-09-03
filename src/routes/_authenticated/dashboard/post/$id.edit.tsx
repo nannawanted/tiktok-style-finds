@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/lib/i18n";
 import { PostForm, type PostFormData } from "@/components/PostForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/post/$id/edit")(
 
 function EditPost() {
   const { id } = Route.useParams();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -74,7 +76,7 @@ function EditPost() {
     }
 
     setLoading(false);
-    toast.success("Post mis à jour");
+    toast.success(t("editPost.postUpdated"));
     navigate({ to: "/dashboard" });
   }
 
@@ -82,13 +84,13 @@ function EditPost() {
     return <main className="mx-auto max-w-2xl px-4 py-6"><Skeleton className="h-96 w-full" /></main>;
   }
   if (!data) {
-    return <main className="mx-auto max-w-2xl px-4 py-6 text-muted-foreground">Post introuvable.</main>;
+    return <main className="mx-auto max-w-2xl px-4 py-6 text-muted-foreground">{t("editPost.postNotFound")}</main>;
   }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="mb-6 text-2xl font-black">Éditer le post</h1>
-      <PostForm initial={data} onSubmit={onSubmit} submitLabel="Sauvegarder" loading={loading} />
+      <h1 className="mb-6 text-2xl font-black">{t("editPost.title")}</h1>
+      <PostForm initial={data} onSubmit={onSubmit} submitLabel={t("editPost.save")} loading={loading} />
     </main>
   );
 }

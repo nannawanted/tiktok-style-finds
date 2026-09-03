@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 
 function Settings() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "" });
@@ -39,10 +41,10 @@ function Settings() {
     const ext = file.name.split(".").pop();
     const path = `${user.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (upErr) { toast.error("Erreur upload photo"); setUploading(false); return; }
+    if (upErr) { toast.error(t("settings.uploadPhotoError")); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     setForm((f) => ({ ...f, profile_image: urlData.publicUrl }));
-    toast.success("Photo chargée !");
+    toast.success(t("settings.photoUploaded"));
     setUploading(false);
   }
 
@@ -52,10 +54,10 @@ function Settings() {
     const ext = file.name.split(".").pop();
     const path = `${user.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true });
-    if (upErr) { toast.error("Erreur upload bannière"); setUploading(false); return; }
+    if (upErr) { toast.error(t("settings.uploadBannerError")); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
     setForm((f) => ({ ...f, banner_image: urlData.publicUrl }));
-    toast.success("Bannière chargée !");
+    toast.success(t("settings.bannerUploaded"));
     setUploading(false);
   }
 
@@ -64,7 +66,7 @@ function Settings() {
     if (!user) return;
     const clean = form.username.trim().toLowerCase().replace(/^@/, "");
     if (!/^[a-z0-9_.]{3,30}$/.test(clean)) {
-      toast.error("Username invalide (3-30 caractères : lettres, chiffres, _ ou .)");
+      toast.error(t("settings.invalidUsername"));
       return;
     }
     setLoading(true);
@@ -79,17 +81,17 @@ function Settings() {
     }
     setLoading(false);
     if (error) toast.error(error.message);
-    else toast.success("Paramètres enregistrés !");
+    else toast.success(t("settings.settingsSaved"));
   }
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6">
-      <h1 className="mb-6 text-2xl font-black">Paramètres</h1>
+      <h1 className="mb-6 text-2xl font-black">{t("settings.title")}</h1>
       <form onSubmit={onSubmit} className="space-y-6">
 
         {/* PHOTO DE PROFIL */}
         <div>
-          <Label>Photo de profil</Label>
+          <Label>{t("settings.profilePicture")}</Label>
           <div className="mt-2 flex items-center gap-4">
             <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-border bg-muted">
               {form.profile_image ? (
@@ -102,7 +104,7 @@ function Settings() {
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => avatarInputRef.current?.click()}>
-                {uploading ? "Upload..." : "Choisir une photo"}
+                {uploading ? t("settings.uploading") : t("settings.choosePicture")}
               </Button>
               <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }} />
@@ -112,7 +114,7 @@ function Settings() {
 
         {/* BANNIÈRE */}
         <div>
-          <Label>Bannière</Label>
+          <Label>{t("settings.banner")}</Label>
           <div className="mt-2 overflow-hidden rounded-xl border border-border bg-muted" style={{ aspectRatio: "5/1" }}>
             {form.banner_image ? (
               <img src={form.banner_image} alt="Banner" className="h-full w-full object-cover" />
@@ -121,7 +123,7 @@ function Settings() {
             )}
           </div>
           <Button type="button" variant="outline" size="sm" className="mt-2" disabled={uploading} onClick={() => bannerInputRef.current?.click()}>
-            {uploading ? "Upload..." : "Choisir une bannière"}
+            {uploading ? t("settings.uploading") : t("settings.chooseBanner")}
           </Button>
           <input ref={bannerInputRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); }} />
@@ -129,18 +131,18 @@ function Settings() {
 
         {/* USERNAME */}
         <div>
-          <Label htmlFor="u">Username</Label>
+          <Label htmlFor="u">{t("settings.username")}</Label>
           <Input id="u" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
         </div>
 
         {/* BIO */}
         <div>
-          <Label htmlFor="b">Bio</Label>
-          <Textarea id="b" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} placeholder="Parle-toi en quelques mots..." />
+          <Label htmlFor="b">{t("settings.bio")}</Label>
+          <Textarea id="b" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} placeholder={t("settings.bioPlaceholder")} />
         </div>
 
         <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
-          {loading ? "Sauvegarde..." : "Sauvegarder"}
+          {loading ? t("settings.saving") : t("settings.save")}
         </Button>
       </form>
     </main>
