@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import {
   Play,
@@ -11,8 +12,6 @@ import {
   Youtube,
   Music2,
   Video,
-  Heart,
-  Share2,
   BadgeCheck,
   ShoppingBag,
   ArrowLeft,
@@ -110,12 +109,7 @@ function VideoColumn({ post }: {
             </span>
           )}
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-background/50 transition-colors duration-300">
-              <Heart className="w-4 h-4" />
-            </button>
-            <button className="w-9 h-9 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-background/50 transition-colors duration-300">
-              <Share2 className="w-4 h-4" />
-            </button>
+            <ShareButton title={post.title} text={`@${post.creator_username} sur WantedFashion`} />
           </div>
         </div>
       </div>
