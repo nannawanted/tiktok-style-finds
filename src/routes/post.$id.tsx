@@ -37,14 +37,6 @@ export const Route = createFileRoute("/post/$id")({
   },
 });
 
-async function trackClick(postId: string, productId: string, creatorUsername: string) {
-  await supabase.from("clicks").insert({
-    post_id: postId,
-    product_id: productId,
-    creator_username: creatorUsername,
-  });
-}
-
 function detectPlatform(url: string | null): "tiktok" | "instagram" | "youtube" | "other" {
   if (!url) return "other";
   if (url.includes("tiktok.com")) return "tiktok";
@@ -119,10 +111,8 @@ function VideoColumn({ post }: {
 
 function ProductRow({
   product,
-  onNavigate,
 }: {
   product: { id: string; name: string; brand: string | null; price: string | null; image_url: string | null; affiliate_link: string };
-  onNavigate: () => void;
 }) {
   let hostname = "";
   try {
@@ -133,7 +123,7 @@ function ProductRow({
 
   return (
     <a
-      href={product.affiliate_link}
+      href={`/go/${product.id}`}
       target="_blank"
       rel="noopener noreferrer"
       onClick={onNavigate}
@@ -254,9 +244,7 @@ function PostPage() {
                   {t("postPage.noProduct")}
                 </div>
               ) : (
-                products.map((p) => (
-                  <ProductRow key={p.id} product={p} onNavigate={() => trackClick(post.id, p.id, post.creator_username)} />
-                ))
+                products.map((p) => <ProductRow key={p.id} product={p} />)
               )}
             </div>
 

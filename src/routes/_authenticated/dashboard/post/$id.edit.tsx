@@ -32,6 +32,7 @@ function EditPost() {
         products: (products ?? []).map((p) => ({
           id: p.id,
           brand: p.brand ?? "",
+          brand_id: p.brand_id ?? null,
           name: p.name,
           price: p.price ?? "",
           image_url: p.image_url ?? "",
@@ -61,6 +62,7 @@ function EditPost() {
         form.products.map((p, i) => ({
           post_id: id,
           brand: p.brand || null,
+          brand_id: p.brand_id || null,
           name: p.name,
           price: p.price || null,
           image_url: p.image_url || null,

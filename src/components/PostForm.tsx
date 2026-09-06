@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,28 @@ import { useTranslation } from "@/lib/i18n";
 export type ProductDraft = {
   id?: string;
   brand: string;
+  brand_id?: string | null;
   name: string;
   price: string;
   image_url: string;
   affiliate_link: string;
 };
+
+type PartnerBrand = { id: string; name: string; website_url: string; commission_rate: number };
+
+function extractHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function matchBrandForUrl(url: string, brands: PartnerBrand[]): PartnerBrand | null {
+  const hostname = extractHostname(url);
+  if (!hostname) return null;
+  return brands.find((b) => extractHostname(b.website_url) === hostname) ?? null;
+}
 
 export type PostFormData = {
   title: string;
@@ -44,7 +61,16 @@ export function PostForm({
   const [tiktokNotice, setTiktokNotice] = useState<string | null>(null);
   const [productLoading, setProductLoading] = useState<Record<number, boolean>>({});
   const [coverUploading, setCoverUploading] = useState(false);
+  const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase
+      .from("brands")
+      .select("id, name, website_url, commission_rate")
+      .eq("status", "active")
+      .then(({ data }) => setPartnerBrands(data ?? []));
+  }, []);
 
   const tiktokDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const productDebounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
@@ -59,7 +85,7 @@ export function PostForm({
   function addProduct() {
     setData((d) => ({
       ...d,
-      products: [...d.products, { brand: "", name: "", price: "", image_url: "", affiliate_link: "" }],
+      products: [...d.products, { brand: "", brand_id: null, name: "", price: "", image_url: "", affiliate_link: "" }],
     }));
   }
 
@@ -136,7 +162,12 @@ export function PostForm({
   }
 
   function handleAffiliateLinkChange(idx: number, url: string) {
-    updateProduct(idx, { affiliate_link: url });
+    const matchedBrand = matchBrandForUrl(url, partnerBrands);
+    updateProduct(idx, {
+      affiliate_link: url,
+      brand_id: matchedBrand?.id ?? null,
+      ...(matchedBrand ? { brand: matchedBrand.name } : {}),
+    });
 
     clearTimeout(productDebounceRef.current[idx]);
     if (!isHttpUrl(url)) {
@@ -152,7 +183,8 @@ export function PostForm({
           ...(meta.name ? { name: meta.name } : {}),
           ...(meta.image_url ? { image_url: meta.image_url } : {}),
           ...(meta.price ? { price: meta.price } : {}),
-          ...(meta.brand ? { brand: meta.brand } : {}),
+          // Ne pas écraser le nom de marque si on l'a déjà déduit du domaine (plus fiable que le scraping).
+          ...(meta.brand && !matchedBrand ? { brand: meta.brand } : {}),
         });
       } catch {
         // Le créateur peut toujours remplir les champs manuellement.
@@ -270,6 +302,17 @@ export function PostForm({
                     <p className="mt-1 text-xs text-muted-foreground">
                       {t("postForm.buyLinkHint")}
                     </p>
+                    {p.affiliate_link && isHttpUrl(p.affiliate_link) && (
+                      p.brand_id ? (
+                        <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-semibold text-green-600">
+                          ✅ Marque partenaire — {partnerBrands.find((b) => b.id === p.brand_id)?.commission_rate}% commission
+                        </p>
+                      ) : (
+                        <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                          ⚠️ Marque pas encore partenaire
+                        </p>
+                      )
+                    )}
                   </div>
                   <div>
                     <Label>{t("postForm.name")}</Label>
