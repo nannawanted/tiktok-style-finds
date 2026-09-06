@@ -12,6 +12,15 @@ type AffiliateRedirectResult =
   | { found: true; targetUrl: string }
   | { found: false };
 
+function isSafeRedirectTarget(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
   .inputValidator((data: { productId: string }) => data)
   .handler(async ({ data }): Promise<AffiliateRedirectResult> => {
@@ -23,7 +32,7 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
       .eq("id", data.productId)
       .maybeSingle();
 
-    if (!product) return { found: false };
+    if (!product || !isSafeRedirectTarget(product.affiliate_link)) return { found: false };
 
     const { data: post } = await supabaseAdmin
       .from("posts")
