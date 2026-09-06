@@ -126,7 +126,6 @@ function ProductRow({
       href={`/go/${product.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={onNavigate}
       className="group flex items-center gap-4 p-4 rounded-2xl bg-card border border-border shadow-sm hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 hover:border-primary/40 transition-all duration-300"
     >
       <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted shrink-0">
