@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,8 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Brand = Tables<"brands">;
 
+const CURRENCIES = ["EUR", "USD", "GBP", "MAD", "CHF", "CAD"];
+
 export const Route = createFileRoute("/_authenticated/dashboard/brands")({
   head: () => ({ meta: [{ title: "Marques partenaires — Wanted Fashion" }] }),
   component: BrandsPage,
@@ -18,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/brands")({
 
 function BrandsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +30,7 @@ function BrandsPage() {
     name: "",
     website_url: "",
     commission_rate: "10",
+    currency: "EUR",
     contact_email: "",
   });
 
@@ -64,6 +69,7 @@ function BrandsPage() {
       name: form.name.trim(),
       website_url: websiteUrl,
       commission_rate: Number(form.commission_rate) || 10,
+      currency: form.currency,
       contact_email: form.contact_email.trim() || null,
       status: "active",
     });
@@ -73,8 +79,8 @@ function BrandsPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Marque ajoutée");
-    setForm({ name: "", website_url: "", commission_rate: "10", contact_email: "" });
+    toast.success(t("brands.brandAdded"));
+    setForm({ name: "", website_url: "", commission_rate: "10", currency: "EUR", contact_email: "" });
     loadBrands();
   }
 
@@ -105,6 +111,7 @@ function BrandsPage() {
   // À coller sur la page de confirmation de commande.
   // Remplacez MONTANT_COMMANDE et REFERENCE_COMMANDE par les vraies valeurs
   // de la commande juste validée (ex: variables injectées par votre plateforme).
+  // Montant dans la devise de la marque (${brand.currency}) — ne pas convertir.
   var amount = MONTANT_COMMANDE; // ex: 49.90
   var orderRef = "REFERENCE_COMMANDE"; // ex: "#1042"
 
@@ -122,7 +129,7 @@ function BrandsPage() {
 })();
 </script>`;
     await navigator.clipboard.writeText(snippet);
-    toast.success("Script copié — remplace MONTANT_COMMANDE et REFERENCE_COMMANDE avant de le donner à la marque");
+    toast.success(t("brands.pixelCopied"));
   }
 
   if (isAdmin === null) {
@@ -136,20 +143,20 @@ function BrandsPage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-10 text-center text-muted-foreground">
-        Accès réservé à l'administrateur.
+        {t("brands.adminOnly")}
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="mb-6 text-2xl font-black">Marques partenaires</h1>
+      <h1 className="mb-6 text-2xl font-black">{t("brands.title")}</h1>
 
       <form onSubmit={addBrand} className="mb-8 space-y-4 rounded-xl border border-border bg-card p-4 shadow-card">
-        <h2 className="font-bold">Ajouter une marque</h2>
+        <h2 className="font-bold">{t("brands.addTitle")}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="name">Nom de la marque</Label>
+            <Label htmlFor="name">{t("brands.nameLabel")}</Label>
             <Input
               id="name"
               required
@@ -159,7 +166,7 @@ function BrandsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="website">Site web</Label>
+            <Label htmlFor="website">{t("brands.websiteLabel")}</Label>
             <Input
               id="website"
               required
@@ -169,7 +176,7 @@ function BrandsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="commission">Commission négociée (%)</Label>
+            <Label htmlFor="commission">{t("brands.commissionLabel")}</Label>
             <Input
               id="commission"
               type="number"
@@ -182,7 +189,20 @@ function BrandsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="contact">Email de contact (optionnel)</Label>
+            <Label htmlFor="currency">{t("brands.currencyLabel")}</Label>
+            <select
+              id="currency"
+              value={form.currency}
+              onChange={(e) => setForm({ ...form, currency: e.target.value })}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="contact">{t("brands.contactLabel")}</Label>
             <Input
               id="contact"
               type="email"
@@ -193,18 +213,18 @@ function BrandsPage() {
           </div>
         </div>
         <Button type="submit" disabled={saving} className="bg-brand text-brand-foreground hover:bg-brand/90">
-          {saving ? "Ajout..." : "Ajouter la marque"}
+          {saving ? t("brands.adding") : t("brands.addButton")}
         </Button>
       </form>
 
       <section className="space-y-3">
-        <h2 className="font-bold">Marques enregistrées ({brands.length})</h2>
+        <h2 className="font-bold">{t("brands.listTitle")} ({brands.length})</h2>
         {loading ? (
           <div className="flex justify-center py-6">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
         ) : brands.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Aucune marque pour l'instant.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("brands.noBrands")}</p>
         ) : (
           <ul className="space-y-2">
             {brands.map((brand) => (
@@ -214,7 +234,7 @@ function BrandsPage() {
               >
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{brand.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{brand.website_url}</p>
+                  <p className="truncate text-xs text-muted-foreground">{brand.website_url} · {brand.currency}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm font-medium text-muted-foreground">{brand.commission_rate}%</span>
@@ -227,13 +247,13 @@ function BrandsPage() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {brand.status === "active" ? "Active" : "En pause"}
+                    {brand.status === "active" ? t("brands.active") : t("brands.paused")}
                   </button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    title="Copier le script pixel"
+                    title={t("brands.copyPixelTitle")}
                     onClick={() => copyPixelScript(brand)}
                   >
                     <Code2 className="size-4" />

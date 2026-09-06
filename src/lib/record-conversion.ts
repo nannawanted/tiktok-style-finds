@@ -23,7 +23,7 @@ export const recordConversion = createServerFn({ method: "POST" })
 
     const { data: brand } = await supabaseAdmin
       .from("brands")
-      .select("id, commission_rate, webhook_secret, status")
+      .select("id, commission_rate, webhook_secret, status, currency")
       .eq("id", data.brand_id)
       .maybeSingle();
 
@@ -53,6 +53,7 @@ export const recordConversion = createServerFn({ method: "POST" })
       product_id: click.product_id,
       order_amount: data.amount,
       commission_amount: commissionAmount,
+      currency: brand.currency,
       order_reference: data.order_reference || null,
       status: "confirmed",
     });

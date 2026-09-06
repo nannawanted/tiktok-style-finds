@@ -70,10 +70,10 @@ function Dashboard() {
             {isAdmin && (
               <>
                 <Link to="/dashboard/brands">
-                  <Button variant="outline" size="sm">Marques</Button>
+                  <Button variant="outline" size="sm">{t("dashboard.brandsNav")}</Button>
                 </Link>
                 <Link to="/dashboard/sales">
-                  <Button variant="outline" size="sm">Ventes</Button>
+                  <Button variant="outline" size="sm">{t("dashboard.salesNav")}</Button>
                 </Link>
               </>
             )}

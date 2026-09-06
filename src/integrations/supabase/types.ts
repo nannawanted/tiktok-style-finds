@@ -17,6 +17,7 @@ export type Database = {
           commission_rate: number
           contact_email: string | null
           created_at: string
+          currency: string
           id: string
           name: string
           status: string
@@ -27,6 +28,7 @@ export type Database = {
           commission_rate?: number
           contact_email?: string | null
           created_at?: string
+          currency?: string
           id?: string
           name: string
           status?: string
@@ -37,6 +39,7 @@ export type Database = {
           commission_rate?: number
           contact_email?: string | null
           created_at?: string
+          currency?: string
           id?: string
           name?: string
           status?: string
@@ -217,6 +220,7 @@ export type Database = {
           click_id: string | null
           commission_amount: number
           creator_share: number | null
+          currency: string
           detected_at: string
           id: string
           order_amount: number
@@ -228,6 +232,7 @@ export type Database = {
           click_id?: string | null
           commission_amount: number
           creator_share?: number | null
+          currency?: string
           detected_at?: string
           id?: string
           order_amount: number
@@ -239,6 +244,7 @@ export type Database = {
           click_id?: string | null
           commission_amount?: number
           creator_share?: number | null
+          currency?: string
           detected_at?: string
           id?: string
           order_amount?: number
