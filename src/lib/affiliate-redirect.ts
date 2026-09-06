@@ -47,7 +47,7 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
     setCookie(COOKIE_NAME, cookieId, {
       maxAge: COOKIE_MAX_AGE_SECONDS,
       path: "/",
-      sameSite: "lax",
+      sameSite: "none",
       secure: true,
     });
 

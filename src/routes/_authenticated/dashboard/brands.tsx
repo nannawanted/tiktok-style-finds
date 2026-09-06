@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Code2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Brand = Tables<"brands">;
@@ -95,6 +95,34 @@ function BrandsPage() {
       return;
     }
     setBrands((b) => b.map((x) => (x.id === brand.id ? { ...x, status: nextStatus } : x)));
+  }
+
+  async function copyPixelScript(brand: Brand) {
+    const origin = window.location.origin;
+    const snippet = `<script>
+(function () {
+  // Wanted Fashion — pixel de conversion (${brand.name})
+  // À coller sur la page de confirmation de commande.
+  // Remplacez MONTANT_COMMANDE et REFERENCE_COMMANDE par les vraies valeurs
+  // de la commande juste validée (ex: variables injectées par votre plateforme).
+  var amount = MONTANT_COMMANDE; // ex: 49.90
+  var orderRef = "REFERENCE_COMMANDE"; // ex: "#1042"
+
+  fetch("${origin}/api/conversion", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      brand_id: "${brand.id}",
+      secret: "${brand.webhook_secret}",
+      amount: amount,
+      order_reference: orderRef,
+    }),
+  });
+})();
+</script>`;
+    await navigator.clipboard.writeText(snippet);
+    toast.success("Script copié — remplace MONTANT_COMMANDE et REFERENCE_COMMANDE avant de le donner à la marque");
   }
 
   if (isAdmin === null) {
@@ -201,6 +229,15 @@ function BrandsPage() {
                   >
                     {brand.status === "active" ? "Active" : "En pause"}
                   </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    title="Copier le script pixel"
+                    onClick={() => copyPixelScript(brand)}
+                  >
+                    <Code2 className="size-4" />
+                  </Button>
                   <Button
                     type="button"
                     variant="ghost"

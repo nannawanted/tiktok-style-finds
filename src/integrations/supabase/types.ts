@@ -20,6 +20,7 @@ export type Database = {
           id: string
           name: string
           status: string
+          webhook_secret: string
           website_url: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           name: string
           status?: string
+          webhook_secret?: string
           website_url: string
         }
         Update: {
@@ -38,6 +40,7 @@ export type Database = {
           id?: string
           name?: string
           status?: string
+          webhook_secret?: string
           website_url?: string
         }
         Relationships: []
