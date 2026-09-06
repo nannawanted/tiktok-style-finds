@@ -66,9 +66,8 @@ export function PostForm({
 
   useEffect(() => {
     supabase
-      .from("brands")
+      .from("brands_public")
       .select("id, name, website_url, commission_rate")
-      .eq("status", "active")
       .then(({ data }) => setPartnerBrands(data ?? []));
   }, []);
 

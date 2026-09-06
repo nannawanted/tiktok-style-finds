@@ -271,7 +271,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      brands_public: {
+        Row: {
+          id: string
+          name: string
+          website_url: string
+          commission_rate: number
+          status: string
+          currency: string
+        }
+      }
     }
     Functions: {
       [_ in never]: never
