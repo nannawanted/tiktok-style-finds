@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type SaleRow = {
   id: string;
@@ -17,10 +18,34 @@ type SaleRow = {
   products: { name: string; brand: string | null } | null;
 };
 
+type Period = "week" | "month" | "year";
+
 export const Route = createFileRoute("/_authenticated/dashboard/sales")({
   head: () => ({ meta: [{ title: "Ventes — Wanted Fashion" }] }),
   component: SalesPage,
 });
+
+function bucketKey(date: Date, period: Period): string {
+  if (period === "year") return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return date.toISOString().slice(0, 10); // YYYY-MM-DD pour semaine et mois
+}
+
+function bucketLabel(key: string, period: Period): string {
+  if (period === "year") {
+    const [y, m] = key.split("-");
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+  }
+  return new Date(key).toLocaleDateString(undefined, { day: "2-digit", month: "short" });
+}
+
+function periodStart(period: Period): Date {
+  const now = new Date();
+  if (period === "week") now.setDate(now.getDate() - 6);
+  else if (period === "month") now.setDate(now.getDate() - 29);
+  else now.setMonth(now.getMonth() - 11);
+  now.setHours(0, 0, 0, 0);
+  return now;
+}
 
 function SalesPage() {
   const { user } = useAuth();
@@ -28,6 +53,7 @@ function SalesPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<Period>("month");
 
   const STATUS_LABEL: Record<string, string> = {
     pending: t("sales.statusPending"),
@@ -66,6 +92,42 @@ function SalesPage() {
       });
   }, [isAdmin]);
 
+  const salesInPeriod = useMemo(() => {
+    const start = periodStart(period);
+    return sales.filter((s) => new Date(s.detected_at) >= start);
+  }, [sales, period]);
+
+  const chartData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of salesInPeriod) {
+      const key = bucketKey(new Date(s.detected_at), period);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([key, count]) => ({ label: bucketLabel(key, period), count }));
+  }, [salesInPeriod, period]);
+
+  const brandBreakdown = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of salesInPeriod) {
+      const brand = s.products?.brand ?? "—";
+      counts.set(brand, (counts.get(brand) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort(([, a], [, b]) => b - a);
+  }, [salesInPeriod]);
+
+  const totalsByCurrency = useMemo(() => {
+    return sales.reduce<Record<string, { orders: number; commission: number }>>((acc, s) => {
+      const cur = s.currency || "EUR";
+      if (!acc[cur]) acc[cur] = { orders: 0, commission: 0 };
+      acc[cur].orders += Number(s.order_amount);
+      acc[cur].commission += Number(s.commission_amount);
+      return acc;
+    }, {});
+  }, [sales]);
+  const currencies = Object.keys(totalsByCurrency);
+
   if (isAdmin === null) {
     return (
       <main className="mx-auto flex max-w-3xl justify-center px-4 py-10">
@@ -81,17 +143,6 @@ function SalesPage() {
       </main>
     );
   }
-
-  // Les devises ne se mélangent jamais : chaque total est calculé séparément
-  // par devise (additionner des EUR et des USD donnerait un chiffre faux).
-  const totalsByCurrency = sales.reduce<Record<string, { orders: number; commission: number }>>((acc, s) => {
-    const cur = s.currency || "EUR";
-    if (!acc[cur]) acc[cur] = { orders: 0, commission: 0 };
-    acc[cur].orders += Number(s.order_amount);
-    acc[cur].commission += Number(s.commission_amount);
-    return acc;
-  }, {});
-  const currencies = Object.keys(totalsByCurrency);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
@@ -113,6 +164,58 @@ function SalesPage() {
           ))}
         </div>
       )}
+
+      {/* Sélecteur de période — contrôle à la fois le graphique et le classement des marques */}
+      <div className="mb-4 flex justify-center gap-2">
+        {(["week", "month", "year"] as Period[]).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+              period === p ? "bg-brand text-white" : "bg-muted text-muted-foreground hover:bg-muted/70"
+            }`}
+          >
+            {t(`sales.period${p === "week" ? "Week" : p === "month" ? "Month" : "Year"}` as any)}
+          </button>
+        ))}
+      </div>
+
+      {/* Graphique : nombre de ventes dans le temps */}
+      <div className="mb-8 rounded-xl border border-border bg-card p-4 shadow-card">
+        <h2 className="mb-3 font-bold">{t("sales.chartTitle")}</h2>
+        {chartData.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">{t("sales.noSales")}</p>
+        ) : (
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="label" fontSize={12} />
+                <YAxis allowDecimals={false} fontSize={12} width={30} />
+                <Tooltip formatter={(value: number) => [value, t("sales.chartYAxis")]} />
+                <Bar dataKey="count" fill="#c0392b" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Classement par marque, sur la même période */}
+      <div className="mb-8 rounded-xl border border-border bg-card p-4 shadow-card">
+        <h2 className="mb-3 font-bold">{t("sales.brandBreakdownTitle")}</h2>
+        {brandBreakdown.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("sales.noSales")}</p>
+        ) : (
+          <ul className="space-y-2">
+            {brandBreakdown.map(([brand, count]) => (
+              <li key={brand} className="flex items-center justify-between rounded-lg bg-background px-3 py-2">
+                <span className="font-medium">{brand}</span>
+                <span className="text-sm font-semibold text-brand">{count} {count > 1 ? t("sales.salesPlural") : t("sales.saleSingular")}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <h2 className="mb-3 font-bold">{t("sales.detailTitle")} ({sales.length})</h2>
       {loading ? (
