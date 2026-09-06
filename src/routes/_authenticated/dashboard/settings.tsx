@@ -172,11 +172,10 @@ function Settings() {
         </Button>
       </form>
 
-      <div className="mt-10 rounded-xl border border-destructive/30 p-4">
-        <h2 className="mb-2 font-bold text-destructive">{t("settings.dangerZone")}</h2>
+      <div className="mt-10">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button type="button" variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
+            <Button type="button" className="w-full bg-brand text-white hover:bg-brand/90">
               {t("settings.deleteAccount")}
             </Button>
           </AlertDialogTrigger>
