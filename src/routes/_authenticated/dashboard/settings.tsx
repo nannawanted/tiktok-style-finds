@@ -1,12 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
+import { deleteAccount } from "@/lib/delete-account";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
@@ -17,11 +22,32 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function Settings() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "" });
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      toast.error(t("settings.deleteAccountError"));
+      setDeleting(false);
+      return;
+    }
+    const result = await deleteAccount({ data: { accessToken } });
+    if (!result.ok) {
+      toast.error(t("settings.deleteAccountError"));
+      setDeleting(false);
+      return;
+    }
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -145,6 +171,33 @@ function Settings() {
           {loading ? t("settings.saving") : t("settings.save")}
         </Button>
       </form>
+
+      <div className="mt-10 rounded-xl border border-destructive/30 p-4">
+        <h2 className="mb-2 font-bold text-destructive">{t("settings.dangerZone")}</h2>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
+              {t("settings.deleteAccount")}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("settings.deleteAccountTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("settings.deleteAccountDesc")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDeleteAccount}
+              >
+                {deleting ? t("settings.deletingAccount") : t("settings.deleteAccountConfirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </main>
   );
 }

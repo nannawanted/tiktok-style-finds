@@ -181,6 +181,13 @@ const dict = {
     bannerUploaded: { fr: "Bannière chargée !", en: "Banner uploaded!" },
     invalidUsername: { fr: "Username invalide (3-30 caractères : lettres, chiffres, _ ou .)", en: "Invalid username (3-30 characters: letters, digits, _ or .)" },
     settingsSaved: { fr: "Paramètres enregistrés !", en: "Settings saved!" },
+    dangerZone: { fr: "Zone dangereuse", en: "Danger zone" },
+    deleteAccount: { fr: "Supprimer mon compte", en: "Delete my account" },
+    deleteAccountTitle: { fr: "Supprimer définitivement ton compte ?", en: "Permanently delete your account?" },
+    deleteAccountDesc: { fr: "Tous tes posts, produits et statistiques seront supprimés. Cette action est irréversible.", en: "All your posts, products and stats will be deleted. This action cannot be undone." },
+    deleteAccountConfirm: { fr: "Oui, supprimer mon compte", en: "Yes, delete my account" },
+    deleteAccountError: { fr: "Erreur lors de la suppression du compte", en: "Error deleting account" },
+    deletingAccount: { fr: "Suppression...", en: "Deleting..." },
   },
   postForm: {
     thePost: { fr: "Le post", en: "The post" },
