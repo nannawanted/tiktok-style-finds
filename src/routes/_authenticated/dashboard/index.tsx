@@ -68,9 +68,14 @@ function Dashboard() {
           </div>
           <div className="flex gap-2">
             {isAdmin && (
-              <Link to="/dashboard/brands">
-                <Button variant="outline" size="sm">Marques</Button>
-              </Link>
+              <>
+                <Link to="/dashboard/brands">
+                  <Button variant="outline" size="sm">Marques</Button>
+                </Link>
+                <Link to="/dashboard/sales">
+                  <Button variant="outline" size="sm">Ventes</Button>
+                </Link>
+              </>
             )}
             <Link to="/dashboard/settings">
               <Button variant="outline" size="sm">{t("dashboard.settings")}</Button>
