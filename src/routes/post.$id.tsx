@@ -161,7 +161,16 @@ function PostPage() {
   const { id } = Route.useParams();
 
   useEffect(() => {
-    supabase.rpc("increment_post_views", { p_id: id });
+    if (!id) return;
+    const storageKey = `wf_viewed:${id}`;
+    if (localStorage.getItem(storageKey)) return;
+    supabase.rpc("increment_post_views", { p_id: id }).then(({ error }) => {
+      if (error) {
+        console.error("increment_post_views failed:", error);
+        return;
+      }
+      localStorage.setItem(storageKey, "1");
+    });
   }, [id]);
 
   const { data, isLoading, error } = useQuery({
