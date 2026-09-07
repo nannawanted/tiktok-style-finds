@@ -6,6 +6,7 @@ import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Eye, MousePointerClick } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -27,11 +28,26 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("id, title, cover_image, created_at, products(id)")
+        .select("id, title, cover_image, created_at, views, products(id)")
         .eq("creator_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const postIds = (data ?? []).map((p) => p.id);
+  const { data: clickCounts } = useQuery({
+    queryKey: ["my-posts-clicks", postIds.join(",")],
+    enabled: postIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clicks").select("post_id").in("post_id", postIds);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        counts[row.post_id] = (counts[row.post_id] ?? 0) + 1;
+      }
+      return counts;
     },
   });
 
@@ -114,6 +130,10 @@ function Dashboard() {
                   <h3 className="truncate font-semibold">{p.title}</h3>
                   <p className="text-xs text-muted-foreground">
                     {p.products?.length ?? 0} {(p.products?.length ?? 0) > 1 ? t("dashboard.products") : t("dashboard.product")}
+                  </p>
+                  <p className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Eye className="size-3.5" /> {p.views ?? 0} {t("dashboard.views")}</span>
+                    <span className="flex items-center gap-1"><MousePointerClick className="size-3.5" /> {clickCounts?.[p.id] ?? 0} {t("dashboard.clicks")}</span>
                   </p>
                 </div>
               </div>

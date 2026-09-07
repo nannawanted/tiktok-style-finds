@@ -129,6 +129,8 @@ const dict = {
     postDeleted: { fr: "Post supprimé", en: "Post deleted" },
     brandsNav: { fr: "Marques", en: "Brands" },
     salesNav: { fr: "Ventes", en: "Sales" },
+    views: { fr: "vues", en: "views" },
+    clicks: { fr: "clics", en: "clicks" },
   },
   brands: {
     title: { fr: "Marques partenaires", en: "Partner brands" },

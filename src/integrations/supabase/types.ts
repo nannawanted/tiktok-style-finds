@@ -135,6 +135,7 @@ export type Database = {
           id: string
           tiktok_url: string | null
           title: string
+          views: number
         }
         Insert: {
           cover_image?: string | null
@@ -144,6 +145,7 @@ export type Database = {
           id?: string
           tiktok_url?: string | null
           title: string
+          views?: number
         }
         Update: {
           cover_image?: string | null
@@ -153,6 +155,7 @@ export type Database = {
           id?: string
           tiktok_url?: string | null
           title?: string
+          views?: number
         }
         Relationships: [
           {

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,6 +159,10 @@ function ProductRow({
 function PostPage() {
   const { t } = useTranslation();
   const { id } = Route.useParams();
+
+  useEffect(() => {
+    supabase.rpc("increment_post_views", { p_id: id });
+  }, [id]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["post", id],
