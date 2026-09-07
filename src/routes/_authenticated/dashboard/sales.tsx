@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type SaleRow = {
   id: string;
@@ -188,13 +188,13 @@ function SalesPage() {
         ) : (
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
                 <XAxis dataKey="label" fontSize={12} />
                 <YAxis allowDecimals={false} fontSize={12} width={30} />
                 <Tooltip formatter={(value: number) => [value, t("sales.chartYAxis")]} />
-                <Bar dataKey="count" fill="#c0392b" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Line type="monotone" dataKey="count" stroke="#c0392b" strokeWidth={3} dot={false} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         )}
