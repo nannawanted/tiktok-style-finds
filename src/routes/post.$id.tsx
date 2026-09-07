@@ -301,6 +301,15 @@ function PostPage() {
           </Link>
         </div>
       </section>
+
+      <section className="py-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          {t("postPage.partnershipCta")}{" "}
+          <a href="mailto:nannawanted@gmail.com" className="font-semibold text-brand hover:underline">
+            nannawanted@gmail.com
+          </a>
+        </p>
+      </section>
     </div>
   );
 }

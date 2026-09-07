@@ -108,6 +108,7 @@ const dict = {
     wantMoreLooks: { fr: "Envie de shopper plus de looks ?", en: "Want to shop more looks?" },
     seeFeed: { fr: "Voir le feed", en: "See the feed" },
     seeProfile: { fr: "Voir le profil", en: "See profile" },
+    partnershipCta: { fr: "Envie d'un partenariat ? Contacte-nous :", en: "Want to partner with us? Contact us:" },
   },
   dashboard: {
     myPosts: { fr: "Mes posts", en: "My posts" },
@@ -134,6 +135,9 @@ const dict = {
   },
   brands: {
     title: { fr: "Marques partenaires", en: "Partner brands" },
+    editInline: { fr: "Modifie directement une case pour mettre à jour une marque.", en: "Edit a cell directly to update a brand." },
+    statusLabel: { fr: "Statut", en: "Status" },
+    signalLabel: { fr: "Signal", en: "Signal" },
     adminOnly: { fr: "Accès réservé à l'administrateur.", en: "Admin access only." },
     addTitle: { fr: "Ajouter une marque", en: "Add a brand" },
     nameLabel: { fr: "Nom de la marque", en: "Brand name" },
