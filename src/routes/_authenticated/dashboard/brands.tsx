@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Trash2, Code2 } from "lucide-react";
+import { getBrandSignalStats } from "@/lib/brand-signal-stats";
+import { Loader2, Trash2, Code2, AlertTriangle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Brand = Tables<"brands">;
@@ -26,6 +27,7 @@ function BrandsPage() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [signalStats, setSignalStats] = useState<Record<string, { total_clicks: number; total_sales: number; last_sale_at: string | null }>>({});
   const [form, setForm] = useState({
     name: "",
     website_url: "",
@@ -47,6 +49,18 @@ function BrandsPage() {
   useEffect(() => {
     if (!isAdmin) return;
     loadBrands();
+    supabase.auth.getSession().then(({ data }) => {
+      const accessToken = data.session?.access_token;
+      if (!accessToken) return;
+      getBrandSignalStats({ data: { accessToken } }).then((result) => {
+        if (!result.ok) return;
+        const map: typeof signalStats = {};
+        for (const s of result.stats) {
+          map[s.brand_id] = { total_clicks: s.total_clicks, total_sales: s.total_sales, last_sale_at: s.last_sale_at };
+        }
+        setSignalStats(map);
+      });
+    });
   }, [isAdmin]);
 
   async function loadBrands() {
@@ -235,6 +249,24 @@ function BrandsPage() {
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{brand.name}</p>
                   <p className="truncate text-xs text-muted-foreground">{brand.website_url} · {brand.currency}</p>
+                  {(() => {
+                    const stat = signalStats[brand.id];
+                    if (!stat) return null;
+                    const daysSinceLastSale = stat.last_sale_at
+                      ? Math.floor((Date.now() - new Date(stat.last_sale_at).getTime()) / 86_400_000)
+                      : null;
+                    const suspicious = stat.total_clicks >= 10 && (daysSinceLastSale === null || daysSinceLastSale > 14);
+                    return (
+                      <p className={`mt-1 flex items-center gap-1 text-xs ${suspicious ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
+                        {suspicious && <AlertTriangle className="size-3.5" />}
+                        {stat.total_clicks} {t("brands.clicksLabel")} · {stat.total_sales} {t("brands.salesLabel")}
+                        {" · "}
+                        {daysSinceLastSale === null
+                          ? t("brands.noSignalYet")
+                          : t("brands.lastSignal").replace("{days}", String(daysSinceLastSale))}
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm font-medium text-muted-foreground">{brand.commission_rate}%</span>

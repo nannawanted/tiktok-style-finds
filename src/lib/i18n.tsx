@@ -150,6 +150,10 @@ const dict = {
     copyPixelTitle: { fr: "Copier le script pixel", en: "Copy pixel script" },
     pixelCopied: { fr: "Script copié — remplace MONTANT_COMMANDE et REFERENCE_COMMANDE avant de le donner à la marque", en: "Script copied — replace MONTANT_COMMANDE and REFERENCE_COMMANDE before giving it to the brand" },
     brandAdded: { fr: "Marque ajoutée", en: "Brand added" },
+    clicksLabel: { fr: "clics", en: "clicks" },
+    salesLabel: { fr: "ventes", en: "sales" },
+    noSignalYet: { fr: "aucune vente reçue pour l'instant", en: "no sale received yet" },
+    lastSignal: { fr: "dernière vente il y a {days} j", en: "last sale {days} days ago" },
   },
   sales: {
     title: { fr: "Ventes", en: "Sales" },
