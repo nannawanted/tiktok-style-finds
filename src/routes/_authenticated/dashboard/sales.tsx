@@ -103,9 +103,28 @@ function SalesPage() {
       const key = bucketKey(new Date(s.detected_at), period);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    return Array.from(counts.entries())
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([key, count]) => ({ label: bucketLabel(key, period), count }));
+
+    // Génère toujours la liste complète des points de la période (même à 0),
+    // pour que le graphique (grille + axes) s'affiche même sans aucune vente.
+    const start = periodStart(period);
+    const buckets: string[] = [];
+    if (period === "year") {
+      const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+      const now = new Date();
+      while (cursor <= now) {
+        buckets.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`);
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    } else {
+      const cursor = new Date(start);
+      const now = new Date();
+      while (cursor <= now) {
+        buckets.push(bucketKey(cursor, period));
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+
+    return buckets.map((key) => ({ label: bucketLabel(key, period), count: counts.get(key) ?? 0 }));
   }, [salesInPeriod, period]);
 
   const brandBreakdown = useMemo(() => {
@@ -183,21 +202,19 @@ function SalesPage() {
       {/* Graphique : nombre de ventes dans le temps */}
       <div className="mb-8 rounded-xl border border-border bg-card p-4 shadow-card">
         <h2 className="mb-3 font-bold">{t("sales.chartTitle")}</h2>
-        {chartData.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">{t("sales.noSales")}</p>
-        ) : (
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
-                <XAxis dataKey="label" fontSize={12} />
-                <YAxis allowDecimals={false} fontSize={12} width={30} />
-                <Tooltip formatter={(value: number) => [value, t("sales.chartYAxis")]} />
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+              <XAxis dataKey="label" fontSize={12} />
+              <YAxis allowDecimals={false} fontSize={12} width={30} domain={[0, salesInPeriod.length > 0 ? "auto" : 5]} />
+              <Tooltip formatter={(value: number) => [value, t("sales.chartYAxis")]} />
+              {salesInPeriod.length > 0 && (
                 <Line type="monotone" dataKey="count" stroke="#c0392b" strokeWidth={3} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Classement par marque, sur la même période */}
