@@ -10,7 +10,7 @@ type RecordConversionInput = {
 
 type RecordConversionResult =
   | { ok: true }
-  | { ok: false; reason: "invalid_brand" | "no_click" | "invalid_amount" };
+  | { ok: false; reason: "invalid_brand" | "no_click" | "invalid_amount" | "duplicate_order" };
 
 const COOKIE_NAME = "wf_aff";
 
@@ -48,15 +48,28 @@ export const recordConversion = createServerFn({ method: "POST" })
 
     const commissionAmount = Math.round(data.amount * (brand.commission_rate / 100) * 100) / 100;
 
-    await supabaseAdmin.from("sales").insert({
+    // Le pixel est visible dans le code source de la page de confirmation de la
+    // marque : quelqu'un pourrait en théorie rejouer/forger un appel avec ce
+    // brand_id + secret. Deux garde-fous :
+    //  1. Une vente n'est JAMAIS auto-confirmée : statut "pending" par défaut,
+    //     validation manuelle requise avant que ça compte comme dû.
+    //  2. Une même référence de commande ne peut pas être déclarée deux fois
+    //     pour cette marque (contrainte unique en base).
+    const { error: insertError } = await supabaseAdmin.from("sales").insert({
       click_id: click.id,
       product_id: click.product_id,
+      brand_id: brand.id,
       order_amount: data.amount,
       commission_amount: commissionAmount,
       currency: brand.currency,
       order_reference: data.order_reference || null,
-      status: "confirmed",
+      status: "pending",
     });
+
+    if (insertError) {
+      if (insertError.code === "23505") return { ok: false, reason: "duplicate_order" };
+      return { ok: false, reason: "invalid_amount" };
+    }
 
     return { ok: true };
   });

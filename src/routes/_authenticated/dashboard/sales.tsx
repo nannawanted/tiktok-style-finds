@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type SaleRow = {
@@ -91,6 +92,14 @@ function SalesPage() {
         setLoading(false);
       });
   }, [isAdmin]);
+
+  async function updateSaleStatus(saleId: string, newStatus: string) {
+    setSales((prev) => prev.map((s) => (s.id === saleId ? { ...s, status: newStatus } : s)));
+    const { error } = await supabase.from("sales").update({ status: newStatus }).eq("id", saleId);
+    if (error) {
+      toast.error(error.message);
+    }
+  }
 
   const salesInPeriod = useMemo(() => {
     const start = periodStart(period);
@@ -260,9 +269,16 @@ function SalesPage() {
                   <p className="text-sm font-semibold">{Number(sale.order_amount).toFixed(2)} {sale.currency}</p>
                   <p className="text-xs text-brand">+{Number(sale.commission_amount).toFixed(2)} {sale.currency}</p>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[sale.status] ?? "bg-muted"}`}>
-                  {STATUS_LABEL[sale.status] ?? sale.status}
-                </span>
+                <select
+                  value={sale.status}
+                  onChange={(e) => updateSaleStatus(sale.id, e.target.value)}
+                  className={`rounded-full border-none px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[sale.status] ?? "bg-muted"}`}
+                >
+                  <option value="pending">{t("sales.statusPending")}</option>
+                  <option value="confirmed">{t("sales.statusConfirmed")}</option>
+                  <option value="paid">{t("sales.statusPaid")}</option>
+                  <option value="refunded">{t("sales.statusRefunded")}</option>
+                </select>
               </div>
             </li>
           ))}
