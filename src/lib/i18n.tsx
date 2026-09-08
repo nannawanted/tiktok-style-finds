@@ -95,6 +95,10 @@ const dict = {
     avatarUpdated: { fr: "Photo de profil mise à jour !", en: "Profile picture updated!" },
     bannerUpdated: { fr: "Bannière mise à jour !", en: "Banner updated!" },
   },
+  footer: {
+    partnershipCta: { fr: "Envie d'un partenariat ? Contacte-nous :", en: "Want to partner with us? Contact us:" },
+    suggestBrandCta: { fr: "Une marque à nous suggérer ?", en: "A brand to suggest to us?" },
+  },
   postPage: {
     notFound: { fr: "Post introuvable.", en: "Post not found." },
     watchVideo: { fr: "Voir la vidéo", en: "Watch video" },
@@ -135,6 +139,11 @@ const dict = {
   },
   brands: {
     title: { fr: "Marques partenaires", en: "Partner brands" },
+    newBrand: { fr: "Nouvelle marque", en: "New brand" },
+    editBrand: { fr: "Modifier la marque", en: "Edit brand" },
+    saveChanges: { fr: "Enregistrer les modifications", en: "Save changes" },
+    changesSaved: { fr: "Modifications enregistrées", en: "Changes saved" },
+    delete: { fr: "Supprimer", en: "Delete" },
     editInline: { fr: "Modifie directement une case pour mettre à jour une marque.", en: "Edit a cell directly to update a brand." },
     statusLabel: { fr: "Statut", en: "Status" },
     signalLabel: { fr: "Signal", en: "Signal" },
