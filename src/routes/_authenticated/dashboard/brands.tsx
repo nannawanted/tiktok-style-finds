@@ -16,11 +16,11 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Brand = Tables<"brands">;
 type SignalStat = { total_clicks: number; total_sales: number; last_sale_at: string | null };
-type BrandFormState = { name: string; website_url: string; commission_rate: string; currency: string; contact_email: string; status: string };
+type BrandFormState = { name: string; website_url: string; commission_rate: string; currency: string; contact_email: string; status: string; max_order_amount: string };
 
 const CURRENCIES = ["EUR", "USD", "GBP", "MAD", "CHF", "CAD"];
 
-const EMPTY_FORM: BrandFormState = { name: "", website_url: "", commission_rate: "10", currency: "EUR", contact_email: "", status: "active" };
+const EMPTY_FORM: BrandFormState = { name: "", website_url: "", commission_rate: "10", currency: "EUR", contact_email: "", status: "active", max_order_amount: "" };
 
 export const Route = createFileRoute("/_authenticated/dashboard/brands")({
   head: () => ({ meta: [{ title: "Marques partenaires — Wanted Fashion" }] }),
@@ -94,6 +94,7 @@ function BrandsPage() {
       currency: brand.currency,
       contact_email: brand.contact_email ?? "",
       status: brand.status,
+      max_order_amount: brand.max_order_amount != null ? String(brand.max_order_amount) : "",
     });
     setOpenId(brand.id);
   }
@@ -109,6 +110,7 @@ function BrandsPage() {
       currency: form.currency,
       contact_email: form.contact_email.trim() || null,
       status: form.status,
+      max_order_amount: form.max_order_amount.trim() ? Number(form.max_order_amount) : null,
     };
 
     const { error } =
@@ -285,6 +287,19 @@ function BrandsPage() {
             <div className="sm:col-span-2">
               <Label htmlFor="f-contact">{t("brands.contactLabel")}</Label>
               <Input id="f-contact" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="contact@zara.com" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="f-cap">{t("brands.maxOrderLabel")}</Label>
+              <Input
+                id="f-cap"
+                type="number"
+                min="0"
+                step="1"
+                value={form.max_order_amount}
+                onChange={(e) => setForm({ ...form, max_order_amount: e.target.value })}
+                placeholder={t("brands.maxOrderPlaceholder")}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">{t("brands.maxOrderHint")}</p>
             </div>
             {openId !== "new" && (
               <div className="sm:col-span-2">

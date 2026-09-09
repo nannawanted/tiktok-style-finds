@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          max_order_amount: number | null
           name: string
           status: string
           webhook_secret: string
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          max_order_amount?: number | null
           name: string
           status?: string
           webhook_secret?: string
@@ -41,6 +43,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          max_order_amount?: number | null
           name?: string
           status?: string
           webhook_secret?: string
@@ -220,6 +223,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          brand_id: string | null
           click_id: string | null
           commission_amount: number
           creator_share: number | null
@@ -232,6 +236,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          brand_id?: string | null
           click_id?: string | null
           commission_amount: number
           creator_share?: number | null

@@ -23,7 +23,7 @@ export const recordConversion = createServerFn({ method: "POST" })
 
     const { data: brand } = await supabaseAdmin
       .from("brands")
-      .select("id, commission_rate, webhook_secret, status, currency")
+      .select("id, commission_rate, webhook_secret, status, currency, max_order_amount")
       .eq("id", data.brand_id)
       .maybeSingle();
 
@@ -55,6 +55,13 @@ export const recordConversion = createServerFn({ method: "POST" })
     //     validation manuelle requise avant que ça compte comme dû.
     //  2. Une même référence de commande ne peut pas être déclarée deux fois
     //     pour cette marque (contrainte unique en base).
+    // Confirmation automatique par défaut (pas de vérification manuelle
+    // systématique) — sauf si la marque a défini un plafond de sécurité par
+    // commande et que ce montant est dépassé : dans ce cas seulement, la
+    // vente passe en 'pending' pour être vérifiée manuellement.
+    const exceedsCap = brand.max_order_amount != null && data.amount > Number(brand.max_order_amount);
+    const status = exceedsCap ? "pending" : "confirmed";
+
     const { error: insertError } = await supabaseAdmin.from("sales").insert({
       click_id: click.id,
       product_id: click.product_id,
@@ -63,7 +70,7 @@ export const recordConversion = createServerFn({ method: "POST" })
       commission_amount: commissionAmount,
       currency: brand.currency,
       order_reference: data.order_reference || null,
-      status: "pending",
+      status,
     });
 
     if (insertError) {
