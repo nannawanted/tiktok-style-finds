@@ -33,7 +33,7 @@ const handleConversionRequest = createServerOnlyFn(async () => {
     });
   }
 
-  let body: { brand_id?: string; secret?: string; amount?: number; order_reference?: string };
+  let body: { brand_id?: string; secret?: string; amount?: number; order_reference?: string; click_ref?: string };
   try {
     body = await request.json();
   } catch {
@@ -56,6 +56,7 @@ const handleConversionRequest = createServerOnlyFn(async () => {
       secret: body.secret,
       amount: body.amount,
       order_reference: body.order_reference,
+      click_ref: body.click_ref,
     },
   });
 

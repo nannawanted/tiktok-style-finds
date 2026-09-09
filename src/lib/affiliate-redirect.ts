@@ -60,5 +60,13 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
       secure: true,
     });
 
-    return { found: true, targetUrl: product.affiliate_link };
+    // Ajoute l'identifiant de clic dans l'URL de destination, en plus du
+    // cookie : ça permet à une marque techniquement équipée de le capturer
+    // côté serveur (au lieu du pixel navigateur) et de nous le renvoyer
+    // elle-même lors de la déclaration de vente — plus fiable et plus sûr
+    // (le serveur de la marque n'expose jamais ça au client final).
+    const targetUrl = new URL(product.affiliate_link);
+    targetUrl.searchParams.set("wf_click", cookieId);
+
+    return { found: true, targetUrl: targetUrl.toString() };
   });

@@ -6,6 +6,10 @@ type RecordConversionInput = {
   secret: string;
   amount: number;
   order_reference?: string;
+  // Fourni uniquement lors d'un appel serveur-à-serveur (le serveur de la
+  // marque nous renvoie directement l'identifiant de clic qu'il a capturé
+  // depuis l'URL de redirection, sans passer par le navigateur du client).
+  click_ref?: string;
 };
 
 type RecordConversionResult =
@@ -31,7 +35,10 @@ export const recordConversion = createServerFn({ method: "POST" })
       return { ok: false, reason: "invalid_brand" };
     }
 
-    const cookieId = getCookie(COOKIE_NAME);
+    // Appel serveur-à-serveur : le click_ref est fourni directement par le
+    // serveur de la marque. Appel pixel classique : on lit le cookie posé
+    // dans le navigateur du client au moment du clic.
+    const cookieId = data.click_ref || getCookie(COOKIE_NAME);
     if (!cookieId) return { ok: false, reason: "no_click" };
 
     // Dernier clic de ce visiteur sur un produit de cette marque

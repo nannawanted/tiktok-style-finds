@@ -147,6 +147,8 @@ const dict = {
     maxOrderLabel: { fr: "Plafond de sécurité par commande (optionnel)", en: "Per-order safety cap (optional)" },
     maxOrderPlaceholder: { fr: "ex: 300", en: "e.g. 300" },
     maxOrderHint: { fr: "Au-delà de ce montant, une vente devra être vérifiée manuellement avant de compter. Laisse vide pour tout confirmer automatiquement.", en: "Above this amount, a sale needs manual review before it counts. Leave empty to auto-confirm everything." },
+    copyServerTitle: { fr: "Copier les instructions serveur-à-serveur", en: "Copy server-to-server instructions" },
+    serverInstructionsCopied: { fr: "Instructions copiées — à donner à l'équipe technique de la marque", en: "Instructions copied — give to the brand's technical team" },
     editInline: { fr: "Modifie directement une case pour mettre à jour une marque.", en: "Edit a cell directly to update a brand." },
     statusLabel: { fr: "Statut", en: "Status" },
     signalLabel: { fr: "Signal", en: "Signal" },

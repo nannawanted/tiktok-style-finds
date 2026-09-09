@@ -167,6 +167,39 @@ function BrandsPage() {
     toast.success(t("brands.pixelCopied"));
   }
 
+  async function copyServerInstructions(brand: Brand) {
+    const origin = window.location.origin;
+    const instructions = `Intégration serveur-à-serveur — ${brand.name}
+(Option plus sécurisée que le pixel : rien n'est exposé au navigateur du client)
+
+1. Quand un visiteur arrive sur votre site via Wanted Fashion, l'URL contient
+   un paramètre "wf_click" (ex: https://votresite.com/produit?wf_click=abc123).
+   Récupérez et stockez cette valeur avec la commande (session, cookie interne,
+   champ caché du panier, etc.) — sur VOTRE serveur, jamais visible du client.
+
+2. Une fois la commande confirmée, votre SERVEUR (pas le navigateur du client)
+   envoie une requête directe :
+
+   POST ${origin}/api/conversion
+   Content-Type: application/json
+
+   {
+     "brand_id": "${brand.id}",
+     "secret": "${brand.webhook_secret}",
+     "amount": 49.90,
+     "order_reference": "#1042",
+     "click_ref": "abc123"
+   }
+
+   (remplacez amount/order_reference/click_ref par les vraies valeurs de la
+   commande, montant en ${brand.currency})
+
+Gardez le secret uniquement dans votre code serveur — ne l'exposez jamais
+dans une page ou un script visible par le client.`;
+    await navigator.clipboard.writeText(instructions);
+    toast.success(t("brands.serverInstructionsCopied"));
+  }
+
   if (isAdmin === null) {
     return (
       <main className="mx-auto flex max-w-2xl justify-center px-4 py-10">
@@ -322,6 +355,9 @@ function BrandsPage() {
               <div className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => copyPixelScript(editingBrand)}>
                   <Code2 className="mr-1 size-4" /> {t("brands.copyPixelTitle")}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => copyServerInstructions(editingBrand)}>
+                  <Code2 className="mr-1 size-4" /> {t("brands.copyServerTitle")}
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="text-destructive" onClick={() => removeBrand(editingBrand.id)}>
                   <Trash2 className="mr-1 size-4" /> {t("brands.delete")}
