@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { initSentry, captureError } from "../lib/sentry";
 import { AuthProvider } from "../lib/auth-context";
 import { LanguageProvider, useTranslation } from "../lib/i18n";
 import { Header } from "../components/Header";
@@ -45,6 +46,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    captureError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -113,6 +115,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    initSentry();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
