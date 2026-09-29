@@ -15,6 +15,7 @@ import { AuthProvider } from "../lib/auth-context";
 import { LanguageProvider, useTranslation } from "../lib/i18n";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { CookieConsent } from "../components/CookieConsent";
 import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
@@ -119,6 +120,7 @@ function RootComponent() {
           <Header />
           <Outlet />
           <Footer />
+          <CookieConsent />
           <Toaster />
         </AuthProvider>
       </LanguageProvider>

@@ -67,12 +67,21 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
       is_self_click: isSelfClick,
     });
 
-    setCookie(COOKIE_NAME, cookieId, {
-      maxAge: COOKIE_MAX_AGE_SECONDS,
-      path: "/",
-      sameSite: "none",
-      secure: true,
-    });
+    // Le cookie de suivi wf_aff n'est posé que si le visiteur a donné son
+    // consentement via le bandeau cookies (RGPD/ePrivacy) — enregistré dans
+    // le cookie wf_consent (celui-là est strictement nécessaire, pas de
+    // consentement requis pour l'enregistrer). Le clic reste enregistré et le
+    // paramètre wf_click ajouté à l'URL dans tous les cas : la redirection
+    // fonctionne normalement, seule la persistance du cookie change.
+    const hasConsent = getCookie("wf_consent") === "true";
+    if (hasConsent) {
+      setCookie(COOKIE_NAME, cookieId, {
+        maxAge: COOKIE_MAX_AGE_SECONDS,
+        path: "/",
+        sameSite: "none",
+        secure: true,
+      });
+    }
 
     // Ajoute l'identifiant de clic dans l'URL de destination, en plus du
     // cookie : ça permet à une marque techniquement équipée de le capturer

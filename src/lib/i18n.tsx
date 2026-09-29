@@ -98,7 +98,14 @@ const dict = {
   footer: {
     partnershipCta: { fr: "Envie d'un partenariat ? Contacte-nous :", en: "Want to partner with us? Contact us:" },
     suggestBrandCta: { fr: "Une marque à nous suggérer ?", en: "A brand to suggest to us?" },
+    privacy: { fr: "Confidentialité", en: "Privacy" },
+    terms: { fr: "Conditions d'utilisation", en: "Terms of use" },
   },
+  cookies: {
+    message: { fr: "On utilise un cookie pour savoir qu'un achat vient d'un lien affiché sur le site, afin de rémunérer les créateurs.", en: "We use a cookie to know when a purchase comes from a link shown on the site, to pay creators." },
+    learnMore: { fr: "En savoir plus", en: "Learn more" },
+    accept: { fr: "Accepter", en: "Accept" },
+    decline: { fr: "Refuser", en: "Decline" },
   postPage: {
     notFound: { fr: "Post introuvable.", en: "Post not found." },
     watchVideo: { fr: "Voir la vidéo", en: "Watch video" },
