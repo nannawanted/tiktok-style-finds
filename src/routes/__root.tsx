@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { initSentry, captureError } from "../lib/sentry";
+import { captureError } from "../lib/sentry";
 import { AuthProvider } from "../lib/auth-context";
 import { LanguageProvider, useTranslation } from "../lib/i18n";
 import { Header } from "../components/Header";
@@ -115,9 +115,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  useEffect(() => {
-    initSentry();
-  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>

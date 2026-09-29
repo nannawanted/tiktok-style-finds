@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/react";
+import * as Sentry from "@sentry/tanstackstart-react";
 
 // Surveillance des erreurs en production (visiteurs, créateurs) — jusqu'ici,
 // une erreur ne remontait que si quelqu'un la signalait. Reste totalement
