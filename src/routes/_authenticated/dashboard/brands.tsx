@@ -352,12 +352,12 @@ dans une page ou un script visible par le client.`;
 
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
             {editingBrand && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90" onClick={() => copyServerInstructions(editingBrand)}>
+                  <Code2 className="mr-1 size-4" /> {t("brands.copyServerTitle")}
+                </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => copyPixelScript(editingBrand)}>
                   <Code2 className="mr-1 size-4" /> {t("brands.copyPixelTitle")}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => copyServerInstructions(editingBrand)}>
-                  <Code2 className="mr-1 size-4" /> {t("brands.copyServerTitle")}
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="text-destructive" onClick={() => removeBrand(editingBrand.id)}>
                   <Trash2 className="mr-1 size-4" /> {t("brands.delete")}

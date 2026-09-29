@@ -232,6 +232,7 @@ export type Database = {
           creator_share: number | null
           currency: string
           detected_at: string
+          flag_reason: string | null
           id: string
           order_amount: number
           order_reference: string | null
@@ -245,6 +246,7 @@ export type Database = {
           creator_share?: number | null
           currency?: string
           detected_at?: string
+          flag_reason?: string | null
           id?: string
           order_amount: number
           order_reference?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           creator_share?: number | null
           currency?: string
           detected_at?: string
+          flag_reason?: string | null
           id?: string
           order_amount?: number
           order_reference?: string | null

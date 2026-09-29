@@ -16,6 +16,7 @@ type SaleRow = {
   status: string;
   order_reference: string | null;
   detected_at: string;
+  flag_reason: string | null;
   products: { name: string; brand: string | null } | null;
   clicks: { is_self_click: boolean } | null;
 };
@@ -71,6 +72,12 @@ function SalesPage() {
     refunded: "bg-destructive/15 text-destructive",
   };
 
+  const FLAG_REASON_LABEL: Record<string, string> = {
+    amount_over_cap: t("sales.flagAmountOverCap"),
+    first_sale_for_pair: t("sales.flagFirstSaleForPair"),
+    high_conversion_rate: t("sales.flagHighConversionRate"),
+  };
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -86,7 +93,7 @@ function SalesPage() {
     setLoading(true);
     supabase
       .from("sales")
-      .select("id, order_amount, commission_amount, creator_share, currency, status, order_reference, detected_at, products(name, brand), clicks(is_self_click)")
+      .select("id, order_amount, commission_amount, creator_share, currency, status, order_reference, detected_at, flag_reason, products(name, brand), clicks(is_self_click)")
       .order("detected_at", { ascending: false })
       .then(({ data }) => {
         setSales((data as unknown as SaleRow[]) ?? []);
@@ -94,9 +101,19 @@ function SalesPage() {
       });
   }, [isAdmin]);
 
-  async function updateSaleStatus(saleId: string, newStatus: string) {
-    setSales((prev) => prev.map((s) => (s.id === saleId ? { ...s, status: newStatus } : s)));
-    const { error } = await supabase.from("sales").update({ status: newStatus }).eq("id", saleId);
+  const HOLD_PERIOD_DAYS = 30;
+
+  function daysSinceDetected(detectedAt: string): number {
+    return Math.floor((Date.now() - new Date(detectedAt).getTime()) / 86_400_000);
+  }
+
+  async function updateSaleStatus(sale: SaleRow, newStatus: string) {
+    if (newStatus === "paid" && daysSinceDetected(sale.detected_at) < HOLD_PERIOD_DAYS) {
+      toast.error(t("sales.holdPeriodBlocked").replace("{days}", String(HOLD_PERIOD_DAYS - daysSinceDetected(sale.detected_at))));
+      return;
+    }
+    setSales((prev) => prev.map((s) => (s.id === sale.id ? { ...s, status: newStatus } : s)));
+    const { error } = await supabase.from("sales").update({ status: newStatus }).eq("id", sale.id);
     if (error) {
       toast.error(error.message);
     }
@@ -269,6 +286,11 @@ function SalesPage() {
                     <AlertTriangle className="size-3.5" /> {t("sales.selfClickWarning")}
                   </p>
                 )}
+                {sale.flag_reason && (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-600">
+                    <AlertTriangle className="size-3.5" /> {FLAG_REASON_LABEL[sale.flag_reason] ?? sale.flag_reason}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-3 text-right">
                 <div>
@@ -277,12 +299,17 @@ function SalesPage() {
                 </div>
                 <select
                   value={sale.status}
-                  onChange={(e) => updateSaleStatus(sale.id, e.target.value)}
+                  onChange={(e) => updateSaleStatus(sale, e.target.value)}
                   className={`rounded-full border-none px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[sale.status] ?? "bg-muted"}`}
                 >
                   <option value="pending">{t("sales.statusPending")}</option>
                   <option value="confirmed">{t("sales.statusConfirmed")}</option>
-                  <option value="paid">{t("sales.statusPaid")}</option>
+                  <option value="paid" disabled={daysSinceDetected(sale.detected_at) < HOLD_PERIOD_DAYS}>
+                    {t("sales.statusPaid")}
+                    {daysSinceDetected(sale.detected_at) < HOLD_PERIOD_DAYS
+                      ? ` (${t("sales.holdPeriodShort").replace("{days}", String(HOLD_PERIOD_DAYS - daysSinceDetected(sale.detected_at)))})`
+                      : ""}
+                  </option>
                   <option value="refunded">{t("sales.statusRefunded")}</option>
                 </select>
               </div>

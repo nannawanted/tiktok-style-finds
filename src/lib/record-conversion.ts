@@ -44,7 +44,7 @@ export const recordConversion = createServerFn({ method: "POST" })
     // Dernier clic de ce visiteur sur un produit de cette marque
     const { data: click } = await supabaseAdmin
       .from("clicks")
-      .select("id, product_id, products!inner(brand_id)")
+      .select("id, product_id, products!inner(brand_id, posts!inner(creator_id))")
       .eq("cookie_id", cookieId)
       .eq("products.brand_id", brand.id)
       .order("clicked_at", { ascending: false })
@@ -53,21 +53,60 @@ export const recordConversion = createServerFn({ method: "POST" })
 
     if (!click) return { ok: false, reason: "no_click" };
 
+    const creatorId = (click.products as any)?.posts?.creator_id as string | undefined;
+
     const commissionAmount = Math.round(data.amount * (brand.commission_rate / 100) * 100) / 100;
 
     // Le pixel est visible dans le code source de la page de confirmation de la
     // marque : quelqu'un pourrait en théorie rejouer/forger un appel avec ce
-    // brand_id + secret. Deux garde-fous :
-    //  1. Une vente n'est JAMAIS auto-confirmée : statut "pending" par défaut,
-    //     validation manuelle requise avant que ça compte comme dû.
-    //  2. Une même référence de commande ne peut pas être déclarée deux fois
-    //     pour cette marque (contrainte unique en base).
-    // Confirmation automatique par défaut (pas de vérification manuelle
-    // systématique) — sauf si la marque a défini un plafond de sécurité par
-    // commande et que ce montant est dépassé : dans ce cas seulement, la
-    // vente passe en 'pending' pour être vérifiée manuellement.
-    const exceedsCap = brand.max_order_amount != null && data.amount > Number(brand.max_order_amount);
-    const status = exceedsCap ? "pending" : "confirmed";
+    // brand_id + secret. Confirmation automatique par défaut (pas de
+    // vérification manuelle systématique), sauf dans 3 cas précis inspirés des
+    // pratiques standards du secteur (Awin, AffiliateWP) :
+    let status: "confirmed" | "pending" = "confirmed";
+    let flagReason: string | null = null;
+
+    // 1) Plafond de sécurité optionnel par commande, défini par la marque.
+    if (brand.max_order_amount != null && data.amount > Number(brand.max_order_amount)) {
+      status = "pending";
+      flagReason = "amount_over_cap";
+    }
+
+    // 2) Première vente jamais déclarée pour ce duo créateur × marque —
+    //    pratique standard ("les premiers paiements sont toujours vérifiés").
+    if (status === "confirmed" && creatorId) {
+      const { count: priorSalesCount } = await supabaseAdmin
+        .from("sales")
+        .select("id, products!inner(post_id, posts!inner(creator_id))", { count: "exact", head: true })
+        .eq("brand_id", brand.id)
+        .eq("products.posts.creator_id", creatorId);
+      if (!priorSalesCount || priorSalesCount === 0) {
+        status = "pending";
+        flagReason = "first_sale_for_pair";
+      }
+    }
+
+    // 3) Taux de conversion anormalement élevé pour ce créateur sur cette
+    //    marque (clics → ventes). Seuil absolu (pas relatif) car le volume
+    //    est encore faible au démarrage : un taux de conversion e-commerce
+    //    normal tourne autour de 1-5% ; au-delà de 40%, c'est suspect.
+    if (status === "confirmed" && creatorId) {
+      const { count: clickCount } = await supabaseAdmin
+        .from("clicks")
+        .select("id, products!inner(brand_id, posts!inner(creator_id))", { count: "exact", head: true })
+        .eq("products.brand_id", brand.id)
+        .eq("products.posts.creator_id", creatorId);
+      const { count: saleCount } = await supabaseAdmin
+        .from("sales")
+        .select("id, products!inner(post_id, posts!inner(creator_id))", { count: "exact", head: true })
+        .eq("brand_id", brand.id)
+        .eq("products.posts.creator_id", creatorId);
+      const clicks = clickCount ?? 0;
+      const priorSales = saleCount ?? 0;
+      if (clicks >= 5 && (priorSales + 1) / clicks > 0.4) {
+        status = "pending";
+        flagReason = "high_conversion_rate";
+      }
+    }
 
     const { error: insertError } = await supabaseAdmin.from("sales").insert({
       click_id: click.id,
@@ -78,6 +117,7 @@ export const recordConversion = createServerFn({ method: "POST" })
       currency: brand.currency,
       order_reference: data.order_reference || null,
       status,
+      flag_reason: flagReason,
     });
 
     if (insertError) {
