@@ -19,7 +19,13 @@ export function initServerSentry() {
   initialized = true;
 }
 
-export function captureServerError(error: unknown, context: Record<string, unknown> = {}) {
+// En environnement serverless (Vercel), la fonction peut être gelée/tuée
+// juste après avoir renvoyé la réponse HTTP, avant que l'envoi réseau vers
+// Sentry (asynchrone) n'ait eu le temps de partir. On force donc un flush
+// borné dans le temps — à `await` systématiquement avant de retourner la
+// réponse d'erreur.
+export async function captureServerError(error: unknown, context: Record<string, unknown> = {}) {
   if (!initialized) return;
   Sentry.captureException(error, { extra: context });
+  await Sentry.flush(2000);
 }

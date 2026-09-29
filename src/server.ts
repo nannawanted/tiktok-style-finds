@@ -34,7 +34,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   }
 
   const swallowedError = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
-  captureServerError(swallowedError, { boundary: "ssr_swallowed_by_h3" });
+  await captureServerError(swallowedError, { boundary: "ssr_swallowed_by_h3" });
   console.error(swallowedError);
   return new Response(renderErrorPage(), {
     status: 500,
@@ -49,7 +49,7 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
-      captureServerError(error, { boundary: "server_fetch_catch" });
+      await captureServerError(error, { boundary: "server_fetch_catch" });
       console.error(error);
       return new Response(renderErrorPage(), {
         status: 500,

@@ -20,7 +20,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
     // Le middleware Sentry ne capture pas les exceptions de rendu SSR
     // (voir doc officielle) — on les remonte donc explicitement ici, au
     // seul endroit où elles sont interceptées avant d'être avalées.
-    captureServerError(error, { boundary: "start_error_middleware" });
+    await captureServerError(error, { boundary: "start_error_middleware" });
     console.error(error);
     return new Response(renderErrorPage(), {
       status: 500,
