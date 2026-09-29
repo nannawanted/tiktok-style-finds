@@ -109,6 +109,7 @@ const dict = {
     learnMore: { fr: "En savoir plus", en: "Learn more" },
     accept: { fr: "Accepter", en: "Accept" },
     decline: { fr: "Refuser", en: "Decline" },
+  },
   postPage: {
     notFound: { fr: "Post introuvable.", en: "Post not found." },
     watchVideo: { fr: "Voir la vidéo", en: "Watch video" },
