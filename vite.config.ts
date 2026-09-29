@@ -5,6 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
 
 export default defineConfig({
   tanstackStart: {
@@ -12,4 +13,16 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // N'active l'upload des source maps que si SENTRY_AUTH_TOKEN est défini
+  // (variable d'environnement Vercel) — no-op sinon, donc jamais bloquant
+  // pour le build tant que le secret n'a pas été ajouté.
+  plugins: process.env.SENTRY_AUTH_TOKEN
+    ? [
+        sentryTanstackStart({
+          org: "wanted-fashion",
+          project: "javascript-tanstackstart-react",
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        }),
+      ]
+    : [],
 });
