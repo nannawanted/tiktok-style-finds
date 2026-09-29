@@ -56,6 +56,9 @@ export const recordConversion = createServerFn({ method: "POST" })
     const creatorId = (click.products as any)?.posts?.creator_id as string | undefined;
 
     const commissionAmount = Math.round(data.amount * (brand.commission_rate / 100) * 100) / 100;
+    // Split 50/50 entre WantedFashion et le créateur, sur la commission
+    // (pas sur le montant total de la commande).
+    const creatorShare = Math.round(commissionAmount * 0.5 * 100) / 100;
 
     // Le pixel est visible dans le code source de la page de confirmation de la
     // marque : quelqu'un pourrait en théorie rejouer/forger un appel avec ce
@@ -114,6 +117,7 @@ export const recordConversion = createServerFn({ method: "POST" })
       brand_id: brand.id,
       order_amount: data.amount,
       commission_amount: commissionAmount,
+      creator_share: creatorShare,
       currency: brand.currency,
       order_reference: data.order_reference || null,
       status,

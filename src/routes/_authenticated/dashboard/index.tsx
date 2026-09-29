@@ -89,6 +89,9 @@ function Dashboard() {
             <p className="text-sm text-muted-foreground">{t("dashboard.manageOutfits")}</p>
           </div>
           <div className="flex gap-2">
+            <Link to="/dashboard/earnings">
+              <Button variant="outline" size="sm">{t("dashboard.earningsNav")}</Button>
+            </Link>
             {isAdmin && (
               <>
                 <Link to="/dashboard/brands">
