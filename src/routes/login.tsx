@@ -33,7 +33,11 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(t("auth.invalidCreds"));
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        toast.error(t("auth.emailNotConfirmed"));
+      } else {
+        toast.error(t("auth.invalidCreds"));
+      }
       return;
     }
     toast.success(t("auth.welcome"));

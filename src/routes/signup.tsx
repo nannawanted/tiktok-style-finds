@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { createCreatorProfile } from "@/lib/create-creator-profile";
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
@@ -60,18 +61,23 @@ function SignupPage() {
       return;
     }
 
-    // Insert creator row (RLS allows: auth.uid() = id)
-    const { error: e2 } = await supabase.from("creators").insert({
-      id: data.user.id,
-      username: clean,
-    });
-    if (e2) {
+    const profileResult = await createCreatorProfile({ data: { userId: data.user.id, username: clean } });
+    if (!profileResult.ok) {
       setLoading(false);
-      toast.error(t("auth.profileFailed") + " " + e2.message);
+      toast.error(t("auth.profileFailed") + " " + profileResult.error);
       return;
     }
 
     setLoading(false);
+
+    // Si la confirmation d'email est activée côté Supabase, aucune session
+    // n'est retournée tant que le lien reçu par email n'a pas été cliqué.
+    if (!data.session) {
+      toast.success(t("auth.checkYourEmail"));
+      navigate({ to: "/login" });
+      return;
+    }
+
     toast.success(t("auth.accountCreated"));
     navigate({ to: "/dashboard" });
   }
