@@ -59,6 +59,7 @@ const dict = {
     signupLink: { fr: "Inscris-toi", en: "Sign up" },
     invalidCreds: { fr: "Identifiants invalides", en: "Invalid credentials" },
     emailNotConfirmed: { fr: "Confirme ton email avant de te connecter — vérifie ta boîte mail.", en: "Confirm your email before signing in — check your inbox." },
+    captchaRequired: { fr: "Merci de valider la vérification anti-robot ci-dessus.", en: "Please complete the anti-bot check above." },
     welcome: { fr: "Bienvenue !", en: "Welcome!" },
     signupTitle: { fr: "Inscription", en: "Sign up" },
     signupSubtitle: { fr: "Crée ton compte créateur Wanted Fashion.", en: "Create your Wanted Fashion creator account." },

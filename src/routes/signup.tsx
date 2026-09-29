@@ -9,6 +9,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createCreatorProfile } from "@/lib/create-creator-profile";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
@@ -22,6 +23,7 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -34,6 +36,10 @@ function SignupPage() {
     const clean = username.trim().toLowerCase().replace(/^@/, "");
     if (!/^[a-z0-9_.]{3,30}$/.test(clean)) {
       toast.error(t("auth.invalidUsername"));
+      return;
+    }
+    if (!captchaToken) {
+      toast.error(t("auth.captchaRequired"));
       return;
     }
     setLoading(true);
@@ -53,7 +59,7 @@ function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: window.location.origin, captchaToken },
     });
     if (error || !data.user) {
       setLoading(false);
@@ -100,6 +106,7 @@ function SignupPage() {
             <Label htmlFor="password">{t("auth.password")}</Label>
             <PasswordInput id="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
+          <TurnstileWidget onToken={setCaptchaToken} />
           <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
             {loading ? t("auth.creating") : t("auth.createAccount")}
           </Button>
