@@ -46,7 +46,7 @@ function SignupPage() {
 
     // Check username uniqueness
     const { data: existing } = await supabase
-      .from("creators")
+      .from("creators_public")
       .select("id")
       .eq("username", clean)
       .maybeSingle();

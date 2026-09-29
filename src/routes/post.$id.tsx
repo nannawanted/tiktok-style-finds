@@ -192,7 +192,7 @@ function PostPage() {
       if (e2) throw e2;
 
       const { data: creator } = await supabase
-        .from("creators")
+        .from("creators_public")
         .select("username, profile_image")
         .eq("username", post.creator_username)
         .maybeSingle();

@@ -406,7 +406,7 @@ function Feed() {
     queryKey: ["top-creators"],
     queryFn: async () => {
       const { data: creators, error } = await supabase
-        .from("creators")
+        .from("creators_public")
         .select("username, profile_image")
         .limit(20);
       if (error) throw error;

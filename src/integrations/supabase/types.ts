@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -69,6 +71,7 @@ export type Database = {
           creator_username: string
           id?: string
           ip_address?: string | null
+          is_self_click?: boolean
           post_id?: string | null
           product_id?: string | null
           user_agent?: string | null
@@ -79,6 +82,7 @@ export type Database = {
           creator_username?: string
           id?: string
           ip_address?: string | null
+          is_self_click?: boolean
           post_id?: string | null
           product_id?: string | null
           user_agent?: string | null
@@ -127,6 +131,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_admin?: boolean
+          last_known_ip?: string | null
           profile_image?: string | null
           username?: string
         }
@@ -171,6 +176,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       products: {
@@ -212,7 +224,21 @@ export type Database = {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_signal_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands_public"
             referencedColumns: ["id"]
           },
           {
@@ -254,6 +280,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          brand_id?: string | null
           click_id?: string | null
           commission_amount?: number
           creator_share?: number | null
@@ -267,6 +294,27 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_signal_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "sales_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands_public"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_click_id_fkey"
             columns: ["click_id"]
@@ -285,19 +333,72 @@ export type Database = {
       }
     }
     Views: {
+      brand_signal_stats: {
+        Row: {
+          brand_id: string | null
+          last_sale_at: string | null
+          total_clicks: number | null
+          total_sales: number | null
+        }
+        Relationships: []
+      }
       brands_public: {
         Row: {
-          id: string
-          name: string
-          website_url: string
-          commission_rate: number
-          status: string
-          currency: string
+          commission_rate: number | null
+          currency: string | null
+          id: string | null
+          name: string | null
+          status: string | null
+          website_url: string | null
         }
+        Insert: {
+          commission_rate?: number | null
+          currency?: string | null
+          id?: string | null
+          name?: string | null
+          status?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          currency?: string | null
+          id?: string | null
+          name?: string | null
+          status?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      creators_public: {
+        Row: {
+          banner_image: string | null
+          bio: string | null
+          created_at: string | null
+          id: string | null
+          profile_image: string | null
+          username: string | null
+        }
+        Insert: {
+          banner_image?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          profile_image?: string | null
+          username?: string | null
+        }
+        Update: {
+          banner_image?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          profile_image?: string | null
+          username?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
-      [_ in never]: never
+      increment_post_views: { Args: { p_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

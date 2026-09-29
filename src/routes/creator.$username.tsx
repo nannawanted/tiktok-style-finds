@@ -51,7 +51,7 @@ function CreatorPage() {
     queryKey: ["creator", username],
     queryFn: async () => {
       const { data: creator, error: e1 } = await supabase
-        .from("creators")
+        .from("creators_public")
         .select("*")
         .eq("username", username)
         .maybeSingle();
