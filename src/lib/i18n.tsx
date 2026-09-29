@@ -186,6 +186,7 @@ const dict = {
     statusPaid: { fr: "Payée", en: "Paid" },
     statusRefunded: { fr: "Remboursée", en: "Refunded" },
     reference: { fr: "Réf.", en: "Ref." },
+    selfClickWarning: { fr: "Clic suspecté du créateur lui-même", en: "Click suspected to be from the creator themselves" },
     periodWeek: { fr: "Semaine", en: "Week" },
     periodMonth: { fr: "Mois", en: "Month" },
     periodYear: { fr: "Année", en: "Year" },

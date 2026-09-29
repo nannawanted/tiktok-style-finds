@@ -58,6 +58,7 @@ export type Database = {
           creator_username: string
           id: string
           ip_address: string | null
+          is_self_click: boolean
           post_id: string | null
           product_id: string | null
           user_agent: string | null
@@ -106,6 +107,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_admin: boolean
+          last_known_ip: string | null
           profile_image: string | null
           username: string
         }
@@ -115,6 +117,7 @@ export type Database = {
           created_at?: string | null
           id: string
           is_admin?: boolean
+          last_known_ip?: string | null
           profile_image?: string | null
           username: string
         }

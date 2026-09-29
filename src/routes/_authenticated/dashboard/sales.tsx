@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -17,6 +17,7 @@ type SaleRow = {
   order_reference: string | null;
   detected_at: string;
   products: { name: string; brand: string | null } | null;
+  clicks: { is_self_click: boolean } | null;
 };
 
 type Period = "week" | "month" | "year";
@@ -85,7 +86,7 @@ function SalesPage() {
     setLoading(true);
     supabase
       .from("sales")
-      .select("id, order_amount, commission_amount, creator_share, currency, status, order_reference, detected_at, products(name, brand)")
+      .select("id, order_amount, commission_amount, creator_share, currency, status, order_reference, detected_at, products(name, brand), clicks(is_self_click)")
       .order("detected_at", { ascending: false })
       .then(({ data }) => {
         setSales((data as unknown as SaleRow[]) ?? []);
@@ -263,6 +264,11 @@ function SalesPage() {
                   {sale.products?.brand ?? "—"} · {new Date(sale.detected_at).toLocaleDateString()}
                   {sale.order_reference ? ` · ${t("sales.reference")} ${sale.order_reference}` : ""}
                 </p>
+                {sale.clicks?.is_self_click && (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-destructive">
+                    <AlertTriangle className="size-3.5" /> {t("sales.selfClickWarning")}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-3 text-right">
                 <div>

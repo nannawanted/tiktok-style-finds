@@ -36,21 +36,35 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
 
     const { data: post } = await supabaseAdmin
       .from("posts")
-      .select("creator_username")
+      .select("creator_username, creator_id")
       .eq("id", product.post_id)
       .maybeSingle();
 
     const existingCookie = getCookie(COOKIE_NAME);
     const cookieId = existingCookie || crypto.randomUUID();
     const request = getRequest();
+    const clickIp = request?.headers.get("x-forwarded-for") ?? null;
+
+    // Détection d'auto-clic : le créateur qui clique sur son propre lien
+    // depuis la même IP que celle vue récemment sur son dashboard.
+    let isSelfClick = false;
+    if (post?.creator_id && clickIp) {
+      const { data: creator } = await supabaseAdmin
+        .from("creators")
+        .select("last_known_ip")
+        .eq("id", post.creator_id)
+        .maybeSingle();
+      isSelfClick = !!creator?.last_known_ip && creator.last_known_ip === clickIp;
+    }
 
     await supabaseAdmin.from("clicks").insert({
       post_id: product.post_id,
       product_id: product.id,
       creator_username: post?.creator_username ?? "inconnu",
       cookie_id: cookieId,
-      ip_address: request?.headers.get("x-forwarded-for") ?? null,
+      ip_address: clickIp,
       user_agent: request?.headers.get("user-agent") ?? null,
+      is_self_click: isSelfClick,
     });
 
     setCookie(COOKIE_NAME, cookieId, {

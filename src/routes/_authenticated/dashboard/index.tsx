@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
+import { recordCreatorIp } from "@/lib/record-creator-ip";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -21,6 +23,10 @@ function Dashboard() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (user?.id) recordCreatorIp({ data: { creatorId: user.id } });
+  }, [user?.id]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-posts", user?.id],
