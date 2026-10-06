@@ -19,6 +19,7 @@ import {
   ArrowUpRight,
   Tag,
   ExternalLink,
+  Flag,
 } from "lucide-react";
 
 export const Route = createFileRoute("/post/$id")({
@@ -260,6 +261,17 @@ function PostPage() {
                 products.map((p) => <ProductRow key={p.id} product={p} />)
               )}
             </div>
+
+            {products.length > 0 && (
+              <p className="text-xs text-muted-foreground">{t("postPage.affiliateNotice")}</p>
+            )}
+
+            <a
+              href={`mailto:nannawanted@gmail.com?subject=${encodeURIComponent(`${t("postPage.reportSubject")} ${id}`)}&body=${encodeURIComponent(t("postPage.reportBody"))}`}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary hover:underline"
+            >
+              <Flag className="w-3 h-3" /> {t("postPage.report")}
+            </a>
 
             <div className="p-5 rounded-2xl bg-muted flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">

@@ -126,6 +126,10 @@ const dict = {
     seeFeed: { fr: "Voir le feed", en: "See the feed" },
     seeProfile: { fr: "Voir le profil", en: "See profile" },
     partnershipCta: { fr: "Envie d'un partenariat ? Contacte-nous :", en: "Want to partner with us? Contact us:" },
+    affiliateNotice: { fr: "Liens affiliés : WantedFashion et le créateur peuvent percevoir une commission si tu achètes via ces liens, sans surcoût pour toi.", en: "Affiliate links: WantedFashion and the creator may earn a commission if you buy through these links, at no extra cost to you." },
+    report: { fr: "Signaler ce contenu", en: "Report this content" },
+    reportSubject: { fr: "Signalement du post", en: "Report of post" },
+    reportBody: { fr: "Bonjour, je souhaite signaler ce contenu. Motif :", en: "Hello, I would like to report this content. Reason:" },
   },
   dashboard: {
     myPosts: { fr: "Mes posts", en: "My posts" },
