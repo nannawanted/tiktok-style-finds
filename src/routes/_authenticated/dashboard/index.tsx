@@ -25,7 +25,11 @@ function Dashboard() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (user?.id) recordCreatorIp({ data: { creatorId: user.id } });
+    if (!user?.id) return;
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      const accessToken = sessionData.session?.access_token;
+      if (accessToken) recordCreatorIp({ data: { accessToken } });
+    });
   }, [user?.id]);
 
   const { data, isLoading } = useQuery({
@@ -51,6 +55,7 @@ function Dashboard() {
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
+        if (!row.post_id) continue;
         counts[row.post_id] = (counts[row.post_id] ?? 0) + 1;
       }
       return counts;

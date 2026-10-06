@@ -410,7 +410,11 @@ function Feed() {
         .select("username, profile_image")
         .limit(20);
       if (error) throw error;
-      return creators ?? [];
+      // Les colonnes d'une vue sont typées nullables ; username ne l'est jamais
+      // en réalité (colonne obligatoire de la table d'origine).
+      return (creators ?? []).flatMap((c) =>
+        c.username ? [{ username: c.username, profile_image: c.profile_image }] : [],
+      );
     },
   });
 

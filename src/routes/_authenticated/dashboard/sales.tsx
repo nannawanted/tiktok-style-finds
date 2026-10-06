@@ -76,6 +76,7 @@ function SalesPage() {
     amount_over_cap: t("sales.flagAmountOverCap"),
     first_sale_for_pair: t("sales.flagFirstSaleForPair"),
     high_conversion_rate: t("sales.flagHighConversionRate"),
+    self_click: t("sales.flagSelfClick"),
   };
 
   useEffect(() => {

@@ -75,6 +75,8 @@ const dict = {
     profileFailed: { fr: "Compte créé mais profil échoué :", en: "Account created but profile failed:" },
     accountCreated: { fr: "Compte créé !", en: "Account created!" },
     checkYourEmail: { fr: "Vérifie ta boîte mail pour confirmer ton compte avant de te connecter.", en: "Check your inbox to confirm your account before signing in." },
+    passwordHint: { fr: "8 caractères minimum.", en: "At least 8 characters." },
+    usernameReserved: { fr: "Ce username n'est pas disponible", en: "This username is not available" },
   },
   creatorPage: {
     home: { fr: "Accueil", en: "Home" },
@@ -216,6 +218,7 @@ const dict = {
     flagAmountOverCap: { fr: "Montant au-dessus du plafond de sécurité", en: "Amount above the safety cap" },
     flagFirstSaleForPair: { fr: "Première vente de ce créateur pour cette marque", en: "First sale from this creator for this brand" },
     flagHighConversionRate: { fr: "Taux de conversion anormalement élevé", en: "Abnormally high conversion rate" },
+    flagSelfClick: { fr: "Clic depuis l'IP du créateur (auto-clic probable)", en: "Click from the creator's own IP (likely self-click)" },
     periodWeek: { fr: "Semaine", en: "Week" },
     periodMonth: { fr: "Mois", en: "Month" },
     periodYear: { fr: "Année", en: "Year" },

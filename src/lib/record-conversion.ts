@@ -17,6 +17,7 @@ type RecordConversionResult =
   | { ok: false; reason: "invalid_brand" | "no_click" | "invalid_amount" | "duplicate_order" };
 
 const COOKIE_NAME = "wf_aff";
+const ATTRIBUTION_WINDOW_DAYS = 30;
 
 export const recordConversion = createServerFn({ method: "POST" })
   .inputValidator((data: RecordConversionInput) => data)
@@ -41,17 +42,25 @@ export const recordConversion = createServerFn({ method: "POST" })
     const cookieId = data.click_ref || getCookie(COOKIE_NAME);
     if (!cookieId) return { ok: false, reason: "no_click" };
 
-    // Dernier clic de ce visiteur sur un produit de cette marque
+    // Dernier clic de ce visiteur sur un produit de cette marque, dans la
+    // fenêtre d'attribution (30 jours, comme la durée du cookie). Sans cette
+    // limite, un appel serveur-à-serveur pourrait rattacher une vente à un clic
+    // vieux de plusieurs mois ou années.
+    const attributionWindowStart = new Date(
+      Date.now() - ATTRIBUTION_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
     const { data: click } = await supabaseAdmin
       .from("clicks")
-      .select("id, product_id, products!inner(brand_id, posts!inner(creator_id))")
+      .select("id, product_id, is_self_click, products!inner(brand_id, posts!inner(creator_id))")
       .eq("cookie_id", cookieId)
       .eq("products.brand_id", brand.id)
+      .gte("clicked_at", attributionWindowStart)
       .order("clicked_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!click) return { ok: false, reason: "no_click" };
+    if (!click || !click.product_id) return { ok: false, reason: "no_click" };
 
     const creatorId = (click.products as any)?.posts?.creator_id as string | undefined;
 
@@ -63,7 +72,7 @@ export const recordConversion = createServerFn({ method: "POST" })
     // Le pixel est visible dans le code source de la page de confirmation de la
     // marque : quelqu'un pourrait en théorie rejouer/forger un appel avec ce
     // brand_id + secret. Confirmation automatique par défaut (pas de
-    // vérification manuelle systématique), sauf dans 3 cas précis inspirés des
+    // vérification manuelle systématique), sauf dans 4 cas précis inspirés des
     // pratiques standards du secteur (Awin, AffiliateWP) :
     let status: "confirmed" | "pending" = "confirmed";
     let flagReason: string | null = null;
@@ -74,21 +83,33 @@ export const recordConversion = createServerFn({ method: "POST" })
       flagReason = "amount_over_cap";
     }
 
-    // 2) Première vente jamais déclarée pour ce duo créateur × marque —
+    // 2) Clic enregistré depuis la même IP que celle du créateur sur son
+    //    dashboard (auto-clic probable) : jamais confirmé automatiquement.
+    if (status === "confirmed" && click.is_self_click) {
+      status = "pending";
+      flagReason = "self_click";
+    }
+
+    // 3) Tant qu'aucune vente de ce duo créateur × marque n'a été VALIDÉE
+    //    (confirmée ou payée), toute nouvelle vente reste à vérifier —
     //    pratique standard ("les premiers paiements sont toujours vérifiés").
+    //    On ne compte volontairement pas les ventes encore en attente : sinon
+    //    une 1ère vente suspecte en attente suffirait à faire confirmer
+    //    automatiquement la 2ème sans qu'aucune vérification n'ait eu lieu.
     if (status === "confirmed" && creatorId) {
-      const { count: priorSalesCount } = await supabaseAdmin
+      const { count: validatedSalesCount } = await supabaseAdmin
         .from("sales")
         .select("id, products!inner(post_id, posts!inner(creator_id))", { count: "exact", head: true })
         .eq("brand_id", brand.id)
+        .in("status", ["confirmed", "paid"])
         .eq("products.posts.creator_id", creatorId);
-      if (!priorSalesCount || priorSalesCount === 0) {
+      if (!validatedSalesCount || validatedSalesCount === 0) {
         status = "pending";
         flagReason = "first_sale_for_pair";
       }
     }
 
-    // 3) Taux de conversion anormalement élevé pour ce créateur sur cette
+    // 4) Taux de conversion anormalement élevé pour ce créateur sur cette
     //    marque (clics → ventes). Seuil absolu (pas relatif) car le volume
     //    est encore faible au démarrage : un taux de conversion e-commerce
     //    normal tourne autour de 1-5% ; au-delà de 40%, c'est suspect.

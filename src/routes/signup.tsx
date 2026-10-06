@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createCreatorProfile } from "@/lib/create-creator-profile";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
@@ -34,8 +35,12 @@ function SignupPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const clean = username.trim().toLowerCase().replace(/^@/, "");
-    if (!/^[a-z0-9_.]{3,30}$/.test(clean)) {
+    if (!USERNAME_PATTERN.test(clean)) {
       toast.error(t("auth.invalidUsername"));
+      return;
+    }
+    if (isReservedUsername(clean)) {
+      toast.error(t("auth.usernameReserved"));
       return;
     }
     if (!captchaToken) {
@@ -59,7 +64,10 @@ function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin, captchaToken },
+      // Le username est enregistré dans les métadonnées du compte : c'est le
+      // serveur qui le relit pour créer le profil (jamais une valeur envoyée
+      // directement par le navigateur à la création du profil).
+      options: { emailRedirectTo: window.location.origin, captchaToken, data: { username: clean } },
     });
     if (error || !data.user) {
       setLoading(false);
@@ -67,7 +75,7 @@ function SignupPage() {
       return;
     }
 
-    const profileResult = await createCreatorProfile({ data: { userId: data.user.id, username: clean } });
+    const profileResult = await createCreatorProfile({ data: { userId: data.user.id } });
     if (!profileResult.ok) {
       setLoading(false);
       toast.error(t("auth.profileFailed") + " " + profileResult.error);
@@ -104,7 +112,8 @@ function SignupPage() {
           </div>
           <div>
             <Label htmlFor="password">{t("auth.password")}</Label>
-            <PasswordInput id="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <p className="mt-1 text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
           </div>
           <TurnstileWidget onToken={setCaptchaToken} />
           <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">

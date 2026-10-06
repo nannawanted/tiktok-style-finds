@@ -50,13 +50,17 @@ function CreatorPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["creator", username],
     queryFn: async () => {
-      const { data: creator, error: e1 } = await supabase
+      const { data: row, error: e1 } = await supabase
         .from("creators_public")
         .select("*")
         .eq("username", username)
         .maybeSingle();
       if (e1) throw e1;
-      if (!creator) throw notFound();
+      if (!row || !row.id || !row.username) throw notFound();
+      // Une vue déclare toutes ses colonnes comme nullables dans les types
+      // générés ; id et username ne le sont jamais en réalité (clé et colonne
+      // obligatoire de la table d'origine).
+      const creator = { ...row, id: row.id, username: row.username };
 
       const { data: posts, error: e2 } = await supabase
         .from("posts")
