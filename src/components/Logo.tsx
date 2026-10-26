@@ -1,9 +1,11 @@
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <img
-      src="/logo.png"
+      src="/logo-sm.png"
       alt="WantedFashion"
-      className={`h-16 w-auto object-contain ${className}`}
+      width={360}
+      height={265}
+      className={`h-14 w-auto object-contain ${className}`}
     />
   );
 }

@@ -1,453 +1,186 @@
-import { useEffect, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { ArrowRight, Play } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import {
-  Play,
-  ShoppingBag,
-  Tag,
-  Video,
-  ArrowRight,
-  Sparkles,
-  TrendingUp,
-  Users,
-  Crown,
-  Heart,
-} from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { useFollowedIds } from "@/lib/social";
+import { fetchCreators, fetchOutfits, type OutfitCard } from "@/lib/public-data";
+import { isStyleKey, type StyleKey } from "@/lib/styles";
+import { DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/site";
+import { OutfitGrid, OutfitGridSkeleton } from "@/components/vitrine/OutfitCard";
+import { CreatorRow } from "@/components/vitrine/CreatorCard";
+import { StyleChips } from "@/components/vitrine/StyleChips";
+import { EmptyBox } from "@/components/vitrine/EmptyBox";
+
+type Tab = "trending" | "latest" | "following";
+type Search = { style?: StyleKey; tab?: Tab };
 
 export const Route = createFileRoute("/")({
-  ssr: false,
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    style: isStyleKey(s.style) ? s.style : undefined,
+    tab: s.tab === "latest" || s.tab === "following" ? s.tab : undefined,
+  }),
+  loaderDeps: ({ search }) => ({ style: search.style ?? null, tab: search.tab ?? "trending" }),
+  loader: async ({ deps }) => {
+    const [outfits, creators] = await Promise.all([
+      deps.tab === "following" ? Promise.resolve([] as OutfitCard[]) : fetchOutfits({ style: deps.style, sort: deps.tab === "latest" ? "latest" : "trending", limit: 30 }),
+      fetchCreators({ style: deps.style, limit: 10 }),
+    ]);
+    return { outfits, creators };
+  },
   head: () => ({
     meta: [
-      { title: "Wanted Fashion — Feed" },
-      { name: "description", content: "Découvre les outfits shoppables des créateurs francophones." },
-      { property: "og:title", content: "Wanted Fashion" },
-      { property: "og:description", content: "Découvre les outfits shoppables." },
-      { property: "og:url", content: "/" },
+      { title: "WantedFashion — Le look de tes créateurs, pièce par pièce" },
+      { name: "description", content: "Retrouve chaque tenue de tes créateurs TikTok et Instagram préférés, avec le lien de chaque vêtement. Streetwear, clean girl, old money…" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: DEFAULT_OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: SITE_URL }],
   }),
-  component: Feed,
+  component: Home,
 });
 
-// Reproduit l'animation au scroll du design Base44, sans dépendance supplémentaire
-function AnimatedElement({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight) {
-      setIsVisible(true);
-      return;
-    }
-    const fallback = setTimeout(() => setIsVisible(true), 800 + delay);
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          clearTimeout(fallback);
-          setTimeout(() => setIsVisible(true), delay);
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.05, rootMargin: "0px 0px 200px 0px" }
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      clearTimeout(fallback);
-    };
-  }, [delay]);
-
+function HeroCollage({ outfits }: { outfits: OutfitCard[] }) {
+  const { t } = useTranslation();
+  const covers = outfits.filter((o) => o.cover_image).slice(0, 3);
+  const tones = ["#BFA587", "#6B5240", "#CDB496"];
+  const slots = [0, 1, 2].map((i) => covers[i] ?? null);
   return (
-    <div
-      ref={ref}
-      className={`transition-all duration-1000 ease-out ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-      } ${className ?? ""}`}
-    >
-      {children}
+    <div className="relative mx-auto flex h-[300px] w-full max-w-md items-end justify-center gap-3 sm:h-[360px]" aria-hidden="true">
+      {slots.map((o, i) => {
+        const mid = i === 1;
+        return (
+          <div
+            key={i}
+            className={`fade-up relative overflow-hidden rounded-[22px] shadow-xl ${
+              mid ? "z-10 h-[280px] w-[44%] sm:h-[340px]" : `h-[220px] w-[30%] sm:h-[260px] ${i === 0 ? "-rotate-6" : "rotate-6"}`
+            }`}
+            style={{ animationDelay: `${150 + i * 120}ms`, background: tones[i] }}
+          >
+            {o?.cover_image && <img src={o.cover_image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />}
+            {mid && (
+              <>
+                <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
+                  <Play className="h-3 w-3 fill-current" /> {t("card.video")}
+                </span>
+                {o && o.pieceCount > 0 && (
+                  <span className="absolute inset-x-3 bottom-3 rounded-xl bg-surface/95 px-3 py-2 text-left text-xs font-bold text-foreground">
+                    {o.pieceCount} {o.pieceCount > 1 ? t("card.pieces") : t("card.piece")}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function formatCount(n: number | null | undefined) {
-  if (!n) return "0";
-  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
-  return `${n}`;
-}
-
-function platformButtonClass(url: string | null) {
-  if (!url) return "bg-foreground text-background";
-  if (url.includes("tiktok")) return "bg-foreground text-background";
-  if (url.includes("instagram")) return "bg-gradient-to-tr from-accent via-primary to-secondary text-primary-foreground";
-  if (url.includes("youtube")) return "bg-destructive text-destructive-foreground";
-  return "bg-foreground text-background";
-}
-
-function HeroSection() {
+function Home() {
   const { t } = useTranslation();
-  return (
-    <section className="relative w-full bg-gradient-to-b from-secondary to-foreground pt-24 pb-32 sm:pt-32 sm:pb-40 rounded-b-[2.5rem] shadow-2xl overflow-hidden">
-      <div
-        className="absolute -top-32 -left-20 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none"
-        style={{ animation: "floatA 10s ease-in-out infinite" }}
-      />
-      <div
-        className="absolute -bottom-40 -right-20 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[140px] pointer-events-none"
-        style={{ animation: "floatB 12s ease-in-out 2s infinite" }}
-      />
+  const { user } = useAuth();
+  const navigate = useNavigate({ from: "/" });
+  const { style, tab = "trending" } = Route.useSearch();
+  const { outfits, creators } = Route.useLoaderData();
+  const { data: followedIds } = useFollowedIds();
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/10 backdrop-blur-md border border-background/20 text-sm font-medium mb-8">
-            <Sparkles className="w-4 h-4 text-primary-foreground" />
-            <span className="text-background">{t("hero.badge")}</span>
-          </div>
+  const followingFeed = useQuery({
+    queryKey: ["following-feed", user?.id, style ?? null, [...(followedIds ?? [])].join(",")],
+    enabled: tab === "following" && !!user && !!followedIds,
+    queryFn: () => fetchOutfits({ style, sort: "latest", limit: 40, creatorIds: [...(followedIds ?? [])] }),
+  });
 
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] text-background max-w-4xl">
-            {t("hero.titlePart1")}{" "}
-            <span className="bg-gradient-to-r from-primary-foreground via-accent to-primary-foreground bg-clip-text text-transparent">
-              {t("hero.titlePart2")} {t("hero.titlePart3")}
-            </span>
-          </h1>
+  const setSearch = (next: Partial<Search>) =>
+    navigate({ search: (prev) => ({ ...prev, ...next }), resetScroll: false, replace: true });
 
-          <p className="mt-8 text-lg sm:text-xl text-background/80 max-w-2xl mx-auto font-medium">
-            {t("hero.steps")}
-          </p>
-
-          <div className="mt-12 flex flex-col sm:flex-row items-center gap-5 justify-center w-full">
-            <a href="#feed" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 h-14 text-lg font-bold hover:-translate-y-1 transition-all duration-300 group"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  {t("hero.ctaExplore")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Button>
-            </a>
-            <Link to="/signup" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto rounded-full px-10 h-14 text-lg font-bold border-background/30 text-foreground bg-background/5 backdrop-blur-sm hover:bg-background/15 hover:text-background hover:border-background/50 transition-all duration-300"
-              >
-                {t("hero.ctaCreator")}
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function HowItWorksSection() {
-  const { t } = useTranslation();
-  const steps = [
-    { icon: Video, title: t("howItWorks.step1Title"), description: t("howItWorks.step1Desc") },
-    { icon: Tag, title: t("howItWorks.step2Title"), description: t("howItWorks.step2Desc") },
-    { icon: ShoppingBag, title: t("howItWorks.step3Title"), description: t("howItWorks.step3Desc") },
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "trending", label: t("home2.trending") },
+    { key: "latest", label: t("home2.latest") },
+    { key: "following", label: t("home2.following") },
   ];
 
-  return (
-    <section className="relative w-full bg-background pt-20 pb-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <AnimatedElement className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">{t("howItWorks.title")}</h2>
-          <p className="text-lg text-foreground/60 mt-3 font-medium">{t("howItWorks.subtitle")}</p>
-        </AnimatedElement>
+  const shown = tab === "following" ? (followingFeed.data ?? []) : outfits;
 
-        <div className="grid grid-cols-3 gap-3 sm:gap-8 relative">
-          {steps.map((step, i) => (
-            <AnimatedElement key={step.title} delay={i * 150}>
-              <div className="relative group bg-card hover:bg-card/80 border border-border/50 rounded-2xl sm:rounded-[2rem] px-2 py-4 sm:p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/5 hover:-translate-y-2 h-full flex flex-col items-center text-center">
-                <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3 sm:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner">
-                  <step.icon className="w-6 h-6 sm:w-10 sm:h-10 text-primary" />
-                </div>
-                <h3 className="text-sm sm:text-xl font-bold text-card-foreground mb-1 sm:mb-3">{step.title}</h3>
-                <p className="text-[11px] sm:text-base text-card-foreground/70 leading-snug sm:leading-relaxed font-normal tracking-tight">{step.description}</p>
-              </div>
-            </AnimatedElement>
-          ))}
+  return (
+    <main>
+      <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-6 pt-8 md:grid-cols-2 md:px-6 md:pb-10 md:pt-14">
+        <div className="fade-up">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-primary">{t("home2.eyebrow")}</p>
+          <h1 className="font-display mt-3 text-[40px] font-bold leading-[1.02] text-foreground sm:text-6xl">{t("home2.title")}</h1>
+          <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-foreground/75">{t("home2.subtitle")}</p>
         </div>
-      </div>
-    </section>
-  );
-}
+        <HeroCollage outfits={outfits} />
+      </section>
 
-function PopularCreatorsSection({
-  creators,
-}: {
-  creators: { username: string; profile_image: string | null }[];
-}) {
-  const { t } = useTranslation();
-  return (
-    <section id="creators" className="relative w-full bg-background pt-16 pb-4 overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6">
-        <AnimatedElement className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-primary" />
-            </span>
-            <h2 className="text-3xl font-black text-foreground tracking-tight">{t("popularCreators.title")}</h2>
-          </div>
-          <a href="#feed" className="text-sm font-bold text-primary hover:text-primary/80 flex items-center gap-1 group">
-            {t("popularCreators.seeAll")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </a>
-        </AnimatedElement>
+      <section id="tenues" className="mx-auto max-w-7xl scroll-mt-28 px-4 md:px-6">
+        <div className="sticky top-[118px] z-30 -mx-4 bg-background/90 px-4 py-3 backdrop-blur-md md:top-[72px] md:-mx-6 md:px-6">
+          <StyleChips value={style ?? null} onChange={(s) => setSearch({ style: s ?? undefined })} />
+        </div>
 
-        <AnimatedElement delay={200}>
-          <div className="flex flex-nowrap gap-8 overflow-x-auto pb-2 pt-4 px-4 -mx-4 hide-scrollbar">
-            {creators.map((creator, index) => (
-              <Link
-                key={creator.username}
-                to="/creator/$username"
-                params={{ username: creator.username }}
-                className="flex flex-col items-center gap-4 text-center shrink-0 group"
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-display text-3xl font-bold">{t("home2.outfitsTitle")}</h2>
+          <div className="flex gap-1.5 rounded-full bg-surface p-1" role="tablist">
+            {tabs.map((tb) => (
+              <button
+                key={tb.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === tb.key}
+                onClick={() => setSearch({ tab: tb.key === "trending" ? undefined : tb.key })}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  tab === tb.key ? "bg-ink text-surface" : "text-foreground/75 hover:text-foreground"
+                }`}
               >
-                <div className="relative">
-                  {index === 0 && (
-                    <div className="absolute -top-3 -right-2 z-10 w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/40">
-                      <Crown className="w-4 h-4 text-accent-foreground" />
-                    </div>
-                  )}
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-accent via-primary to-secondary group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-xl shadow-foreground/10">
-                    <div className="w-full h-full rounded-full border-[3px] border-background overflow-hidden bg-muted">
-                      {creator.profile_image ? (
-                        <img
-                          src={creator.profile_image}
-                          alt={creator.username}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-lg font-black text-muted-foreground">
-                          {creator.username[0]?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <span className="text-base font-bold text-foreground block group-hover:text-primary transition-colors">
-                  @{creator.username}
-                </span>
-              </Link>
+                {tb.label}
+              </button>
             ))}
           </div>
-        </AnimatedElement>
-      </div>
-    </section>
-  );
-}
-
-function FeedSection({
-  posts,
-  isLoading,
-}: {
-  posts: {
-    id: string;
-    title: string;
-    cover_image: string | null;
-    creator_username: string;
-    tiktok_url: string | null;
-    products: { id: string }[];
-  }[];
-  isLoading: boolean;
-}) {
-  const { t } = useTranslation();
-  return (
-    <section id="feed" className="relative w-full bg-background py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <AnimatedElement className="mb-14">
-          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">{t("feed.title")}</h2>
-          <p className="text-lg text-foreground/60 mt-3 font-medium">{t("feed.subtitle")}</p>
-        </AnimatedElement>
-
-        {isLoading ? (
-          <div className="flex gap-4 overflow-x-hidden pb-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-[3/4] w-40 sm:w-52 shrink-0 rounded-2xl" />
-            ))}
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-            {t("feed.empty")}
-          </div>
-        ) : (
-          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-4 -mx-4 hide-scrollbar">
-            {posts.map((post, index) => (
-              <AnimatedElement key={post.id} delay={index * 40} className="shrink-0">
-                <Link
-                  to="/post/$id"
-                  params={{ id: post.id }}
-                  className="group flex flex-col w-40 sm:w-52 rounded-2xl overflow-hidden bg-card border border-border/40 shadow-sm hover:shadow-2xl hover:shadow-foreground/10 hover:-translate-y-2 transition-all duration-500"
-                >
-                  <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted">
-                    {post.cover_image && (
-                      <img
-                        src={post.cover_image}
-                        alt={post.title}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80" />
-                    {post.tiktok_url && (
-                      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                        <span
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-bold shadow-lg ${platformButtonClass(
-                            post.tiktok_url
-                          )} group-hover:scale-105 transition-transform duration-300`}
-                        >
-                          <Play className="w-3 h-3 fill-current" /> {t("feed.watchVideo")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-3 flex-1 flex flex-col justify-between bg-card">
-                    <h3 className="font-bold text-sm text-card-foreground leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-                      {post.title}
-                    </h3>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-                      <span className="text-xs font-bold text-card-foreground/80 flex items-center gap-1.5 truncate">
-                        <div className="w-4 h-4 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[8px]">
-                          @
-                        </div>
-                        <span className="truncate">{post.creator_username}</span>
-                      </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground flex items-center gap-1 shrink-0">
-                        <ShoppingBag className="w-2.5 h-2.5" />
-                        {post.products?.length ?? 0}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </AnimatedElement>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function CreatorCTASection() {
-  const { t } = useTranslation();
-  return (
-    <section className="relative w-full bg-secondary py-32 overflow-hidden rounded-t-[3rem] mt-12">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none -translate-x-1/2 translate-y-1/2" />
-
-      <AnimatedElement className="relative max-w-4xl mx-auto px-6 text-center z-10">
-        <div className="w-20 h-20 rounded-3xl bg-background shadow-xl shadow-foreground/5 flex items-center justify-center mx-auto mb-8 rotate-3 hover:rotate-6 hover:scale-110 transition-all duration-500">
-          <Users className="w-10 h-10 text-primary" />
         </div>
-        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-secondary-foreground tracking-tight leading-tight">
-          {t("creatorCta.title1")} <br className="hidden sm:block" />
-          <span className="text-background bg-foreground px-4 py-1 rounded-xl inline-block mt-2 rotate-[-1deg]">
-            {t("creatorCta.title2")}
-          </span>
-        </h2>
-        <p className="mt-8 text-xl text-secondary-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed">
-          {t("creatorCta.desc")}
-        </p>
-        <Link to="/signup" className="inline-block mx-auto">
-          <Button
-            size="lg"
-            className="relative overflow-hidden mt-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 sm:px-12 h-14 sm:h-16 text-base sm:text-xl font-black shadow-2xl shadow-primary/30 hover:-translate-y-2 hover:shadow-primary/50 transition-all duration-300 group"
+
+        <div className="mt-6">
+          {tab === "following" && !user ? (
+            <EmptyBox text={t("home2.loginToFollow")} action={{ to: "/login", label: t("nav2.login") }} />
+          ) : tab === "following" && followingFeed.isLoading ? (
+            <OutfitGridSkeleton />
+          ) : shown.length === 0 ? (
+            <EmptyBox text={tab === "following" ? t("home2.followingEmpty") : style ? t("home2.noResult") : t("home2.empty")} />
+          ) : (
+            <OutfitGrid outfits={shown} />
+          )}
+        </div>
+      </section>
+
+      {creators.length > 0 && (
+        <section className="mx-auto mt-14 max-w-7xl px-4 md:px-6">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-display text-3xl font-bold">{t("home2.creatorsTitle")}</h2>
+            <Link
+              to="/createurs"
+              search={{ style }}
+              className="group inline-flex items-center gap-1 text-sm font-bold text-primary"
+            >
+              {t("home2.seeAllCreators")} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+          <CreatorRow creators={creators} />
+        </section>
+      )}
+
+      <section className="mt-16 bg-secondary text-secondary-foreground">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-14 md:flex-row md:items-center md:justify-between md:px-6">
+          <div className="max-w-xl">
+            <h2 className="font-display text-4xl font-bold leading-tight">{t("home2.ctaTitle")}</h2>
+            <p className="mt-3 text-[17px] leading-relaxed opacity-90">{t("home2.ctaText")}</p>
+          </div>
+          <Link
+            to="/signup"
+            className="rounded-full bg-surface px-7 py-4 text-[17px] font-bold text-foreground shadow-lg transition-transform hover:-translate-y-1"
           >
-            <span className="relative z-10 flex items-center justify-center gap-3">
-              {t("creatorCta.cta")} <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-2 transition-transform shrink-0" />
-            </span>
-          </Button>
-        </Link>
-      </AnimatedElement>
-    </section>
-  );
-}
-
-function Feed() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["feed"],
-    queryFn: async () => {
-      const { data: posts, error } = await supabase
-        .from("posts")
-        .select("id, title, cover_image, creator_username, tiktok_url, created_at, products(id)")
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return posts ?? [];
-    },
-  });
-
-  const { data: topCreators } = useQuery({
-    queryKey: ["top-creators"],
-    queryFn: async () => {
-      const { data: creators, error } = await supabase
-        .from("creators_public")
-        .select("username, profile_image")
-        .limit(20);
-      if (error) throw error;
-      // Les colonnes d'une vue sont typées nullables ; username ne l'est jamais
-      // en réalité (colonne obligatoire de la table d'origine).
-      return (creators ?? []).flatMap((c) =>
-        c.username ? [{ username: c.username, profile_image: c.profile_image }] : [],
-      );
-    },
-  });
-
-  useEffect(() => {
-    if (isLoading) return;
-    const hash = window.location.hash;
-    if (!hash) return;
-    const id = hash.replace("#", "");
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [isLoading]);
-
-  return (
-    <main className="bg-background min-h-screen">
-      <style>{`
-        @keyframes floatA {
-          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-          50% { transform: translateY(-30px) rotate(5deg) scale(1.05); }
-        }
-        @keyframes floatB {
-          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-          50% { transform: translateY(-40px) rotate(-5deg) scale(1.1); }
-        }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
-      <HeroSection />
-      {topCreators && topCreators.length > 0 && <PopularCreatorsSection creators={topCreators} />}
-      <FeedSection posts={data ?? []} isLoading={isLoading} />
-      <HowItWorksSection />
-      <CreatorCTASection />
+            {t("home2.ctaButton")}
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

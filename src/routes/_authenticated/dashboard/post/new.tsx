@@ -35,6 +35,7 @@ function NewPost() {
       title: data.title,
       tiktok_url: data.tiktok_url || null,
       cover_image: data.cover_image || null,
+      styles: data.styles,
     }).select("id").single();
 
     if (error || !post) {

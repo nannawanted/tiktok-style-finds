@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { StylePicker } from "@/components/vitrine/StyleChips";
+import { MAX_STYLES, type StyleKey } from "@/lib/styles";
 import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +40,7 @@ export type PostFormData = {
   title: string;
   tiktok_url: string;
   cover_image: string;
+  styles: StyleKey[];
   products: ProductDraft[];
 };
 
@@ -55,7 +59,7 @@ export function PostForm({
 }) {
   const { t } = useTranslation();
   const [data, setData] = useState<PostFormData>(
-    initial ?? { title: "", tiktok_url: "", cover_image: "", products: [] },
+    initial ?? { title: "", tiktok_url: "", cover_image: "", styles: [], products: [] },
   );
   const [tiktokLoading, setTiktokLoading] = useState(false);
   const [tiktokNotice, setTiktokNotice] = useState<string | null>(null);
@@ -206,6 +210,16 @@ export function PostForm({
           <Label htmlFor="title">{t("postForm.titleLabel")}</Label>
           <Input id="title" required maxLength={120} value={data.title}
             onChange={(e) => setData({ ...data, title: e.target.value })} />
+        </div>
+        <div>
+          <Label>{t("creatorSettings.outfitStyles")}</Label>
+          <p className="mb-2 mt-1 text-xs text-muted-foreground">{t("creatorSettings.outfitStylesHint")}</p>
+          <StylePicker
+            value={data.styles}
+            max={MAX_STYLES}
+            onMax={() => toast(t("creatorSettings.maxStyles"))}
+            onChange={(styles) => setData((d) => ({ ...d, styles }))}
+          />
         </div>
         <div>
           <Label htmlFor="tt">{t("postForm.tiktokUrlLabel")}</Label>

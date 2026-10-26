@@ -18,6 +18,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { CookieConsent } from "../components/CookieConsent";
 import { Toaster } from "../components/ui/sonner";
+import { SITE_NAME, DEFAULT_OG_IMAGE } from "../lib/site";
 
 function NotFoundComponent() {
   return (
@@ -76,21 +77,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Wanted Fashion — Découvre les outfits de tes créateurs TikTok" },
-      { name: "description", content: "Wanted Fashion : la plateforme social commerce des créateurs TikTok francophones. Retrouve tous les produits de leurs vidéos." },
-      { property: "og:title", content: "Wanted Fashion — Découvre les outfits de tes créateurs TikTok" },
-      { property: "og:description", content: "Wanted Fashion : la plateforme social commerce des créateurs TikTok francophones. Retrouve tous les produits de leurs vidéos." },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#E3D0B5" },
+      { title: "WantedFashion — Le look de tes créateurs, pièce par pièce" },
+      { name: "description", content: "Retrouve chaque tenue de tes créateurs TikTok et Instagram préférés, avec le lien de chaque vêtement. Streetwear, clean girl, old money…" },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:locale", content: "fr_FR" },
       { property: "og:type", content: "website" },
+      { property: "og:title", content: "WantedFashion — Le look de tes créateurs, pièce par pièce" },
+      { property: "og:description", content: "Chaque tenue de tes créateurs préférés, avec le lien de chaque vêtement." },
+      { property: "og:image", content: DEFAULT_OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Wanted Fashion — Découvre les outfits de tes créateurs TikTok" },
-      { name: "twitter:description", content: "Wanted Fashion : la plateforme social commerce des créateurs TikTok francophones. Retrouve tous les produits de leurs vidéos." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/be633365-40c0-4c97-9905-5e3a49e33c25/id-preview-184fe330--cdabea03-1407-466c-9c67-c416af7712d8.lovable.app-1782756046805.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/be633365-40c0-4c97-9905-5e3a49e33c25/id-preview-184fe330--cdabea03-1407-466c-9c67-c416af7712d8.lovable.app-1782756046805.png" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
-    scripts: [
-      { src: "https://s.skimresources.com/js/305412X1793617.skimlinks.js", async: true },
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap",
+      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,

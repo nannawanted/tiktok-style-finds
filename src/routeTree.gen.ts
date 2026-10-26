@@ -9,20 +9,63 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as AtChar123usernameChar125RouteImport } from './routes/@{$username}'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ConditionsRouteImport } from './routes/conditions'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as CreateursRouteImport } from './routes/createurs'
+import { Route as ExplorerRouteImport } from './routes/explorer'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AuthenticatedEnregistresRouteImport } from './routes/_authenticated/enregistres'
+import { Route as ApiConversionRouteImport } from './routes/api.conversion'
 import { Route as CreatorUsernameRouteImport } from './routes/creator.$username'
+import { Route as GoProductIdRouteImport } from './routes/go.$productId'
+import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
+import { Route as AuthenticatedDashboardBrandsRouteImport } from './routes/_authenticated/dashboard/brands'
+import { Route as AuthenticatedDashboardEarningsRouteImport } from './routes/_authenticated/dashboard/earnings'
+import { Route as AuthenticatedDashboardSalesRouteImport } from './routes/_authenticated/dashboard/sales'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardPostNewRouteImport } from './routes/_authenticated/dashboard/post/new'
 import { Route as AuthenticatedDashboardPostIdEditRouteImport } from './routes/_authenticated/dashboard/post/$id.edit'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AtChar123usernameChar125Route =
+  AtChar123usernameChar125RouteImport.update({
+    id: '/@{$username}',
+    path: '/@{$username}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConditionsRoute = ConditionsRouteImport.update({
+  id: '/conditions',
+  path: '/conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateursRoute = CreateursRouteImport.update({
+  id: '/createurs',
+  path: '/createurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExplorerRoute = ExplorerRouteImport.update({
+  id: '/explorer',
+  path: '/explorer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -30,18 +73,30 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostIdRoute = PostIdRouteImport.update({
-  id: '/post/$id',
-  path: '/post/$id',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedEnregistresRoute =
+  AuthenticatedEnregistresRouteImport.update({
+    id: '/enregistres',
+    path: '/enregistres',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiConversionRoute = ApiConversionRouteImport.update({
+  id: '/api/conversion',
+  path: '/api/conversion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorUsernameRoute = CreatorUsernameRouteImport.update({
@@ -49,10 +104,38 @@ const CreatorUsernameRoute = CreatorUsernameRouteImport.update({
   path: '/creator/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoProductIdRoute = GoProductIdRouteImport.update({
+  id: '/go/$productId',
+  path: '/go/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostIdRoute = PostIdRouteImport.update({
+  id: '/post/$id',
+  path: '/post/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/dashboard/',
     path: '/dashboard/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardBrandsRoute =
+  AuthenticatedDashboardBrandsRouteImport.update({
+    id: '/dashboard/brands',
+    path: '/dashboard/brands',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardEarningsRoute =
+  AuthenticatedDashboardEarningsRouteImport.update({
+    id: '/dashboard/earnings',
+    path: '/dashboard/earnings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardSalesRoute =
+  AuthenticatedDashboardSalesRouteImport.update({
+    id: '/dashboard/sales',
+    path: '/dashboard/sales',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardSettingsRoute =
@@ -76,10 +159,23 @@ const AuthenticatedDashboardPostIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/@{$username}': typeof AtChar123usernameChar125Route
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/createurs': typeof CreateursRoute
+  '/explorer': typeof ExplorerRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/enregistres': typeof AuthenticatedEnregistresRoute
+  '/api/conversion': typeof ApiConversionRoute
   '/creator/$username': typeof CreatorUsernameRoute
+  '/go/$productId': typeof GoProductIdRoute
   '/post/$id': typeof PostIdRoute
+  '/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
+  '/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
+  '/dashboard/sales': typeof AuthenticatedDashboardSalesRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
@@ -87,10 +183,23 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/@{$username}': typeof AtChar123usernameChar125Route
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/createurs': typeof CreateursRoute
+  '/explorer': typeof ExplorerRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/enregistres': typeof AuthenticatedEnregistresRoute
+  '/api/conversion': typeof ApiConversionRoute
   '/creator/$username': typeof CreatorUsernameRoute
+  '/go/$productId': typeof GoProductIdRoute
   '/post/$id': typeof PostIdRoute
+  '/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
+  '/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
+  '/dashboard/sales': typeof AuthenticatedDashboardSalesRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
@@ -100,10 +209,23 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/@{$username}': typeof AtChar123usernameChar125Route
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/createurs': typeof CreateursRoute
+  '/explorer': typeof ExplorerRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/enregistres': typeof AuthenticatedEnregistresRoute
+  '/api/conversion': typeof ApiConversionRoute
   '/creator/$username': typeof CreatorUsernameRoute
+  '/go/$productId': typeof GoProductIdRoute
   '/post/$id': typeof PostIdRoute
+  '/_authenticated/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
+  '/_authenticated/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
+  '/_authenticated/dashboard/sales': typeof AuthenticatedDashboardSalesRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
@@ -113,10 +235,23 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/@{$username}'
+    | '/conditions'
+    | '/confidentialite'
+    | '/createurs'
+    | '/explorer'
     | '/login'
+    | '/robots.txt'
     | '/signup'
+    | '/sitemap.xml'
+    | '/enregistres'
+    | '/api/conversion'
     | '/creator/$username'
+    | '/go/$productId'
     | '/post/$id'
+    | '/dashboard/brands'
+    | '/dashboard/earnings'
+    | '/dashboard/sales'
     | '/dashboard/settings'
     | '/dashboard/'
     | '/dashboard/post/new'
@@ -124,10 +259,23 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/@{$username}'
+    | '/conditions'
+    | '/confidentialite'
+    | '/createurs'
+    | '/explorer'
     | '/login'
+    | '/robots.txt'
     | '/signup'
+    | '/sitemap.xml'
+    | '/enregistres'
+    | '/api/conversion'
     | '/creator/$username'
+    | '/go/$productId'
     | '/post/$id'
+    | '/dashboard/brands'
+    | '/dashboard/earnings'
+    | '/dashboard/sales'
     | '/dashboard/settings'
     | '/dashboard'
     | '/dashboard/post/new'
@@ -136,10 +284,23 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/@{$username}'
+    | '/conditions'
+    | '/confidentialite'
+    | '/createurs'
+    | '/explorer'
     | '/login'
+    | '/robots.txt'
     | '/signup'
+    | '/sitemap.xml'
+    | '/_authenticated/enregistres'
+    | '/api/conversion'
     | '/creator/$username'
+    | '/go/$productId'
     | '/post/$id'
+    | '/_authenticated/dashboard/brands'
+    | '/_authenticated/dashboard/earnings'
+    | '/_authenticated/dashboard/sales'
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/post/new'
@@ -149,26 +310,35 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AtChar123usernameChar125Route: typeof AtChar123usernameChar125Route
+  ConditionsRoute: typeof ConditionsRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  CreateursRoute: typeof CreateursRoute
+  ExplorerRoute: typeof ExplorerRoute
   LoginRoute: typeof LoginRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SignupRoute: typeof SignupRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiConversionRoute: typeof ApiConversionRoute
   CreatorUsernameRoute: typeof CreatorUsernameRoute
+  GoProductIdRoute: typeof GoProductIdRoute
   PostIdRoute: typeof PostIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/@{$username}': {
+      id: '/@{$username}'
+      path: '/@{$username}'
+      fullPath: '/@{$username}'
+      preLoaderRoute: typeof AtChar123usernameChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -178,18 +348,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/conditions': {
+      id: '/conditions'
+      path: '/conditions'
+      fullPath: '/conditions'
+      preLoaderRoute: typeof ConditionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/post/$id': {
-      id: '/post/$id'
-      path: '/post/$id'
-      fullPath: '/post/$id'
-      preLoaderRoute: typeof PostIdRouteImport
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/createurs': {
+      id: '/createurs'
+      path: '/createurs'
+      fullPath: '/createurs'
+      preLoaderRoute: typeof CreateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explorer': {
+      id: '/explorer'
+      path: '/explorer'
+      fullPath: '/explorer'
+      preLoaderRoute: typeof ExplorerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/enregistres': {
+      id: '/_authenticated/enregistres'
+      path: '/enregistres'
+      fullPath: '/enregistres'
+      preLoaderRoute: typeof AuthenticatedEnregistresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/conversion': {
+      id: '/api/conversion'
+      path: '/api/conversion'
+      fullPath: '/api/conversion'
+      preLoaderRoute: typeof ApiConversionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator/$username': {
@@ -199,11 +425,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/go/$productId': {
+      id: '/go/$productId'
+      path: '/go/$productId'
+      fullPath: '/go/$productId'
+      preLoaderRoute: typeof GoProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/post/$id': {
+      id: '/post/$id'
+      path: '/post/$id'
+      fullPath: '/post/$id'
+      preLoaderRoute: typeof PostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/dashboard/': {
       id: '/_authenticated/dashboard/'
       path: '/dashboard'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/brands': {
+      id: '/_authenticated/dashboard/brands'
+      path: '/dashboard/brands'
+      fullPath: '/dashboard/brands'
+      preLoaderRoute: typeof AuthenticatedDashboardBrandsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/earnings': {
+      id: '/_authenticated/dashboard/earnings'
+      path: '/dashboard/earnings'
+      fullPath: '/dashboard/earnings'
+      preLoaderRoute: typeof AuthenticatedDashboardEarningsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/sales': {
+      id: '/_authenticated/dashboard/sales'
+      path: '/dashboard/sales'
+      fullPath: '/dashboard/sales'
+      preLoaderRoute: typeof AuthenticatedDashboardSalesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard/settings': {
@@ -231,6 +492,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedEnregistresRoute: typeof AuthenticatedEnregistresRoute
+  AuthenticatedDashboardBrandsRoute: typeof AuthenticatedDashboardBrandsRoute
+  AuthenticatedDashboardEarningsRoute: typeof AuthenticatedDashboardEarningsRoute
+  AuthenticatedDashboardSalesRoute: typeof AuthenticatedDashboardSalesRoute
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardPostNewRoute: typeof AuthenticatedDashboardPostNewRoute
@@ -238,6 +503,10 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedEnregistresRoute: AuthenticatedEnregistresRoute,
+  AuthenticatedDashboardBrandsRoute: AuthenticatedDashboardBrandsRoute,
+  AuthenticatedDashboardEarningsRoute: AuthenticatedDashboardEarningsRoute,
+  AuthenticatedDashboardSalesRoute: AuthenticatedDashboardSalesRoute,
   AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedDashboardPostNewRoute: AuthenticatedDashboardPostNewRoute,
@@ -250,9 +519,18 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AtChar123usernameChar125Route: AtChar123usernameChar125Route,
+  ConditionsRoute: ConditionsRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  CreateursRoute: CreateursRoute,
+  ExplorerRoute: ExplorerRoute,
   LoginRoute: LoginRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SignupRoute: SignupRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiConversionRoute: ApiConversionRoute,
   CreatorUsernameRoute: CreatorUsernameRoute,
+  GoProductIdRoute: GoProductIdRoute,
   PostIdRoute: PostIdRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,318 +1,272 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { ArrowLeft, ArrowUpRight, Flag, Link2, Play } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
-import { Skeleton } from "@/components/ui/skeleton";
+import { fetchOutfit, fetchSimilarOutfits } from "@/lib/public-data";
+import { styleLabelKey } from "@/lib/styles";
+import { absoluteUrl, clip, DEFAULT_OG_IMAGE, outfitPath, profilePath, SITE_NAME } from "@/lib/site";
 import { ShareButton } from "@/components/ShareButton";
-import { Button } from "@/components/ui/button";
-import {
-  Play,
-  Instagram,
-  Youtube,
-  Music2,
-  Video,
-  BadgeCheck,
-  ShoppingBag,
-  ArrowLeft,
-  ArrowUpRight,
-  Tag,
-  ExternalLink,
-  Flag,
-} from "lucide-react";
+import { Avatar, OutfitGrid } from "@/components/vitrine/OutfitCard";
+import { SaveButton } from "@/components/vitrine/SaveButton";
+import { FollowButton } from "@/components/vitrine/FollowButton";
+import { MadeWithBanner } from "@/components/vitrine/MadeWith";
 
 export const Route = createFileRoute("/post/$id")({
-  ssr: false,
-  head: ({ params }) => ({
-    meta: [
-      { title: `Outfit — Wanted Fashion` },
-      { name: "description", content: `Shop tous les produits de cet outfit sur Wanted Fashion.` },
-      { property: "og:url", content: `/post/${params.id}` },
-    ],
-    links: [{ rel: "canonical", href: `/post/${params.id}` }],
-  }),
-  component: PostPage,
-  notFoundComponent: () => {
-    const { t } = useTranslation();
-    return <div className="mx-auto max-w-2xl p-10 text-center text-muted-foreground">{t("postPage.notFound")}</div>;
+  loader: async ({ params }) => {
+    const data = await fetchOutfit(params.id);
+    if (!data) throw notFound();
+    return data;
   },
+  head: ({ loaderData, params }) => {
+    if (!loaderData) return { meta: [{ title: `Tenue | ${SITE_NAME}` }, { name: "robots", content: "noindex" }] };
+    const { post, products } = loaderData;
+    const brands = [...new Set(products.map((p) => p.brand).filter(Boolean))].slice(0, 4).join(", ");
+    const pieceNames = products.slice(0, 4).map((p) => p.name).join(", ");
+    const title = `${post.title}, par @${post.creator_username} | ${SITE_NAME}`;
+    const description = clip(
+      `Les ${products.length} pièce${products.length > 1 ? "s" : ""} de la tenue « ${post.title} » de @${post.creator_username}` +
+        (pieceNames ? ` : ${pieceNames}` : "") +
+        (brands ? ` (${brands})` : "") +
+        ", avec le lien de chaque vêtement.",
+    );
+    const url = absoluteUrl(outfitPath(params.id));
+    const image = post.cover_image ?? DEFAULT_OG_IMAGE;
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      name: post.title,
+      url,
+      image,
+      dateCreated: post.created_at ?? undefined,
+      author: { "@type": "Person", name: `@${post.creator_username}`, url: absoluteUrl(profilePath(post.creator_username)) },
+      hasPart: products.map((p) => ({ "@type": "Product", name: p.name, ...(p.brand ? { brand: { "@type": "Brand", name: p.brand } } : {}), ...(p.image_url ? { image: p.image_url } : {}) })),
+    };
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:title", content: `${post.title}, par @${post.creator_username}` },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:image", content: image },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }],
+    };
+  },
+  component: OutfitPage,
+  notFoundComponent: NotFoundOutfit,
 });
 
-function detectPlatform(url: string | null): "tiktok" | "instagram" | "youtube" | "other" {
-  if (!url) return "other";
-  if (url.includes("tiktok.com")) return "tiktok";
-  if (url.includes("instagram.com")) return "instagram";
-  if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
-  return "other";
-}
-
-function platformButtonClass(platform: string) {
-  if (platform === "tiktok") return "bg-foreground text-background hover:bg-foreground/90";
-  if (platform === "instagram")
-    return "bg-gradient-to-r from-accent via-primary to-secondary text-primary-foreground hover:opacity-90";
-  if (platform === "youtube") return "bg-destructive text-destructive-foreground hover:bg-destructive/90";
-  return "bg-foreground text-background";
-}
-
-function PlatformIcon({ platform, className }: { platform: string; className?: string }) {
-  if (platform === "tiktok") return <Music2 className={className} />;
-  if (platform === "instagram") return <Instagram className={className} />;
-  if (platform === "youtube") return <Youtube className={className} />;
-  return <Video className={className} />;
-}
-
-function VideoColumn({ post }: {
-  post: { title: string; cover_image: string | null; tiktok_url: string | null; creator_username: string };
-}) {
+function NotFoundOutfit() {
   const { t } = useTranslation();
-  const platform = detectPlatform(post.tiktok_url);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: "easeOut" }}
-      className="relative"
-    >
-      <div className="relative w-full aspect-[9/16] max-h-[70vh] mx-auto rounded-3xl overflow-hidden bg-muted shadow-xl">
-        {post.cover_image && (
-          <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/10" />
-        {post.tiktok_url && (
-          <a
-            href={post.tiktok_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute inset-0 flex items-center justify-center group"
-            aria-label={t("postPage.watchVideo")}
-          >
-            <span className="w-16 h-16 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary-foreground/40">
-              <Play className="w-6 h-6 text-primary-foreground fill-current" />
-            </span>
-          </a>
-        )}
-        <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between">
-          {post.tiktok_url && (
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${platformButtonClass(
-                platform
-              )}`}
-            >
-              <PlatformIcon platform={platform} className="w-3 h-3" /> {t("postPage.watchVideo")}
-            </span>
-          )}
-          <div className="flex items-center gap-2">
-            <ShareButton title={post.title} text={`@${post.creator_username} sur WantedFashion`} />
-          </div>
-        </div>
-      </div>
-    </motion.div>
+    <main className="mx-auto flex max-w-md flex-col items-center gap-5 px-4 py-24 text-center">
+      <p className="text-lg text-foreground/75">{t("outfit.notFound")}</p>
+      <Link to="/" className="rounded-full bg-ink px-6 py-3 font-bold text-surface">
+        {t("root.backHome")}
+      </Link>
+    </main>
   );
 }
 
-function ProductRow({
-  product,
-}: {
-  product: { id: string; name: string; brand: string | null; price: string | null; image_url: string | null; affiliate_link: string };
-}) {
-  let hostname = "";
+function hostOf(url: string) {
   try {
-    hostname = new URL(product.affiliate_link).hostname.replace("www.", "");
+    return new URL(url).hostname.replace(/^www\./, "");
   } catch {
-    hostname = "";
+    return "";
   }
-
-  return (
-    <a
-      href={`/go/${product.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex items-center gap-4 p-4 rounded-2xl bg-card border border-border shadow-sm hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 hover:border-primary/40 transition-all duration-300"
-    >
-      <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted shrink-0">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">—</div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        {product.brand && <p className="text-xs text-muted-foreground uppercase tracking-wide">{product.brand}</p>}
-        <h4 className="font-semibold text-card-foreground truncate">{product.name}</h4>
-        <div className="flex items-center gap-2 mt-1">
-          {product.price && <span className="text-primary font-bold">{product.price}</span>}
-          {hostname && <span className="text-xs text-muted-foreground">· {hostname}</span>}
-        </div>
-      </div>
-      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors duration-300">
-        <ArrowUpRight className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
-      </div>
-    </a>
-  );
 }
 
-function PostPage() {
+function OutfitPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { id } = Route.useParams();
+  const { post, products, creator } = Route.useLoaderData();
 
+  // Compteur de vues (une seule fois par navigateur et par tenue)
   useEffect(() => {
-    if (!id) return;
-    const storageKey = `wf_viewed:${id}`;
-    if (localStorage.getItem(storageKey)) return;
+    const key = `wf_viewed:${id}`;
+    try {
+      if (localStorage.getItem(key)) return;
+    } catch {
+      return;
+    }
     supabase.rpc("increment_post_views", { p_id: id }).then(({ error }) => {
-      if (error) {
-        console.error("increment_post_views failed:", error);
-        return;
+      if (!error) {
+        try {
+          localStorage.setItem(key, "1");
+        } catch {
+          /* navigation privée : on ignore */
+        }
       }
-      localStorage.setItem(storageKey, "1");
     });
   }, [id]);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["post", id],
-    queryFn: async () => {
-      const { data: post, error: e1 } = await supabase
-        .from("posts")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (e1) throw e1;
-      if (!post) throw notFound();
-
-      const { data: products, error: e2 } = await supabase
-        .from("products")
-        .select("*")
-        .eq("post_id", id)
-        .order("position", { ascending: true });
-      if (e2) throw e2;
-
-      const { data: creator } = await supabase
-        .from("creators_public")
-        .select("username, profile_image")
-        .eq("username", post.creator_username)
-        .maybeSingle();
-
-      return { post, products: products ?? [], creator };
-    },
+  const similar = useQuery({
+    queryKey: ["similar", id],
+    queryFn: () => fetchSimilarOutfits(id, post.styles, 8),
   });
 
-  if (isLoading) {
-    return (
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <Skeleton className="h-8 w-2/3" />
-        <Skeleton className="mt-4 aspect-[9/16] max-h-[70vh] w-full max-w-sm rounded-3xl" />
-      </main>
-    );
+  const pageUrl = absoluteUrl(outfitPath(id));
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(pageUrl);
+      toast.success(t("outfit.linkCopied"));
+    } catch {
+      toast.error(t("card.actionError"));
+    }
   }
 
-  if (error || !data) return null;
-  const { post, products, creator } = data;
+  const reportHref = `mailto:nannawanted@gmail.com?subject=${encodeURIComponent(`${t("outfit.reportSubject")} ${id}`)}&body=${encodeURIComponent(`${t("outfit.reportBody")}\n\n${pageUrl}`)}`;
 
   return (
-    <div>
-      <section className="relative bg-background py-10 sm:py-16">
-        <div className="relative max-w-5xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <VideoColumn post={post} />
+    <main className="mx-auto max-w-6xl px-4 pt-4 md:px-6 md:pt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => (window.history.length > 1 ? router.history.back() : router.navigate({ to: "/" }))}
+          className="inline-flex h-11 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold hover:bg-card"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t("outfit.back")}
+        </button>
+        <ShareButton
+          title={post.title}
+          text={`@${post.creator_username} sur WantedFashion`}
+          url={pageUrl}
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-surface hover:bg-card"
+          iconClassName="h-5 w-5"
+        />
+      </div>
 
-          <div className="flex flex-col gap-6">
-            <div>
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors duration-300 mb-2"
-              >
-                <ArrowLeft className="w-4 h-4" /> {t("postPage.backToFeed")}
-              </Link>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{post.title}</h1>
-              <Link to="/creator/$username" params={{ username: post.creator_username }} className="mt-3 inline-flex items-center gap-2 group">
-                <div className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/30 overflow-hidden bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                  {creator?.profile_image ? (
-                    <img src={creator.profile_image} alt={post.creator_username} className="w-full h-full object-cover" />
-                  ) : (
-                    post.creator_username[0]?.toUpperCase()
-                  )}
-                </div>
-                <span className="text-sm font-medium text-primary group-hover:underline">@{post.creator_username}</span>
-                <BadgeCheck className="w-4 h-4 text-primary" />
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-2 p-4 rounded-2xl bg-secondary text-secondary-foreground">
-              <Tag className="w-4 h-4" />
-              <p className="text-sm">
-                <span className="font-semibold">{products.length}</span>{" "}
-                {products.length > 1 ? t("postPage.piecePlural") : t("postPage.pieceSingular")}{" "}
-                {products.length > 1 ? t("postPage.identifiedPlural") : t("postPage.identifiedSingular")}{" "}
-                {t("postPage.inThisVideo")}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {products.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-                  {t("postPage.noProduct")}
-                </div>
-              ) : (
-                products.map((p) => <ProductRow key={p.id} product={p} />)
-              )}
-            </div>
-
-            {products.length > 0 && (
-              <p className="text-xs text-muted-foreground">{t("postPage.affiliateNotice")}</p>
+      <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
+        <div className="fade-up md:sticky md:top-24 md:self-start">
+          <div className="relative overflow-hidden rounded-[28px] bg-secondary shadow-xl">
+            {post.cover_image ? (
+              <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" className="max-h-[78vh] w-full object-cover" />
+            ) : (
+              <div className="aspect-[9/14] w-full" />
             )}
-
-            <a
-              href={`mailto:nannawanted@gmail.com?subject=${encodeURIComponent(`${t("postPage.reportSubject")} ${id}`)}&body=${encodeURIComponent(t("postPage.reportBody"))}`}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary hover:underline"
-            >
-              <Flag className="w-3 h-3" /> {t("postPage.report")}
-            </a>
-
-            <div className="p-5 rounded-2xl bg-muted flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-primary" />
-                </div>
-                <p className="text-sm text-foreground font-medium">{t("postPage.wantMoreLooks")}</p>
-              </div>
-              <Link to="/">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">{t("postPage.seeFeed")}</Button>
-              </Link>
-            </div>
+            {post.tiktok_url && (
+              <a
+                href={post.tiktok_url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="group absolute inset-0 flex items-center justify-center"
+                aria-label={t("outfit.watchOn")}
+              >
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface/90 shadow-lg transition-transform group-hover:scale-110">
+                  <Play className="ml-1 h-7 w-7 fill-current text-foreground" aria-hidden="true" />
+                </span>
+                <span className="absolute bottom-4 left-4 rounded-full bg-ink/90 px-3.5 py-2 text-sm font-bold text-surface">
+                  {t("outfit.watchOn")}
+                </span>
+              </a>
+            )}
           </div>
         </div>
-      </section>
 
-      <section className="relative bg-secondary py-14 overflow-hidden">
-        <div className="relative max-w-4xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full overflow-hidden bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground ring-2 ring-primary-foreground/30">
-              {creator?.profile_image ? (
-                <img src={creator.profile_image} alt={post.creator_username} className="w-full h-full object-cover" />
-              ) : (
-                post.creator_username[0]?.toUpperCase()
-              )}
-            </div>
-            <div>
-              <p className="text-primary-foreground font-semibold">{post.creator_username}</p>
-              <p className="text-secondary-foreground/70 text-sm">@{post.creator_username}</p>
-            </div>
+        <div className="fade-up" style={{ animationDelay: "120ms" }}>
+          <h1 className="font-display text-3xl font-bold leading-tight md:text-[44px]">{post.title}</h1>
+
+          <div className="mt-4 flex items-center gap-3">
+            <Link to="/@{$username}" params={{ username: post.creator_username }} className="flex min-w-0 flex-1 items-center gap-3">
+              <span className="rounded-full p-[2px] ring-2 ring-primary">
+                <Avatar src={creator?.profile_image ?? null} name={post.creator_username} className="h-10 w-10" />
+              </span>
+              <span className="truncate font-bold hover:text-primary">@{post.creator_username}</span>
+            </Link>
+            {creator && <FollowButton creatorId={creator.id} tone="brand" />}
           </div>
-          <Link to="/creator/$username" params={{ username: post.creator_username }}>
-            <Button
-              variant="outline"
-              className="rounded-full border-primary-foreground/40 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 hover:text-primary-foreground"
+
+          {post.styles.length > 0 && (
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {post.styles.map((s) => (
+                <li key={s}>
+                  <Link to="/" search={{ style: s }} hash="tenues" className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground/80 hover:border-foreground/50">
+                    {t(styleLabelKey(s))}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <h2 className="mt-8 text-lg font-bold">{t("outfit.pieces")}</h2>
+          <div className="mt-3 flex flex-col gap-2.5">
+            {products.length === 0 && <p className="text-foreground/70">{t("outfit.noPieces")}</p>}
+            {products.map((p, i) => (
+              <a
+                key={p.id}
+                href={`/go/${p.id}`}
+                target="_blank"
+                rel="noopener noreferrer nofollow sponsored"
+                className="fade-up group flex items-center gap-3.5 rounded-2xl bg-surface p-2.5 pr-3 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+                style={{ animationDelay: `${200 + i * 60}ms` }}
+              >
+                <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-card">
+                  {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  {p.brand && <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">{p.brand}</span>}
+                  <span className="truncate font-semibold">{p.name}</span>
+                  <span className="text-sm">
+                    {p.price && <span className="font-bold text-primary">{p.price}</span>}
+                    {hostOf(p.affiliate_link) && <span className="text-foreground/55"> · {hostOf(p.affiliate_link)}</span>}
+                  </span>
+                </span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-surface transition-colors group-hover:bg-primary">
+                  <ArrowUpRight className="h-4 w-4" aria-label={t("outfit.view")} />
+                </span>
+              </a>
+            ))}
+          </div>
+
+          {products.length > 0 && (
+            <p className="mt-3 text-xs leading-relaxed text-foreground/65">
+              {t("outfit.disclosure")}{" "}
+              <a href={reportHref} className="inline-flex items-center gap-1 underline hover:text-primary">
+                <Flag className="h-3 w-3" aria-hidden="true" /> {t("outfit.report")}
+              </a>
+            </p>
+          )}
+
+          <div className="mt-6 flex gap-2.5">
+            <SaveButton postId={id} variant="wide" />
+            <button
+              type="button"
+              onClick={copyLink}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-ink font-semibold text-surface transition-colors hover:bg-ink/85"
             >
-              {t("postPage.seeProfile")} <ExternalLink className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
+              <Link2 className="h-5 w-5" aria-hidden="true" /> {t("outfit.copyLink")}
+            </button>
+          </div>
+          {products.length === 0 && (
+            <p className="mt-3 text-xs text-foreground/65">
+              <a href={reportHref} className="underline hover:text-primary">
+                {t("outfit.report")}
+              </a>
+            </p>
+          )}
         </div>
-      </section>
-    </div>
+      </div>
+
+      {similar.data && similar.data.length > 0 && (
+        <section className="mt-14">
+          <h2 className="font-display mb-5 text-3xl font-bold">{t("outfit.similar")}</h2>
+          <OutfitGrid outfits={similar.data} />
+        </section>
+      )}
+
+      <div className="mt-10">
+        <MadeWithBanner />
+      </div>
+    </main>
   );
 }

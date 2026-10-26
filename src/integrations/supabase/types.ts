@@ -113,6 +113,9 @@ export type Database = {
           is_admin: boolean
           last_known_ip: string | null
           profile_image: string | null
+          instagram_url: string | null
+          styles: string[]
+          tiktok_url: string | null
           username: string
         }
         Insert: {
@@ -123,6 +126,9 @@ export type Database = {
           is_admin?: boolean
           last_known_ip?: string | null
           profile_image?: string | null
+          instagram_url?: string | null
+          styles?: string[]
+          tiktok_url?: string | null
           username: string
         }
         Update: {
@@ -133,6 +139,9 @@ export type Database = {
           is_admin?: boolean
           last_known_ip?: string | null
           profile_image?: string | null
+          instagram_url?: string | null
+          styles?: string[]
+          tiktok_url?: string | null
           username?: string
         }
         Relationships: []
@@ -144,6 +153,7 @@ export type Database = {
           creator_id: string
           creator_username: string
           id: string
+          styles: string[]
           tiktok_url: string | null
           title: string
           views: number
@@ -154,6 +164,7 @@ export type Database = {
           creator_id: string
           creator_username: string
           id?: string
+          styles?: string[]
           tiktok_url?: string | null
           title: string
           views?: number
@@ -164,6 +175,7 @@ export type Database = {
           creator_id?: string
           creator_username?: string
           id?: string
+          styles?: string[]
           tiktok_url?: string | null
           title?: string
           views?: number
@@ -243,6 +255,58 @@ export type Database = {
           },
           {
             foreignKeyName: "products_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          creator_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          follower_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saves: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saves_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
@@ -376,6 +440,9 @@ export type Database = {
           created_at: string | null
           id: string | null
           profile_image: string | null
+          instagram_url: string | null
+          styles: string[] | null
+          tiktok_url: string | null
           username: string | null
         }
         Insert: {
@@ -384,6 +451,9 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           profile_image?: string | null
+          instagram_url?: string | null
+          styles?: string[] | null
+          tiktok_url?: string | null
           username?: string | null
         }
         Update: {
@@ -392,6 +462,9 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           profile_image?: string | null
+          instagram_url?: string | null
+          styles?: string[] | null
+          tiktok_url?: string | null
           username?: string | null
         }
         Relationships: []
@@ -399,6 +472,7 @@ export type Database = {
     }
     Functions: {
       increment_post_views: { Args: { p_id: string }; Returns: undefined }
+      is_valid_style_list: { Args: { s: string[] }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

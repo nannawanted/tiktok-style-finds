@@ -13,6 +13,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
+import { StylePicker } from "@/components/vitrine/StyleChips";
+import { cleanStyles, MAX_STYLES, type StyleKey } from "@/lib/styles";
+import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   head: () => ({ meta: [{ title: "Paramètres — Wanted Fashion" }] }),
@@ -26,7 +30,8 @@ function Settings() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "" });
+  const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "", tiktok_url: "", instagram_url: "", styles: [] as StyleKey[] });
+  const [savedUsername, setSavedUsername] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +62,11 @@ function Settings() {
         bio: data.bio ?? "",
         profile_image: data.profile_image ?? "",
         banner_image: data.banner_image ?? "",
+        tiktok_url: data.tiktok_url ?? "",
+        instagram_url: data.instagram_url ?? "",
+        styles: cleanStyles(data.styles),
       });
+      if (data) setSavedUsername(data.username);
     });
   }, [user]);
 
@@ -91,8 +100,22 @@ function Settings() {
     e.preventDefault();
     if (!user) return;
     const clean = form.username.trim().toLowerCase().replace(/^@/, "");
-    if (!/^[a-z0-9_.]{3,30}$/.test(clean)) {
+    if (!USERNAME_PATTERN.test(clean)) {
       toast.error(t("settings.invalidUsername"));
+      return;
+    }
+    if (isReservedUsername(clean)) {
+      toast.error(t("auth.usernameReserved"));
+      return;
+    }
+    const tiktok = form.tiktok_url.trim();
+    const insta = form.instagram_url.trim();
+    if (tiktok && !/^https:\/\/(www\.)?tiktok\.com\//.test(tiktok)) {
+      toast.error(t("creatorSettings.invalidTiktok"));
+      return;
+    }
+    if (insta && !/^https:\/\/(www\.)?instagram\.com\//.test(insta)) {
+      toast.error(t("creatorSettings.invalidInstagram"));
       return;
     }
     setLoading(true);
@@ -101,10 +124,12 @@ function Settings() {
       bio: form.bio || null,
       profile_image: form.profile_image || null,
       banner_image: form.banner_image || null,
+      tiktok_url: tiktok || null,
+      instagram_url: insta || null,
+      styles: form.styles,
     }).eq("id", user.id);
-    if (!error) {
-      await supabase.from("posts").update({ creator_username: clean }).eq("creator_id", user.id);
-    }
+    // Les tenues suivent automatiquement le nouveau username (géré par la base).
+    if (!error) setSavedUsername(clean);
     setLoading(false);
     if (error) toast.error(error.message);
     else toast.success(t("settings.settingsSaved"));
@@ -166,6 +191,34 @@ function Settings() {
           <Label htmlFor="b">{t("settings.bio")}</Label>
           <Textarea id="b" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} placeholder={t("settings.bioPlaceholder")} />
         </div>
+
+        {/* STYLES */}
+        <div>
+          <Label>{t("creatorSettings.stylesTitle")}</Label>
+          <p className="mb-2 mt-1 text-xs text-muted-foreground">{t("creatorSettings.stylesHint")}</p>
+          <StylePicker
+            value={form.styles}
+            max={MAX_STYLES}
+            onMax={() => toast(t("creatorSettings.maxStyles"))}
+            onChange={(styles) => setForm({ ...form, styles })}
+          />
+        </div>
+
+        {/* RÉSEAUX */}
+        <div>
+          <Label htmlFor="tt">{t("creatorSettings.tiktok")}</Label>
+          <Input id="tt" type="url" inputMode="url" placeholder="https://www.tiktok.com/@..." value={form.tiktok_url} onChange={(e) => setForm({ ...form, tiktok_url: e.target.value })} />
+        </div>
+        <div>
+          <Label htmlFor="ig">{t("creatorSettings.instagram")}</Label>
+          <Input id="ig" type="url" inputMode="url" placeholder="https://www.instagram.com/..." value={form.instagram_url} onChange={(e) => setForm({ ...form, instagram_url: e.target.value })} />
+        </div>
+
+        {savedUsername && (
+          <Link to="/@{$username}" params={{ username: savedUsername }} className="block text-sm font-semibold text-primary underline">
+            {t("creatorSettings.myPublicPage")}
+          </Link>
+        )}
 
         <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
           {loading ? t("settings.saving") : t("settings.save")}

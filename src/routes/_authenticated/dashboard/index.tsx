@@ -62,6 +62,15 @@ function Dashboard() {
     },
   });
 
+  const { data: myUsername } = useQuery({
+    queryKey: ["my-username", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("creators").select("username").eq("id", user!.id).maybeSingle();
+      return data?.username ?? null;
+    },
+  });
+
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin", user?.id],
     enabled: !!user,
@@ -93,12 +102,18 @@ function Dashboard() {
             <h1 className="text-2xl font-black sm:text-3xl">{t("dashboard.myPosts")}</h1>
             <p className="text-sm text-muted-foreground">{t("dashboard.manageOutfits")}</p>
           </div>
-          <div className="flex gap-2">
-            <Link to="/dashboard/earnings">
-              <Button variant="outline" size="sm">{t("dashboard.earningsNav")}</Button>
-            </Link>
+          <div className="flex flex-wrap gap-2">
+            {myUsername && (
+              <Link to="/@{$username}" params={{ username: myUsername }}>
+                <Button variant="outline" size="sm">{t("creatorSettings.myPublicPage")}</Button>
+              </Link>
+            )}
+            {/* Affiliation maison en veille : visible uniquement pour l'admin. */}
             {isAdmin && (
               <>
+                <Link to="/dashboard/earnings">
+                  <Button variant="outline" size="sm">{t("dashboard.earningsNav")}</Button>
+                </Link>
                 <Link to="/dashboard/brands">
                   <Button variant="outline" size="sm">{t("dashboard.brandsNav")}</Button>
                 </Link>
