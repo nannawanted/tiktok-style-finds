@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createCreatorProfile } from "@/lib/create-creator-profile";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { CAPTCHA_ENABLED } from "@/lib/captcha";
 import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
 export const Route = createFileRoute("/signup")({
@@ -43,7 +44,7 @@ function SignupPage() {
       toast.error(t("auth.usernameReserved"));
       return;
     }
-    if (!captchaToken) {
+    if (CAPTCHA_ENABLED && !captchaToken) {
       toast.error(t("auth.captchaRequired"));
       return;
     }
@@ -67,7 +68,7 @@ function SignupPage() {
       // Le username est enregistré dans les métadonnées du compte : c'est le
       // serveur qui le relit pour créer le profil (jamais une valeur envoyée
       // directement par le navigateur à la création du profil).
-      options: { emailRedirectTo: window.location.origin, captchaToken, data: { username: clean } },
+      options: { emailRedirectTo: window.location.origin, ...(CAPTCHA_ENABLED ? { captchaToken } : {}), data: { username: clean } },
     });
     if (error || !data.user) {
       setLoading(false);
@@ -115,7 +116,7 @@ function SignupPage() {
             <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
             <p className="mt-1 text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
           </div>
-          <TurnstileWidget onToken={setCaptchaToken} />
+          {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}
           <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
             {loading ? t("auth.creating") : t("auth.createAccount")}
           </Button>
