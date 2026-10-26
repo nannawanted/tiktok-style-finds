@@ -14,6 +14,7 @@ export type OutfitCard = {
   tiktok_url: string | null;
   styles: StyleKey[];
   pieceCount: number;
+  likes: number;
 };
 
 export type CreatorCard = {
@@ -71,10 +72,23 @@ function toCreatorCard(row: {
 async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
   const names = [...new Set(rows.map((r) => r.creator_username))];
   const avatars = new Map<string, string | null>();
-  if (names.length) {
-    const { data } = await supabase.from("creators_public").select("username, profile_image").in("username", names);
-    for (const c of data ?? []) if (c.username) avatars.set(c.username, c.profile_image);
-  }
+  const likes = new Map<string, number>();
+  await Promise.all([
+    names.length
+      ? supabase
+          .from("creators_public")
+          .select("username, profile_image")
+          .in("username", names)
+          .then(({ data }) => {
+            for (const c of data ?? []) if (c.username) avatars.set(c.username, c.profile_image);
+          })
+      : null,
+    rows.length
+      ? supabase.rpc("post_like_counts", { p_ids: rows.map((r) => r.id) }).then(({ data }) => {
+          for (const l of data ?? []) likes.set(l.post_id, Number(l.likes));
+        })
+      : null,
+  ]);
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
@@ -84,7 +98,31 @@ async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
     tiktok_url: r.tiktok_url,
     styles: cleanStyles(r.styles),
     pieceCount: r.products?.length ?? 0,
+    likes: likes.get(r.id) ?? 0,
   }));
+}
+
+/**
+ * « Tenues du moment » : classées selon les cœurs reçus sur les 7 derniers
+ * jours. S'il n'y en a pas assez, on complète avec les plus récentes.
+ */
+async function fetchTrendingOutfits(opts: { style?: StyleKey | null; limit: number; creatorIds?: string[]; excludeId?: string }) {
+  const { data: ranked } = await supabase.rpc("trending_posts", { p_days: 7, p_limit: 100 });
+  const order = (ranked ?? []).map((r) => r.post_id).filter((id) => id !== opts.excludeId);
+  let top: OutfitCard[] = [];
+  if (order.length) {
+    let query = supabase.from("posts").select(OUTFIT_COLUMNS).in("id", order);
+    if (opts.style) query = query.contains("styles", [opts.style]);
+    if (opts.creatorIds) query = query.in("creator_id", opts.creatorIds);
+    const { data } = await query;
+    const pos = new Map(order.map((id, i) => [id, i]));
+    top = (await withAvatars((data ?? []) as RawOutfit[])).sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0)).slice(0, opts.limit);
+  }
+  if (top.length < opts.limit) {
+    const recent = await fetchOutfits({ ...opts, sort: "latest", limit: opts.limit + top.length });
+    for (const o of recent) if (top.length < opts.limit && !top.some((t) => t.id === o.id)) top.push(o);
+  }
+  return top;
 }
 
 export async function fetchOutfits(opts: {
@@ -100,11 +138,11 @@ export async function fetchOutfits(opts: {
     if (opts.creatorIds.length === 0) return [];
     query = query.in("creator_id", opts.creatorIds);
   }
+  if (opts.sort === "trending") {
+    return fetchTrendingOutfits({ style: opts.style, limit: opts.limit ?? 30, creatorIds: opts.creatorIds, excludeId: opts.excludeId });
+  }
   if (opts.excludeId) query = query.neq("id", opts.excludeId);
-  query =
-    opts.sort === "trending"
-      ? query.order("views", { ascending: false }).order("created_at", { ascending: false })
-      : query.order("created_at", { ascending: false });
+  query = query.order("created_at", { ascending: false });
   const { data, error } = await query.limit(opts.limit ?? 30);
   if (error) throw error;
   return withAvatars((data ?? []) as RawOutfit[]);
@@ -232,4 +270,55 @@ export async function fetchOutfitsByIds(ids: string[]): Promise<OutfitCard[]> {
   const cards = await withAvatars((data ?? []) as RawOutfit[]);
   const order = new Map(ids.map((id, i) => [id, i]));
   return cards.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+}
+
+
+// ——— Abonnements (publics, comme un compte Instagram public) ———
+
+export async function fetchFollowCounts(creatorId: string) {
+  const [followers, following] = await Promise.all([
+    supabase.from("follows").select("creator_id", { count: "exact", head: true }).eq("creator_id", creatorId),
+    supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("follower_id", creatorId),
+  ]);
+  return { followers: followers.count ?? 0, following: following.count ?? 0 };
+}
+
+async function creatorsByIds(ids: string[]): Promise<CreatorCard[]> {
+  if (!ids.length) return [];
+  const { data } = await supabase
+    .from("creators_public")
+    .select("id, username, bio, profile_image, banner_image, styles, tiktok_url, instagram_url")
+    .in("id", ids.slice(0, 500));
+  const pos = new Map(ids.map((id, i) => [id, i]));
+  return (data ?? [])
+    .map(toCreatorCard)
+    .filter((c): c is CreatorCard => c !== null)
+    .sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0));
+}
+
+export async function fetchFollowers(creatorId: string): Promise<CreatorCard[]> {
+  const { data } = await supabase.from("follows").select("follower_id").eq("creator_id", creatorId).order("created_at", { ascending: false }).limit(500);
+  return creatorsByIds((data ?? []).map((r) => r.follower_id));
+}
+
+export async function fetchFollowing(userId: string): Promise<CreatorCard[]> {
+  const { data } = await supabase.from("follows").select("creator_id").eq("follower_id", userId).order("created_at", { ascending: false }).limit(500);
+  return creatorsByIds((data ?? []).map((r) => r.creator_id));
+}
+
+/** Suggestions « à suivre » : créateurs aux styles proches, puis les plus récents. */
+export async function fetchSuggestions(opts: { styles: StyleKey[]; exclude: string[]; limit?: number }): Promise<CreatorCard[]> {
+  const limit = opts.limit ?? 8;
+  const exclude = new Set(opts.exclude);
+  const pool: CreatorCard[] = [];
+  const cols = "id, username, bio, profile_image, banner_image, styles, tiktok_url, instagram_url";
+  if (opts.styles.length) {
+    const { data } = await supabase.from("creators_public").select(cols).overlaps("styles", opts.styles).limit(60);
+    for (const c of (data ?? []).map(toCreatorCard)) if (c && !exclude.has(c.id)) pool.push(c);
+  }
+  if (pool.length < limit) {
+    const { data } = await supabase.from("creators_public").select(cols).order("created_at", { ascending: false }).limit(60);
+    for (const c of (data ?? []).map(toCreatorCard)) if (c && !exclude.has(c.id) && !pool.some((p) => p.id === c.id)) pool.push(c);
+  }
+  return pool.slice(0, limit);
 }

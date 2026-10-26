@@ -8,6 +8,9 @@ import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useQuery } from "@tanstack/react-query";
+import { cleanQuery, fetchCreators, searchOutfits } from "@/lib/public-data";
+import { Avatar } from "@/components/vitrine/OutfitCard";
 
 function SearchBox({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
@@ -16,15 +19,48 @@ function SearchBox({ className = "" }: { className?: string }) {
     select: (s) => (s.location.pathname === "/explorer" ? String((s.location.search as { q?: string }).q ?? "") : ""),
   });
   const [q, setQ] = useState(currentQ);
+  const [open, setOpen] = useState(false);
+  const [debounced, setDebounced] = useState("");
   useEffect(() => setQ(currentQ), [currentQ]);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(cleanQuery(q)), 250);
+    return () => clearTimeout(id);
+  }, [q]);
+
+  // Suggestions en direct pendant la frappe (créateurs + tenues)
+  const suggestions = useQuery({
+    queryKey: ["search-suggest", debounced],
+    enabled: debounced.length >= 2,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const [creators, outfits] = await Promise.all([
+        fetchCreators({ q: debounced, limit: 4 }),
+        searchOutfits(debounced, null, 5),
+      ]);
+      return { creators, outfits };
+    },
+  });
+
+  function go() {
+    setOpen(false);
+    (document.activeElement as HTMLElement | null)?.blur();
+    navigate({ to: "/explorer", search: { q: q.trim() || undefined } });
+  }
+
+  const data = suggestions.data;
+  const show = open && debounced.length >= 2;
+  const empty = data && data.creators.length === 0 && data.outfits.length === 0;
 
   return (
     <form
       role="search"
-      className={className}
+      className={`relative ${className}`}
       onSubmit={(e) => {
         e.preventDefault();
-        navigate({ to: "/explorer", search: { q: q.trim() || undefined } });
+        go();
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
     >
       <label className="flex h-11 items-center gap-2.5 rounded-full border border-border bg-surface px-4 transition-colors focus-within:border-foreground/50">
@@ -33,13 +69,67 @@ function SearchBox({ className = "" }: { className?: string }) {
         <input
           type="search"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
           placeholder={t("nav2.searchPlaceholder")}
           enterKeyHint="search"
           maxLength={60}
+          autoComplete="off"
           className="w-full min-w-0 bg-transparent text-[15px] text-foreground outline-none placeholder:text-foreground/50"
         />
       </label>
+      {show && (
+        <div className="absolute inset-x-0 top-[calc(100%+6px)] z-50 max-h-[70vh] overflow-y-auto rounded-3xl border border-border bg-surface p-2 shadow-[var(--shadow-card-hover)]">
+          {suggestions.isLoading && <p className="px-3 py-3 text-sm text-foreground/60">…</p>}
+          {empty && <p className="px-3 py-3 text-sm text-foreground/60">{t("explore.noOutfits")}</p>}
+          {data && data.creators.length > 0 && (
+            <div className="pb-1">
+              <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-foreground/50">{t("explore.creators")}</p>
+              {data.creators.map((c) => (
+                <Link
+                  key={c.id}
+                  to="/@{$username}"
+                  params={{ username: c.username }}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-2xl px-3 py-2 hover:bg-card"
+                >
+                  <Avatar src={c.profile_image} name={c.username} className="h-9 w-9" />
+                  <span className="truncate font-semibold">@{c.username}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+          {data && data.outfits.length > 0 && (
+            <div className="pb-1">
+              <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-foreground/50">{t("explore.outfits")}</p>
+              {data.outfits.map((o) => (
+                <Link
+                  key={o.id}
+                  to="/post/$id"
+                  params={{ id: o.id }}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-2xl px-3 py-2 hover:bg-card"
+                >
+                  <span className="h-11 w-9 shrink-0 overflow-hidden rounded-lg bg-card">
+                    {o.cover_image && <img src={o.cover_image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">{o.title}</span>
+                    <span className="block truncate text-xs text-foreground/60">@{o.creator_username}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+          <button type="submit" className="mt-1 w-full rounded-2xl px-3 py-2.5 text-left text-sm font-bold text-primary hover:bg-card">
+            {t("explore.resultsFor")} « {q.trim()} » →
+          </button>
+        </div>
+      )}
     </form>
   );
 }

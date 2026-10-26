@@ -141,6 +141,7 @@ function OutfitPage() {
           title={post.title}
           text={`@${post.creator_username} sur WantedFashion`}
           url={pageUrl}
+          image={post.cover_image}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-surface hover:bg-card"
           iconClassName="h-5 w-5"
         />

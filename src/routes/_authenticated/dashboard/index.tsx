@@ -71,15 +71,6 @@ function Dashboard() {
     },
   });
 
-  const { data: isAdmin } = useQuery({
-    queryKey: ["is-admin", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase.from("creators").select("is_admin").eq("id", user!.id).maybeSingle();
-      return Boolean(data?.is_admin);
-    },
-  });
-
   const del = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("products").delete().eq("post_id", id);
@@ -107,20 +98,6 @@ function Dashboard() {
               <Link to="/@{$username}" params={{ username: myUsername }}>
                 <Button variant="outline" size="sm">{t("creatorSettings.myPublicPage")}</Button>
               </Link>
-            )}
-            {/* Affiliation maison en veille : visible uniquement pour l'admin. */}
-            {isAdmin && (
-              <>
-                <Link to="/dashboard/earnings">
-                  <Button variant="outline" size="sm">{t("dashboard.earningsNav")}</Button>
-                </Link>
-                <Link to="/dashboard/brands">
-                  <Button variant="outline" size="sm">{t("dashboard.brandsNav")}</Button>
-                </Link>
-                <Link to="/dashboard/sales">
-                  <Button variant="outline" size="sm">{t("dashboard.salesNav")}</Button>
-                </Link>
-              </>
             )}
             <Link to="/dashboard/settings">
               <Button variant="outline" size="sm">{t("dashboard.settings")}</Button>

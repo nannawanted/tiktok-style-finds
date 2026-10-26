@@ -473,6 +473,14 @@ export type Database = {
     Functions: {
       increment_post_views: { Args: { p_id: string }; Returns: undefined }
       is_valid_style_list: { Args: { s: string[] }; Returns: boolean }
+      post_like_counts: {
+        Args: { p_ids: string[] }
+        Returns: { likes: number; post_id: string }[]
+      }
+      trending_posts: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: { likes: number; post_id: string }[]
+      }
     }
     Enums: {
       [_ in never]: never

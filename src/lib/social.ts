@@ -87,6 +87,8 @@ export function useToggleFollow() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["followed-ids", user?.id] });
       qc.invalidateQueries({ queryKey: ["following-feed", user?.id] });
+      qc.invalidateQueries({ queryKey: ["follow-counts"] });
+      qc.invalidateQueries({ queryKey: ["follow-list"] });
     },
   });
 }

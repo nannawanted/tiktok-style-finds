@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StylePicker } from "@/components/vitrine/StyleChips";
+import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
 import { MAX_STYLES, type StyleKey } from "@/lib/styles";
 import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,8 @@ export function PostForm({
     return url.includes("instagram.com");
   }
 
+  const [pendingCover, setPendingCover] = useState<File | null>(null);
+
   async function uploadCoverImage(file: File) {
     setCoverUploading(true);
     setTiktokNotice(null);
@@ -142,7 +145,9 @@ export function PostForm({
       setTiktokLoading(true);
       try {
         if (isTikTok) {
-          const result = await fetchTikTokOembed({ data: { url } });
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token ?? "";
+          const result = await fetchTikTokOembed({ data: { url, accessToken } });
           if (result.thumbnail_url) {
             setData((d) => ({ ...d, cover_image: result.thumbnail_url }));
           } else {
@@ -264,7 +269,7 @@ export function PostForm({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCoverImage(f); }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingCover(f); e.target.value = ""; }}
             />
           </div>
           {data.cover_image && (
@@ -315,17 +320,6 @@ export function PostForm({
                     <p className="mt-1 text-xs text-muted-foreground">
                       {t("postForm.buyLinkHint")}
                     </p>
-                    {p.affiliate_link && isHttpUrl(p.affiliate_link) && (
-                      p.brand_id ? (
-                        <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-semibold text-green-600">
-                          ✅ Marque partenaire — {partnerBrands.find((b) => b.id === p.brand_id)?.commission_rate}% commission
-                        </p>
-                      ) : (
-                        <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                          ⚠️ Marque pas encore partenaire
-                        </p>
-                      )
-                    )}
                   </div>
                   <div>
                     <Label>{t("postForm.name")}</Label>
@@ -353,6 +347,15 @@ export function PostForm({
       <Button type="submit" disabled={loading} className="bg-brand text-brand-foreground hover:bg-brand/90">
         {loading ? t("postForm.saving") : submitLabel}
       </Button>
+      <ImageCropDialog
+        file={pendingCover}
+        aspect={3 / 4}
+        onCancel={() => setPendingCover(null)}
+        onDone={(f) => {
+          setPendingCover(null);
+          uploadCoverImage(f);
+        }}
+      />
     </form>
   );
 }

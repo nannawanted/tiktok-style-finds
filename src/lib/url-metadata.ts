@@ -281,26 +281,63 @@ export const fetchProductMetadata = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => resolveProductMetadata(data.url));
 
+// Hébergeurs d'images autorisés pour la copie des miniatures (évite qu'on
+// fasse télécharger n'importe quelle adresse au serveur).
+const THUMBNAIL_HOSTS = [/\.tiktokcdn(-[a-z]+)?\.com$/, /\.ibyteimg\.com$/, /\.byteimg\.com$/, /\.cdninstagram\.com$/, /\.fbcdn\.net$/];
+const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
+
+/** Les liens courts partagés depuis l'appli (vm./vt.tiktok.com) redirigent vers la vraie vidéo. */
+async function resolveTikTokUrl(url: string): Promise<string> {
+  const u = new URL(url);
+  if (/^(vm|vt)\.tiktok\.com$/.test(u.hostname) || u.pathname.startsWith("/t/")) {
+    const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": BROWSER_USER_AGENT } });
+    const finalUrl = new URL(res.url);
+    if (!finalUrl.hostname.endsWith("tiktok.com")) throw new Error("URL TikTok invalide");
+    return `${finalUrl.origin}${finalUrl.pathname}`;
+  }
+  return `${u.origin}${u.pathname}`;
+}
+
+/**
+ * Copie une miniature dans le stockage du site. Les miniatures TikTok sont des
+ * liens temporaires (ils expirent au bout de quelques heures ou jours) : sans
+ * copie, la couverture de la tenue finit par disparaître.
+ */
+async function copyThumbnailToStorage(imageUrl: string): Promise<string> {
+  const parsed = parseHttpUrl(imageUrl);
+  if (parsed.protocol !== "https:" || !THUMBNAIL_HOSTS.some((re) => re.test(parsed.hostname))) return imageUrl;
+  const res = await fetch(imageUrl, { headers: { "User-Agent": BROWSER_USER_AGENT } });
+  const type = (res.headers.get("content-type") ?? "").split(";")[0].trim();
+  if (!res.ok || !["image/jpeg", "image/png", "image/webp"].includes(type)) return imageUrl;
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.byteLength === 0 || bytes.byteLength > MAX_THUMBNAIL_BYTES) return imageUrl;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabaseAdmin.storage.from("covers").upload(path, bytes, { contentType: type });
+  if (error) return imageUrl;
+  return supabaseAdmin.storage.from("covers").getPublicUrl(path).data.publicUrl;
+}
+
 export const fetchTikTokOembed = createServerFn({ method: "POST" })
-  .inputValidator((data: { url: string }) => {
+  .inputValidator((data: { url: string; accessToken: string }) => {
     const parsed = parseHttpUrl(data.url);
-    if (!parsed.hostname.includes("tiktok.com")) {
+    if (!parsed.hostname.endsWith("tiktok.com")) {
       throw new Error("URL TikTok invalide");
     }
+    if (typeof data.accessToken !== "string" || !data.accessToken) throw new Error("not_authenticated");
     return data;
   })
   .handler(async ({ data }) => {
+    // Réservé aux créateurs connectés : la fonction télécharge et stocke une image.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
+    if (userError || !userData?.user) throw new Error("not_authenticated");
+
     // TikTok's oEmbed endpoint can fail to parse URLs with extra tracking
     // query params (is_from_webapp, sender_device, web_id, etc). Strip them
     // and keep only the clean post path before requesting the embed.
-    const cleanUrl = (() => {
-      try {
-        const u = new URL(data.url);
-        return `${u.origin}${u.pathname}`;
-      } catch {
-        return data.url;
-      }
-    })();
+    const cleanUrl = await resolveTikTokUrl(data.url).catch(() => data.url);
 
     const res = await fetch(
       `https://www.tiktok.com/oembed?url=${encodeURIComponent(cleanUrl)}`,
@@ -314,7 +351,9 @@ export const fetchTikTokOembed = createServerFn({ method: "POST" })
     }
 
     const json = (await res.json()) as { thumbnail_url?: string };
-    return { thumbnail_url: json.thumbnail_url ?? "" };
+    if (!json.thumbnail_url) return { thumbnail_url: "" };
+    const stored = await copyThumbnailToStorage(json.thumbnail_url).catch(() => json.thumbnail_url ?? "");
+    return { thumbnail_url: stored };
   });
 
 export function isTikTokUrl(url: string): boolean {

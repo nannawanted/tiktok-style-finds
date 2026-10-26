@@ -22,11 +22,14 @@ export const Route = createFileRoute("/")({
   }),
   loaderDeps: ({ search }) => ({ style: search.style ?? null, tab: search.tab ?? "trending" }),
   loader: async ({ deps }) => {
-    const [outfits, creators] = await Promise.all([
+    const isDefaultTrending = deps.tab === "trending" && !deps.style;
+    const [outfits, creators, weekTop] = await Promise.all([
       deps.tab === "following" ? Promise.resolve([] as OutfitCard[]) : fetchOutfits({ style: deps.style, sort: deps.tab === "latest" ? "latest" : "trending", limit: 30 }),
       fetchCreators({ style: deps.style, limit: 10 }),
+      // Le carrousel du haut montre toujours les tenues les plus aimées de la semaine
+      isDefaultTrending ? Promise.resolve(null) : fetchOutfits({ sort: "trending", limit: 6 }),
     ]);
-    return { outfits, creators };
+    return { outfits, creators, hero: weekTop ?? outfits.slice(0, 6) };
   },
   head: () => ({
     meta: [
@@ -40,37 +43,45 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+/** Les 3 tenues les plus aimées de la semaine (classement « Tendances »), cliquables. */
 function HeroCollage({ outfits }: { outfits: OutfitCard[] }) {
   const { t } = useTranslation();
   const covers = outfits.filter((o) => o.cover_image).slice(0, 3);
+  // La plus aimée au centre, les deux suivantes de chaque côté
+  const slots = [covers[1] ?? null, covers[0] ?? null, covers[2] ?? null];
   const tones = ["#BFA587", "#6B5240", "#CDB496"];
-  const slots = [0, 1, 2].map((i) => covers[i] ?? null);
   return (
-    <div className="relative mx-auto flex h-[300px] w-full max-w-md items-end justify-center gap-3 sm:h-[360px]" aria-hidden="true">
+    <div className="relative mx-auto flex h-[300px] w-full max-w-md items-end justify-center gap-3 sm:h-[360px]">
       {slots.map((o, i) => {
         const mid = i === 1;
-        return (
-          <div
-            key={i}
-            className={`fade-up relative overflow-hidden rounded-[22px] shadow-xl ${
-              mid ? "z-10 h-[280px] w-[44%] sm:h-[340px]" : `h-[220px] w-[30%] sm:h-[260px] ${i === 0 ? "-rotate-6" : "rotate-6"}`
-            }`}
-            style={{ animationDelay: `${150 + i * 120}ms`, background: tones[i] }}
-          >
-            {o?.cover_image && <img src={o.cover_image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />}
-            {mid && (
+        const cls = `fade-up group relative block overflow-hidden rounded-[22px] shadow-xl transition-transform duration-500 hover:-translate-y-2 ${
+          mid ? "z-10 h-[280px] w-[44%] sm:h-[340px]" : `h-[220px] w-[30%] sm:h-[260px] ${i === 0 ? "-rotate-6 hover:-rotate-3" : "rotate-6 hover:rotate-3"}`
+        }`;
+        const style = { animationDelay: `${150 + i * 120}ms`, background: tones[i] };
+        const inner = (
+          <>
+            {o?.cover_image && (
+              <img src={o.cover_image} alt={o.title} referrerPolicy="no-referrer" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            )}
+            {mid && o && (
               <>
                 <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
-                  <Play className="h-3 w-3 fill-current" /> {t("card.video")}
+                  <Play className="h-3 w-3 fill-current" aria-hidden="true" /> {t("card.video")}
                 </span>
-                {o && o.pieceCount > 0 && (
-                  <span className="absolute inset-x-3 bottom-3 rounded-xl bg-surface/95 px-3 py-2 text-left text-xs font-bold text-foreground">
-                    {o.pieceCount} {o.pieceCount > 1 ? t("card.pieces") : t("card.piece")}
-                  </span>
-                )}
+                <span className="absolute inset-x-3 bottom-3 rounded-xl bg-surface/95 px-3 py-2 text-left">
+                  <span className="block truncate text-xs font-bold text-foreground">{o.title}</span>
+                  <span className="block truncate text-[11px] text-foreground/65">@{o.creator_username}</span>
+                </span>
               </>
             )}
-          </div>
+          </>
+        );
+        return o ? (
+          <Link key={o.id} to="/post/$id" params={{ id: o.id }} className={cls} style={style} aria-label={o.title}>
+            {inner}
+          </Link>
+        ) : (
+          <div key={`empty-${i}`} className={cls} style={style} aria-hidden="true" />
         );
       })}
     </div>
@@ -82,7 +93,7 @@ function Home() {
   const { user } = useAuth();
   const navigate = useNavigate({ from: "/" });
   const { style, tab = "trending" } = Route.useSearch();
-  const { outfits, creators } = Route.useLoaderData();
+  const { outfits, creators, hero } = Route.useLoaderData();
   const { data: followedIds } = useFollowedIds();
 
   const followingFeed = useQuery({
@@ -110,7 +121,7 @@ function Home() {
           <h1 className="font-display mt-3 text-[40px] font-bold leading-[1.02] text-foreground sm:text-6xl">{t("home2.title")}</h1>
           <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-foreground/75">{t("home2.subtitle")}</p>
         </div>
-        <HeroCollage outfits={outfits} />
+        <HeroCollage outfits={hero} />
       </section>
 
       <section id="tenues" className="mx-auto max-w-7xl scroll-mt-28 px-4 md:px-6">

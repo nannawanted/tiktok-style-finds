@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { StylePicker } from "@/components/vitrine/StyleChips";
+import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
 import { cleanStyles, MAX_STYLES, type StyleKey } from "@/lib/styles";
 import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
@@ -32,6 +33,7 @@ function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "", tiktok_url: "", instagram_url: "", styles: [] as StyleKey[] });
   const [savedUsername, setSavedUsername] = useState("");
+  const [pending, setPending] = useState<{ kind: "avatar" | "banner"; file: File } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,7 +160,7 @@ function Settings() {
                 {uploading ? t("settings.uploading") : t("settings.choosePicture")}
               </Button>
               <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }} />
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setPending({ kind: "avatar", file: f }); e.target.value = ""; }} />
             </div>
           </div>
         </div>
@@ -177,7 +179,19 @@ function Settings() {
             {uploading ? t("settings.uploading") : t("settings.chooseBanner")}
           </Button>
           <input ref={bannerInputRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); }} />
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) setPending({ kind: "banner", file: f }); e.target.value = ""; }} />
+          <ImageCropDialog
+            file={pending?.file ?? null}
+            aspect={pending?.kind === "banner" ? 3 : 1}
+            round={pending?.kind === "avatar"}
+            onCancel={() => setPending(null)}
+            onDone={(f) => {
+              const kind = pending?.kind;
+              setPending(null);
+              if (kind === "avatar") uploadAvatar(f);
+              else if (kind === "banner") uploadBanner(f);
+            }}
+          />
         </div>
 
         {/* USERNAME */}

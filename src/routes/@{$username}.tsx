@@ -13,6 +13,8 @@ import { Avatar, OutfitGrid } from "@/components/vitrine/OutfitCard";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { MadeWithBadge } from "@/components/vitrine/MadeWith";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
+import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
+import { FollowSuggestions, ProfileStats } from "@/components/vitrine/FollowLists";
 
 export const Route = createFileRoute("/@{$username}")({
   loader: async ({ params }) => {
@@ -82,6 +84,7 @@ function ProfilePage() {
   const isOwner = user?.id === creator.id;
   const [filter, setFilter] = useState<StyleKey | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [pending, setPending] = useState<{ kind: "avatars" | "banners"; file: File } | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
   const bannerInput = useRef<HTMLInputElement>(null);
 
@@ -145,6 +148,7 @@ function ProfilePage() {
           )}
           <ShareButton
             title={`@${creator.username} sur WantedFashion`}
+            image={creator.profile_image}
             url={absoluteUrl(profilePath(creator.username))}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-surface/95"
             iconClassName="h-5 w-5"
@@ -199,6 +203,8 @@ function ProfilePage() {
           </div>
         )}
 
+        <ProfileStats creatorId={creator.id} outfitCount={outfits.length} />
+
         <div className="mt-5 w-full max-w-sm">
           {isOwner ? (
             <div className="flex gap-2">
@@ -237,12 +243,45 @@ function ProfilePage() {
         )}
       </section>
 
+      <FollowSuggestions creatorId={creator.id} styles={creator.styles} />
+
       <div className="mt-12 flex justify-center px-4">
         <MadeWithBadge />
       </div>
 
-      <input ref={avatarInput} type="file" accept={ALLOWED_IMAGE_TYPES.join(",")} className="hidden" onChange={(e) => e.target.files?.[0] && upload("avatars", e.target.files[0])} />
-      <input ref={bannerInput} type="file" accept={ALLOWED_IMAGE_TYPES.join(",")} className="hidden" onChange={(e) => e.target.files?.[0] && upload("banners", e.target.files[0])} />
+      <input
+        ref={avatarInput}
+        type="file"
+        accept={ALLOWED_IMAGE_TYPES.join(",")}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) setPending({ kind: "avatars", file: f });
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={bannerInput}
+        type="file"
+        accept={ALLOWED_IMAGE_TYPES.join(",")}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) setPending({ kind: "banners", file: f });
+          e.target.value = "";
+        }}
+      />
+      <ImageCropDialog
+        file={pending?.file ?? null}
+        aspect={pending?.kind === "banners" ? 3 : 1}
+        round={pending?.kind === "avatars"}
+        onCancel={() => setPending(null)}
+        onDone={(f) => {
+          const kind = pending?.kind;
+          setPending(null);
+          if (kind) upload(kind, f);
+        }}
+      />
     </main>
   );
 }
