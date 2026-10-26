@@ -9,6 +9,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { CAPTCHA_ENABLED } from "@/lib/captcha";
 
 export const Route = createFileRoute("/login")({
   ssr: false,
@@ -31,12 +32,12 @@ function LoginPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!captchaToken) {
+    if (CAPTCHA_ENABLED && !captchaToken) {
       toast.error(t("auth.captchaRequired"));
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } });
+    const { error } = await supabase.auth.signInWithPassword({ email, password, options: CAPTCHA_ENABLED ? { captchaToken } : undefined });
     setLoading(false);
     if (error) {
       if (error.message.toLowerCase().includes("email not confirmed")) {
@@ -64,7 +65,7 @@ function LoginPage() {
             <Label htmlFor="password">{t("auth.password")}</Label>
             <PasswordInput id="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-          <TurnstileWidget onToken={setCaptchaToken} />
+          {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}
           <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
             {loading ? t("auth.loggingIn") : t("auth.login")}
           </Button>
