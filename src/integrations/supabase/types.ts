@@ -181,6 +181,8 @@ export type Database = {
           id: string
           styles: string[]
           tags: string[]
+          visual_tags: string[]
+          visual_tags_rejected: string[]
           tiktok_url: string | null
           title: string
           views: number
@@ -193,6 +195,8 @@ export type Database = {
           id?: string
           styles?: string[]
           tags?: string[]
+          visual_tags?: string[]
+          visual_tags_rejected?: string[]
           tiktok_url?: string | null
           title: string
           views?: number
@@ -205,6 +209,8 @@ export type Database = {
           id?: string
           styles?: string[]
           tags?: string[]
+          visual_tags?: string[]
+          visual_tags_rejected?: string[]
           tiktok_url?: string | null
           title?: string
           views?: number

@@ -118,6 +118,7 @@ zebra|pattern|zebra print|zebre,zebra
 camo|pattern|camouflage|camouflage,camo,militaire
 polka|pattern|polka dot|pois,a pois,polka dots
 logo|pattern|big logo print|logo,logos,gros logo,monogramme
+plain|pattern|plain solid color|uni,unie,sans motif
 leather|material|leather|cuir,leather,simili cuir
 suede|material|suede|daim,suede
 denim-material|material|denim|denim,toile de jean
@@ -128,6 +129,7 @@ linen|material|linen|lin,linen
 fur|material|faux fur|fourrure,moumoute,fur,sherpa
 velvet|material|velvet|velours,velvet
 mesh|material|sheer mesh|transparent,resille,mesh
+cotton|material|cotton|coton,cotton
 beach|place|at the beach|plage,mer,beach,bord de mer,vacances
 snow|place|in the snow|neige,ski,snow,montagne,hiver
 street|place|in a city street|rue,ville,street,urbain,city
@@ -139,6 +141,7 @@ office|place|in an office|bureau,travail,office,taf
 wedding|place|at a wedding|mariage,wedding,ceremonie
 restaurant|place|in a restaurant|restaurant,resto,diner
 gym|place|at the gym|salle de sport,gym,muscu
+home|place|at home indoors|maison,chez moi,interieur,appart
 summer|vibe|summer|ete,estival,summer,ensoleille
 winter|vibe|warm winter|hiver,hivernal,winter,froid
 autumn|vibe|autumn|automne,autumn,fall
@@ -301,4 +304,42 @@ export function refineSuggestions(query: string, limit = 10): string[] {
     for (const l of lists) if (l[i] && out.length < limit) out.push(displayWord(l[i]));
   }
   return [...new Set(out)];
+}
+
+/** Nom affiché d'une notion (« leather-jacket » → « veste en cuir »). */
+export function conceptLabel(key: string): string {
+  const c = VISUAL_CONCEPTS.find((x) => x.key === key);
+  return c ? displayWord(c.words[0]) : key;
+}
+
+/**
+ * Découpe une recherche en groupes de mots pour la recherche texte : chaque
+ * mot (ou expression connue) avec ses synonymes. « baskets noires » →
+ * [["baskets","basket","sneakers",…], ["noir","noire","black",…]].
+ */
+export function searchGroups(query: string): string[] {
+  const tokens = normalizeText(query.replace(/#/g, " ")).split(" ").filter(Boolean);
+  const groups: string[] = [];
+  let i = 0;
+  while (i < tokens.length && groups.length < 8) {
+    let matched = 0;
+    for (let len = Math.min(4, tokens.length - i); len >= 1; len--) {
+      const phrase = tokens.slice(i, i + len).join(" ");
+      const key = PHRASES.get(phrase);
+      if (key) {
+        const c = VISUAL_CONCEPTS.find((x) => x.key === key);
+        const words = [phrase, ...(c?.words ?? [])].map(normalizeText).filter(Boolean);
+        groups.push([...new Set(words)].slice(0, 12).join("|"));
+        matched = len;
+        break;
+      }
+    }
+    if (matched) {
+      i += matched;
+    } else {
+      if (!STOP.has(tokens[i]) && tokens[i].length > 1) groups.push(tokens[i]);
+      i += 1;
+    }
+  }
+  return groups;
 }

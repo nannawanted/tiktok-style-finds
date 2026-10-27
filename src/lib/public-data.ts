@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { STYLE_KEYS, cleanStyles, type StyleKey } from "./styles";
 import { cleanTags, normalizeTag } from "./tags";
-import { detectVisualConcepts, normalizeText } from "./visual-concepts";
+import { detectVisualConcepts, normalizeText, searchGroups } from "./visual-concepts";
 
 // Lectures publiques (aucune donnée privée). Ces fonctions tournent aussi bien
 // sur le serveur (pages fabriquées côté serveur, pour Google et les aperçus de
@@ -186,10 +186,13 @@ export async function fetchCreators(opts: { style?: StyleKey | null; q?: string;
 }
 
 /**
- * Recherche « comme Google » : on mélange, dans cet ordre,
- * 1. les correspondances exactes (hashtags, titre, pièces, marques, styles),
- * 2. les correspondances approchées (fautes de frappe),
- * 3. les photos qui correspondent visuellement (couleurs, vêtements, motifs, lieux…).
+ * Recherche façon Pinterest. Les résultats sont mélangés dans cet ordre :
+ * 1. ce que les gens ouvrent le plus après la même recherche (la recherche apprend des clics) ;
+ * 2. la recherche texte « moteur de recherche » : titre, hashtags, pièces, marques, styles,
+ *    avec pluriels, féminins, accents et synonymes (baskets = sneakers = tennis) ;
+ * 3. les photos où le créateur a confirmé ce que l'IA a vu ;
+ * 4. les fautes de frappe (« blazr » → blazer) ;
+ * 5. les photos que l'IA reconnaît (couleurs, vêtements, motifs, lieux…).
  * « #mot » ne cherche que dans les hashtags.
  */
 export async function searchOutfits(rawQ: string, style?: StyleKey | null, limit = 40): Promise<OutfitCard[]> {
@@ -202,22 +205,26 @@ export async function searchOutfits(rawQ: string, style?: StyleKey | null, limit
   const grams = new Set([...tokens, ...tokens.slice(1).map((w, i) => `${tokens[i]}${w}`)]);
   const styleMatch = STYLE_KEYS.filter((k) => grams.has(k.replace(/-/g, "")) || normalizeTag(k) === tag);
   const visualKeys = tagOnly ? [] : detectVisualConcepts(words);
-  const rows = <T,>(r: { data: unknown } | null) => ((r?.data ?? []) as T[]);
+  const groups = tagOnly ? [] : searchGroups(words);
+  const rows = <T,>(r: { data: unknown } | null) => (r?.data ?? []) as T[];
+  const rpc = (fn: string, args: Record<string, unknown>) => supabase.rpc(fn as never, args as never);
 
-  const [byTitle, byPiece, byTag, byStyle, byFuzzy, byVisual] = await Promise.all([
-    tagOnly || !words ? null : supabase.from("posts").select("id").ilike("title", `%${words}%`).limit(limit),
-    tagOnly || !words ? null : supabase.from("products").select("post_id").or(`name.ilike.%${words}%,brand.ilike.%${words}%`).limit(limit * 2),
-    tag ? supabase.rpc("posts_by_tag" as never, { p_q: tag, p_limit: limit } as never) : null,
+  const [byClicks, byFts, byTag, byVisualTags, byStyle, byFuzzy, byVisual] = await Promise.all([
+    tagOnly ? null : rpc("search_click_boost", { p_q: words, p_limit: 20 }),
+    groups.length ? rpc("search_posts_fts", { p_groups: groups, p_limit: limit }) : null,
+    tag ? rpc("posts_by_tag", { p_q: tag, p_limit: limit }) : null,
+    visualKeys.length ? rpc("posts_by_visual_tags", { p_keys: visualKeys, p_limit: limit }) : null,
     !tagOnly && styleMatch.length ? supabase.from("posts").select("id").overlaps("styles", styleMatch).order("views", { ascending: false }).limit(limit) : null,
-    tagOnly || words.length < 3 ? null : supabase.rpc("search_posts_fuzzy" as never, { p_q: words, p_limit: limit } as never),
-    visualKeys.length ? supabase.rpc("posts_by_visual" as never, { p_keys: visualKeys, p_limit: limit } as never) : null,
+    tagOnly || words.length < 3 ? null : rpc("search_posts_fuzzy", { p_q: words, p_limit: limit }),
+    visualKeys.length ? rpc("posts_by_visual", { p_keys: visualKeys, p_limit: limit }) : null,
   ]);
 
   const ids = [
     ...new Set([
+      ...rows<{ post_id: string }>(byClicks).map((r) => r.post_id),
       ...rows<{ id: string }>(byTag).map((r) => r.id),
-      ...rows<{ id: string }>(byTitle).map((r) => r.id),
-      ...rows<{ post_id: string }>(byPiece).map((r) => r.post_id),
+      ...rows<{ post_id: string }>(byFts).map((r) => r.post_id),
+      ...rows<{ post_id: string }>(byVisualTags).map((r) => r.post_id),
       ...rows<{ id: string }>(byStyle).map((r) => r.id),
       ...rows<{ post_id: string }>(byFuzzy).map((r) => r.post_id),
       ...rows<{ post_id: string }>(byVisual).map((r) => r.post_id),
@@ -226,6 +233,13 @@ export async function searchOutfits(rawQ: string, style?: StyleKey | null, limit
   if (!ids.length) return [];
   const cards = await fetchOutfitsByIds(ids.slice(0, 150));
   return (style ? cards.filter((c) => c.styles.includes(style)) : cards).slice(0, limit);
+}
+
+/** La recherche apprend : « après avoir cherché X, quelqu'un a ouvert la tenue Y ». */
+export function logSearchClick(q: string, postId: string) {
+  const clean = cleanQuery(q).replace(/#/g, " ").trim();
+  if (clean.length < 2) return;
+  void supabase.rpc("log_search_click" as never, { p_q: clean, p_post: postId } as never);
 }
 
 export type OutfitDetail = {

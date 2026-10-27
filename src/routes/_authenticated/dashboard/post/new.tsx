@@ -46,6 +46,8 @@ function NewPost() {
       cover_image: data.cover_image || null,
       styles: data.styles,
       tags: data.tags,
+      visual_tags: data.visual_tags,
+      visual_tags_rejected: data.visual_tags_rejected,
     }).select("id").single();
 
     if (error || !post) {

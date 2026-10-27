@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Check, Crop, Heart, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, X,
+  ArrowLeft, Check, Crop, Heart, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, Sparkles, X,
 } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 import { StylePicker } from "@/components/vitrine/StyleChips";
@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
+import { suggestVisualTags } from "@/lib/visual-embedding";
+import { conceptLabel } from "@/lib/visual-concepts";
 
 // Création / modification d'une tenue en 3 étapes (Photo · Pièces · Style),
 // comme une publication Instagram. Tout ce que faisait l'ancien formulaire
@@ -42,11 +44,14 @@ export type PostFormData = {
   styles: StyleKey[];
   /** Hashtags (sans #) pour retrouver la tenue dans la recherche. */
   tags: string[];
+  /** Ce que l’IA a vu sur la photo, gardé / retiré par le créateur (clés du vocabulaire). */
+  visual_tags: string[];
+  visual_tags_rejected: string[];
   products: ProductDraft[];
 };
 
 const URL_DEBOUNCE_MS = 600;
-const EMPTY: PostFormData = { title: "", tiktok_url: "", cover_image: "", styles: [], tags: [], products: [] };
+const EMPTY: PostFormData = { title: "", tiktok_url: "", cover_image: "", styles: [], tags: [], visual_tags: [], visual_tags_rejected: [], products: [] };
 const SUGGESTIONS: TKey[] = ["studio.sugg1", "studio.sugg2", "studio.sugg3", "studio.sugg4", "studio.sugg5"];
 
 function extractHostname(url: string): string {
@@ -64,7 +69,7 @@ function matchBrandForUrl(url: string, brands: PartnerBrand[]): PartnerBrand | n
 }
 
 const newKey = () => Math.random().toString(36).slice(2, 10);
-const withKeys = (d: PostFormData): PostFormData => ({ ...d, tags: cleanTags(d.tags), products: d.products.map((p) => ({ ...p, _k: p._k ?? newKey() })) });
+const withKeys = (d: PostFormData): PostFormData => ({ ...d, tags: cleanTags(d.tags), visual_tags: d.visual_tags ?? [], visual_tags_rejected: d.visual_tags_rejected ?? [], products: d.products.map((p) => ({ ...p, _k: p._k ?? newKey() })) });
 const hasContent = (d: PostFormData) => !!(d.title.trim() || d.cover_image || d.tiktok_url || d.products.length);
 
 // ——— Brouillon (création seulement), gardé dans ce navigateur ———
@@ -114,6 +119,8 @@ export function PostForm({
   const [editing, setEditing] = useState<string | null>(null);
   const [pieceUrl, setPieceUrl] = useState("");
   const [tagInput, setTagInput] = useState("");
+  // Ce que l'IA voit sur la photo (calculé dès que la photo est choisie)
+  const [ai, setAi] = useState<{ status: "idle" | "loading" | "done" | "error"; keys: string[] }>({ status: "idle", keys: [] });
   const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -170,6 +177,41 @@ export function PostForm({
     }, 500);
     return () => clearTimeout(id);
   }, [data, mode, draftKey]);
+
+  useEffect(() => {
+    const url = data.cover_image;
+    if (!url || typeof window === "undefined") return;
+    let cancelled = false;
+    setAi({ status: "loading", keys: [] });
+    suggestVisualTags(url)
+      .then((keys) => {
+        if (cancelled) return;
+        setAi({ status: "done", keys });
+        // Par défaut, tout ce que l'IA voit est gardé (sauf ce que le créateur a déjà retiré)
+        setData((d) => ({
+          ...d,
+          visual_tags: [...new Set([...d.visual_tags, ...keys.filter((k) => !d.visual_tags_rejected.includes(k))])].slice(0, 20),
+        }));
+      })
+      .catch((e) => {
+        console.warn("[visual] suggestions indisponibles", e);
+        if (!cancelled) setAi({ status: "error", keys: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.cover_image]);
+
+  function toggleVisualTag(key: string) {
+    setData((d) => {
+      const on = d.visual_tags.includes(key);
+      return {
+        ...d,
+        visual_tags: on ? d.visual_tags.filter((k) => k !== key) : [...d.visual_tags, key].slice(0, 20),
+        visual_tags_rejected: on ? [...new Set([...d.visual_tags_rejected, key])].slice(0, 20) : d.visual_tags_rejected.filter((k) => k !== key),
+      };
+    });
+  }
 
   function go(n: number) {
     setStep(n);
@@ -716,6 +758,43 @@ export function PostForm({
             <p className="mt-1 text-[13px] text-foreground/60">{t("studio.styleHint")}</p>
           </div>
           <StylePicker value={data.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setData((d) => ({ ...d, styles }))} />
+
+          {data.cover_image && (
+            <div>
+              <h2 className="font-display flex items-center gap-2 text-2xl font-bold">
+                <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" /> {t("studio.aiTitle")}
+              </h2>
+              <p className="mt-1 text-[13px] text-foreground/60">{t("studio.aiHint")}</p>
+              {ai.status === "loading" ? (
+                <p className="mt-3 flex items-center gap-2 rounded-2xl bg-surface px-4 py-3 text-sm font-semibold">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> {t("studio.aiLoading")}
+                </p>
+              ) : ai.status === "error" && !data.visual_tags.length ? (
+                <p className="mt-3 rounded-2xl bg-surface px-4 py-3 text-sm text-foreground/65">{t("studio.aiError")}</p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[...new Set([...ai.keys, ...data.visual_tags])].map((key) => {
+                    const on = data.visual_tags.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleVisualTag(key)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-all active:scale-95 ${on ? "bg-ink text-surface" : "border-[1.5px] border-dashed border-border text-foreground/45 line-through"}`}
+                      >
+                        {on ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <X className="h-3.5 w-3.5" aria-hidden="true" />}
+                        {conceptLabel(key)}
+                      </button>
+                    );
+                  })}
+                  {ai.status === "done" && ai.keys.length === 0 && !data.visual_tags.length && (
+                    <p className="text-sm text-foreground/60">{t("studio.aiNothing")}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <h2 className="font-display text-2xl font-bold">{t("studio.tagsTitle")}</h2>

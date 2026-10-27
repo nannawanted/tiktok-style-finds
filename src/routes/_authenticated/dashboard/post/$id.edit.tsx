@@ -34,6 +34,8 @@ function EditPost() {
         cover_image: post.cover_image ?? "",
         styles: cleanStyles(post.styles),
         tags: cleanTags((post as { tags?: string[] }).tags),
+        visual_tags: (post as { visual_tags?: string[] }).visual_tags ?? [],
+        visual_tags_rejected: (post as { visual_tags_rejected?: string[] }).visual_tags_rejected ?? [],
         products: (products ?? []).map((p) => ({
           id: p.id,
           brand: p.brand ?? "",
@@ -55,6 +57,8 @@ function EditPost() {
       cover_image: form.cover_image || null,
       styles: form.styles,
       tags: form.tags,
+      visual_tags: form.visual_tags,
+      visual_tags_rejected: form.visual_tags_rejected,
     }).eq("id", id);
     if (error) {
       setLoading(false);

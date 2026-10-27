@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
-import { cleanQuery, fetchFeedPage, searchOutfits, type FeedKind, type OutfitCard } from "@/lib/public-data";
+import { cleanQuery, fetchFeedPage, logSearchClick, searchOutfits, type FeedKind, type OutfitCard } from "@/lib/public-data";
 import { isStyleKey, type StyleKey } from "@/lib/styles";
 import { absoluteUrl } from "@/lib/site";
 import { OutfitGrid } from "@/components/vitrine/OutfitCard";
@@ -78,7 +78,17 @@ function Explorer() {
       <div className="sticky top-[118px] z-30 -mx-4 mt-3 bg-background/90 px-4 py-3 backdrop-blur-md md:top-[72px] md:-mx-6 md:px-6">
         <StyleChips value={style ?? null} onChange={(s) => update({ style: s ?? undefined })} />
       </div>
-      <div className="mt-6">{results.length ? <OutfitGrid outfits={results} /> : <EmptyBox text={t("explore.noOutfits")} />}</div>
+      <div
+        className="mt-6"
+        // La recherche apprend des clics : on note quelle tenue est ouverte après cette recherche
+        onClickCapture={(e) => {
+          const a = (e.target as HTMLElement).closest("a[href^='/post/']");
+          const id = a?.getAttribute("href")?.split("/")[2];
+          if (id && q) logSearchClick(q, id);
+        }}
+      >
+        {results.length ? <OutfitGrid outfits={results} /> : <EmptyBox text={t("explore.noOutfits")} />}
+      </div>
     </main>
   );
 }

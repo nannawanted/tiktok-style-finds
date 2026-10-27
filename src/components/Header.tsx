@@ -10,7 +10,7 @@ import { useTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
-import { cleanQuery, fetchCreators, searchOutfits } from "@/lib/public-data";
+import { cleanQuery, fetchCreators, logSearchClick, searchOutfits } from "@/lib/public-data";
 import { searchCompletions } from "@/lib/visual-concepts";
 import { normalizeTag } from "@/lib/tags";
 import { Avatar } from "@/components/vitrine/OutfitCard";
@@ -145,7 +145,10 @@ function SearchBox({ className = "" }: { className?: string }) {
                   key={o.id}
                   to="/post/$id"
                   params={{ id: o.id }}
-                  onClick={closeMenu}
+                  onClick={() => {
+                    logSearchClick(debounced, o.id);
+                    closeMenu();
+                  }}
                   className="flex items-center gap-3 rounded-2xl px-3 py-2 hover:bg-card"
                 >
                   <span className="h-11 w-9 shrink-0 overflow-hidden rounded-lg bg-card">
