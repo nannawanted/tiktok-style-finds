@@ -506,6 +506,7 @@ const dict = {
     crop: { fr: "Recadrer", en: "Crop" },
     cropUnavailable: { fr: "Impossible de recadrer cette image, importe-la depuis ta galerie", en: "Can't crop this image, upload it from your gallery" },
     change: { fr: "Changer", en: "Change" },
+    changeCover: { fr: "Changer la couverture", en: "Change cover" },
     titleLabel: { fr: "Nom du look", en: "Look name" },
     titlePlaceholder: { fr: "Blazer beige et jean droit", en: "Beige blazer and straight jeans" },
     titleHint: { fr: "Court et précis, comme une recherche Google", en: "Short and precise, like a Google search" },

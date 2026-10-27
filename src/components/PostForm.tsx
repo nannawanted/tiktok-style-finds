@@ -388,16 +388,17 @@ export function PostForm({
     data.cover_image ? (
       <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-[0_20px_40px_-28px_rgba(40,20,10,.7)]">
         <img src={data.cover_image} alt={t("studio.coverAlt")} referrerPolicy="no-referrer" draggable={false} className="block w-full select-none" />
-        {!fromVideo && (
-          <div className="absolute right-3 top-3 flex gap-2">
+        <div className="absolute right-3 top-3 flex gap-2">
+          {!fromVideo && (
             <button type="button" onClick={recropCurrent} className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-2 text-[13px] font-semibold backdrop-blur">
               <Crop className="h-3.5 w-3.5" aria-hidden="true" /> {t("studio.crop")}
             </button>
-            <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-2 text-[13px] font-semibold backdrop-blur">
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {t("studio.change")}
-            </button>
-          </div>
-        )}
+          )}
+          {/* Vidéo : la miniature peut être remplacée par une photo de la galerie (avec recadrage) */}
+          <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-2 text-[13px] font-semibold backdrop-blur">
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {fromVideo ? t("studio.changeCover") : t("studio.change")}
+          </button>
+        </div>
         {coverLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 text-sm font-semibold">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> {t("studio.fetchingCover")}
@@ -562,16 +563,6 @@ export function PostForm({
             </div>
           )}
 
-          {fromVideo && (
-            <div className="rounded-3xl bg-surface/70 px-4 py-3">
-              <Label htmlFor="studio-video2">{t("studio.videoLabel")}</Label>
-              <div className="relative mt-1">
-                <Input id="studio-video2" type="url" inputMode="url" value={data.tiktok_url} onChange={(e) => handleVideoUrlChange(e.target.value)} placeholder={t("studio.videoPlaceholder")} />
-                {coverLoading && <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
-              </div>
-              <p className="mt-1 text-xs text-foreground/60">{t("studio.videoHint")}</p>
-            </div>
-          )}
         </section>
       )}
 
