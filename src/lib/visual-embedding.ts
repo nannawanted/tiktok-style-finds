@@ -105,7 +105,7 @@ export async function computeTextEmbeddings(texts: string[]): Promise<number[][]
 
 /** Calcule et enregistre les empreintes des notions manquantes (admin). */
 export async function indexVisualConcepts(
-  concepts: { key: string; prompt: string }[],
+  concepts: { key: string; prompt: string; category?: string }[],
   onProgress?: (done: number, total: number) => void,
 ): Promise<{ done: number; failed: number }> {
   let done = 0;
@@ -121,6 +121,9 @@ export async function indexVisualConcepts(
           p_prompt: batch[j].prompt,
           p_embedding: vectors[j],
         } as never);
+        if (!error && batch[j].category) {
+          await supabase.rpc("set_visual_concept_category" as never, { p_key: batch[j].key, p_category: batch[j].category } as never);
+        }
         if (error) failed += 1;
         else done += 1;
       }
