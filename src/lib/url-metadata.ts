@@ -376,16 +376,44 @@ export const fetchProductMetadata = createServerFn({ method: "POST" })
 const THUMBNAIL_HOSTS = [/\.tiktokcdn(-[a-z]+)?\.com$/, /\.ibyteimg\.com$/, /\.byteimg\.com$/, /\.cdninstagram\.com$/, /\.fbcdn\.net$/];
 const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
 
-/** Les liens courts partagés depuis l'appli (vm./vt.tiktok.com) redirigent vers la vraie vidéo. */
-async function resolveTikTokUrl(url: string): Promise<string> {
-  const u = new URL(url);
-  if (/^(vm|vt)\.tiktok\.com$/.test(u.hostname) || u.pathname.startsWith("/t/")) {
-    const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": BROWSER_USER_AGENT } });
-    const finalUrl = new URL(res.url);
-    if (!finalUrl.hostname.endsWith("tiktok.com")) throw new Error("URL TikTok invalide");
-    return `${finalUrl.origin}${finalUrl.pathname}`;
+const isTikTokHost = (h: string) => h === "tiktok.com" || h.endsWith(".tiktok.com");
+const isShortTikTok = (u: URL) => /^(vm|vt)\.tiktok\.com$/.test(u.hostname) || u.pathname.startsWith("/t/");
+
+/** Identifiant numérique de la vidéo (ou du post photo) s'il est dans le lien. */
+function tiktokPostId(u: URL): { id: string; kind: "video" | "photo" } | null {
+  const m = u.pathname.match(/\/(video|photo)\/(\d{8,25})/);
+  if (m) return { id: m[2], kind: m[1] as "video" | "photo" };
+  const v = u.pathname.match(/^\/v\/(\d{8,25})/); // m.tiktok.com/v/123.html
+  if (v) return { id: v[1], kind: "video" };
+  const q = u.searchParams.get("item_id") || u.searchParams.get("share_item_id");
+  return q && /^\d{8,25}$/.test(q) ? { id: q, kind: "video" } : null;
+}
+
+/**
+ * Les liens courts partagés depuis l'appli (vm./vt.tiktok.com, /t/…) redirigent
+ * vers la vraie vidéo. On suit les redirections une par une (sans charger la
+ * page finale, que TikTok bloque souvent pour les serveurs).
+ */
+async function resolveTikTokUrl(url: string): Promise<URL> {
+  let u = new URL(url);
+  for (let i = 0; i < 5 && isShortTikTok(u) && !tiktokPostId(u); i++) {
+    const res = await fetch(u, { redirect: "manual", headers: { "User-Agent": BROWSER_USER_AGENT } });
+    const loc = res.headers.get("location");
+    if (!loc) break;
+    const next = new URL(loc, u);
+    if (!isTikTokHost(next.hostname)) throw new Error("bad_redirect");
+    u = next;
   }
-  return `${u.origin}${u.pathname}`;
+  return u;
+}
+
+async function tiktokOembedThumbnail(target: string): Promise<{ thumb: string; status: number }> {
+  const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(target)}`, {
+    headers: { Accept: "application/json", "User-Agent": BROWSER_USER_AGENT },
+  });
+  if (!res.ok) return { thumb: "", status: res.status };
+  const json = (await res.json().catch(() => ({}))) as { thumbnail_url?: string };
+  return { thumb: json.thumbnail_url ?? "", status: res.status };
 }
 
 /**
@@ -409,40 +437,71 @@ async function copyThumbnailToStorage(imageUrl: string): Promise<string> {
   return supabaseAdmin.storage.from("covers").getPublicUrl(path).data.publicUrl;
 }
 
+export type TikTokCoverResult = { thumbnail_url: string; error?: string };
+
 export const fetchTikTokOembed = createServerFn({ method: "POST" })
   .inputValidator((data: { url: string; accessToken: string }) => {
     const parsed = parseHttpUrl(data.url);
-    if (!parsed.hostname.endsWith("tiktok.com")) {
-      throw new Error("URL TikTok invalide");
-    }
+    if (!isTikTokHost(parsed.hostname)) throw new Error("URL TikTok invalide");
     if (typeof data.accessToken !== "string" || !data.accessToken) throw new Error("not_authenticated");
     return data;
   })
-  .handler(async ({ data }) => {
-    // Réservé aux créateurs connectés : la fonction télécharge et stocke une image.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
-    if (userError || !userData?.user) throw new Error("not_authenticated");
+  .handler(async ({ data }): Promise<TikTokCoverResult> => {
+    // Réservé aux créateurs connectés (la fonction télécharge et stocke une image).
+    // Vérification avec la clé publique : marche même si la clé admin manque.
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: userData, error: userError } = await supabase.auth.getUser(data.accessToken);
+    if (userError || !userData?.user) return { thumbnail_url: "", error: "not_authenticated" };
 
-    // TikTok's oEmbed endpoint can fail to parse URLs with extra tracking
-    // query params (is_from_webapp, sender_device, web_id, etc). Strip them
-    // and keep only the clean post path before requesting the embed.
-    const cleanUrl = await resolveTikTokUrl(data.url).catch(() => data.url);
+    let resolved: URL;
+    try {
+      resolved = await resolveTikTokUrl(data.url);
+    } catch (e) {
+      console.error("[TikTok] lien court non résolu", data.url, e);
+      resolved = new URL(data.url);
+    }
+    const post = tiktokPostId(resolved);
+    const user = resolved.pathname.match(/^\/(@[^/]+)/)?.[1];
 
-    const res = await fetch(
-      `https://www.tiktok.com/oembed?url=${encodeURIComponent(cleanUrl)}`,
-      { headers: { Accept: "application/json", "User-Agent": BROWSER_USER_AGENT } },
-    );
+    // Plusieurs formes d'adresse, de la plus fiable à la moins fiable
+    const candidates = [
+      `${resolved.origin}${resolved.pathname}`,
+      post && user ? `https://www.tiktok.com/${user}/${post.kind}/${post.id}` : "",
+      post ? `https://www.tiktok.com/@tiktok/${post.kind}/${post.id}` : "",
+      post && post.kind === "photo" ? `https://www.tiktok.com/@tiktok/video/${post.id}` : "",
+      data.url,
+    ].filter((c, i, all) => c && all.indexOf(c) === i);
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error(`[TikTok oEmbed] ${res.status} for ${cleanUrl}: ${body.slice(0, 300)}`);
-      throw new Error("Impossible de récupérer la miniature TikTok");
+    let thumb = "";
+    let lastStatus = 0;
+    for (const c of candidates) {
+      try {
+        const r = await tiktokOembedThumbnail(c);
+        lastStatus = r.status;
+        if (r.thumb) {
+          thumb = r.thumb;
+          break;
+        }
+      } catch (e) {
+        console.error("[TikTok oEmbed] échec réseau", c, e);
+      }
     }
 
-    const json = (await res.json()) as { thumbnail_url?: string };
-    if (!json.thumbnail_url) return { thumbnail_url: "" };
-    const stored = await copyThumbnailToStorage(json.thumbnail_url).catch(() => json.thumbnail_url ?? "");
+    // Dernier recours : l'image d'aperçu de la page (og:image)
+    if (!thumb) {
+      try {
+        const meta = await resolveProductMetadata(`${resolved.origin}${resolved.pathname}`);
+        if (meta.image_url) thumb = meta.image_url;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (!thumb) {
+      console.error(`[TikTok] aucune miniature pour ${data.url} (résolu : ${resolved.href}, oEmbed ${lastStatus})`);
+      return { thumbnail_url: "", error: post ? `oembed_${lastStatus || "network"}` : "no_video_id" };
+    }
+    const stored = await copyThumbnailToStorage(thumb).catch(() => thumb);
     return { thumbnail_url: stored };
   });
 

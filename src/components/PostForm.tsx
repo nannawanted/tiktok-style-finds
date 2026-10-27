@@ -107,6 +107,8 @@ export function PostForm({
   const [coverNotice, setCoverNotice] = useState<string | null>(null);
   const [showVideoField, setShowVideoField] = useState(false);
   const [pendingCover, setPendingCover] = useState<File | null>(null);
+  // D'où vient la photo actuelle (pour savoir si on propose le recadrage)
+  const [coverSource, setCoverSource] = useState<"video" | "photo" | null>(null);
   const [productLoading, setProductLoading] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [pieceUrl, setPieceUrl] = useState("");
@@ -188,6 +190,7 @@ export function PostForm({
       }
       const { data: urlData } = supabase.storage.from("covers").getPublicUrl(path);
       setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
+      setCoverSource("photo");
       if (step === 0) go(1);
     } finally {
       setCoverLoading(false);
@@ -225,19 +228,25 @@ export function PostForm({
           const result = await fetchTikTokOembed({ data: { url, accessToken } });
           if (result.thumbnail_url) {
             setData((d) => ({ ...d, cover_image: result.thumbnail_url ?? d.cover_image }));
+            setCoverSource("video");
             toast(t("studio.coverReady"));
             if (step === 0) go(1);
-          } else setCoverNotice(t("postForm.tiktokThumbFail"));
+          } else {
+            console.warn("[TikTok] miniature indisponible :", result.error);
+            setCoverNotice(`${t("studio.videoFail")} (${result.error ?? "?"})`);
+          }
         } else {
           const meta = await fetchProductMetadata({ data: { url } });
           if (meta.image_url) {
             setData((d) => ({ ...d, cover_image: meta.image_url ?? d.cover_image }));
+            setCoverSource("video");
             toast(t("studio.coverReady"));
             if (step === 0) go(1);
           } else setCoverNotice(t("postForm.instagramThumbFail"));
         }
-      } catch {
-        setCoverNotice(isTikTok ? t("postForm.tiktokThumbFail") : t("postForm.instagramThumbFail"));
+      } catch (e) {
+        console.warn("[vidéo] miniature indisponible :", e);
+        setCoverNotice(isTikTok ? `${t("studio.videoFail")} (${e instanceof Error ? e.message.slice(0, 60) : "?"})` : t("postForm.instagramThumbFail"));
       } finally {
         setCoverLoading(false);
       }
@@ -374,7 +383,7 @@ export function PostForm({
 
   // ——— Rendu ———
   // Photo issue d'une vidéo TikTok/Instagram : pas de recadrage (c'est la miniature de la vidéo)
-  const fromVideo = !!data.tiktok_url.trim();
+  const fromVideo = coverSource ? coverSource === "video" : !!data.tiktok_url.trim();
   const coverBlock = () =>
     data.cover_image ? (
       <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-[0_20px_40px_-28px_rgba(40,20,10,.7)]">
@@ -494,7 +503,14 @@ export function PostForm({
                     </button>
                   )}
                 </div>
-                {coverNotice && <p className="rounded-xl bg-accent/30 px-3 py-2 text-[13px]">{coverNotice}</p>}
+                {coverNotice && (
+                  <div className="space-y-2 rounded-xl bg-accent/30 px-3 py-2.5 text-[13px] leading-snug">
+                    <p>{coverNotice}</p>
+                    <button type="button" onClick={() => fileRef.current?.click()} className="font-semibold underline underline-offset-4">
+                      {t("studio.useGalleryInstead")}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

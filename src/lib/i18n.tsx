@@ -497,6 +497,8 @@ const dict = {
     videoLabel: { fr: "Lien de la vidéo TikTok ou Instagram", en: "TikTok or Instagram video link" },
     videoPlaceholder: { fr: "https://www.tiktok.com/@toi/video/…", en: "https://www.tiktok.com/@you/video/…" },
     videoHint: { fr: "Un bouton « Voir la vidéo » apparaîtra sur ta tenue.", en: "A “Watch the video” button will appear on your outfit." },
+    videoFail: { fr: "On n'a pas réussi à récupérer la miniature de cette vidéo. Vérifie que la vidéo est publique, ou choisis une photo de ta galerie : le lien de la vidéo sera quand même gardé.", en: "We couldn't get this video's thumbnail. Check the video is public, or pick a photo from your gallery: the video link will still be kept." },
+    useGalleryInstead: { fr: "Choisir une photo de ma galerie", en: "Pick a photo from my gallery" },
     fetchingCover: { fr: "Récupération de la miniature…", en: "Fetching the thumbnail…" },
     coverReady: { fr: "Miniature récupérée", en: "Thumbnail ready" },
     coverAlt: { fr: "Photo de la tenue", en: "Outfit photo" },
