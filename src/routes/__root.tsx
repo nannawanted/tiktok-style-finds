@@ -19,6 +19,8 @@ import { Footer } from "../components/Footer";
 import { CookieConsent } from "../components/CookieConsent";
 import { Toaster } from "../components/ui/sonner";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "../lib/site";
+import { CollectionPickerProvider } from "../components/vitrine/CollectionPicker";
+import { InterestsDialog } from "../components/vitrine/InterestsDialog";
 
 function NotFoundComponent() {
   return (
@@ -127,11 +129,14 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <Header />
-          <Outlet />
-          <Footer />
-          <CookieConsent />
-          <Toaster />
+          <CollectionPickerProvider>
+            <Header />
+            <Outlet />
+            <Footer />
+            <CookieConsent />
+            <InterestsDialog />
+            <Toaster />
+          </CollectionPickerProvider>
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>

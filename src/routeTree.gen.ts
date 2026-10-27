@@ -21,6 +21,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedEnregistresRouteImport } from './routes/_authenticated/enregistres'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as ApiConversionRouteImport } from './routes/api.conversion'
 import { Route as CreatorUsernameRouteImport } from './routes/creator.$username'
 import { Route as GoProductIdRouteImport } from './routes/go.$productId'
@@ -92,6 +93,12 @@ const AuthenticatedEnregistresRoute =
   AuthenticatedEnregistresRouteImport.update({
     id: '/enregistres',
     path: '/enregistres',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiConversionRoute = ApiConversionRouteImport.update({
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/enregistres': typeof AuthenticatedEnregistresRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/api/conversion': typeof ApiConversionRoute
   '/creator/$username': typeof CreatorUsernameRoute
   '/go/$productId': typeof GoProductIdRoute
@@ -193,6 +201,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/enregistres': typeof AuthenticatedEnregistresRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/api/conversion': typeof ApiConversionRoute
   '/creator/$username': typeof CreatorUsernameRoute
   '/go/$productId': typeof GoProductIdRoute
@@ -219,6 +228,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/enregistres': typeof AuthenticatedEnregistresRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/api/conversion': typeof ApiConversionRoute
   '/creator/$username': typeof CreatorUsernameRoute
   '/go/$productId': typeof GoProductIdRoute
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/enregistres'
+    | '/notifications'
     | '/api/conversion'
     | '/creator/$username'
     | '/go/$productId'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/enregistres'
+    | '/notifications'
     | '/api/conversion'
     | '/creator/$username'
     | '/go/$productId'
@@ -294,6 +306,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/_authenticated/enregistres'
+    | '/_authenticated/notifications'
     | '/api/conversion'
     | '/creator/$username'
     | '/go/$productId'
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEnregistresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/conversion': {
       id: '/api/conversion'
       path: '/api/conversion'
@@ -493,6 +513,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnregistresRoute: typeof AuthenticatedEnregistresRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedDashboardBrandsRoute: typeof AuthenticatedDashboardBrandsRoute
   AuthenticatedDashboardEarningsRoute: typeof AuthenticatedDashboardEarningsRoute
   AuthenticatedDashboardSalesRoute: typeof AuthenticatedDashboardSalesRoute
@@ -504,6 +525,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEnregistresRoute: AuthenticatedEnregistresRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedDashboardBrandsRoute: AuthenticatedDashboardBrandsRoute,
   AuthenticatedDashboardEarningsRoute: AuthenticatedDashboardEarningsRoute,
   AuthenticatedDashboardSalesRoute: AuthenticatedDashboardSalesRoute,

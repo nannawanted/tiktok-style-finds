@@ -1,17 +1,19 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowUpRight, Flag, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
-import { fetchOutfit, fetchSimilarOutfits } from "@/lib/public-data";
+import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
 import { styleLabelKey } from "@/lib/styles";
 import { absoluteUrl, clip, DEFAULT_OG_IMAGE, outfitPath, profilePath, SITE_NAME } from "@/lib/site";
 import { ShareButton } from "@/components/ShareButton";
-import { Avatar, OutfitGrid } from "@/components/vitrine/OutfitCard";
+import { Avatar } from "@/components/vitrine/OutfitCard";
 import { SaveButton } from "@/components/vitrine/SaveButton";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { MadeWithBanner } from "@/components/vitrine/MadeWith";
+import { DoubleTapLike } from "@/components/vitrine/DoubleTapLike";
+import { InfiniteOutfitFeed } from "@/components/vitrine/InfiniteOutfitFeed";
+import { AddToCollectionButton } from "@/components/vitrine/AddToCollectionButton";
 
 export const Route = createFileRoute("/post/$id")({
   loader: async ({ params }) => {
@@ -108,10 +110,6 @@ function OutfitPage() {
     });
   }, [id]);
 
-  const similar = useQuery({
-    queryKey: ["similar", id],
-    queryFn: () => fetchSimilarOutfits(id, post.styles, 8),
-  });
 
   const pageUrl = absoluteUrl(outfitPath(id));
 
@@ -131,9 +129,9 @@ function OutfitPage() {
 
       <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
         <div className="fade-up md:sticky md:top-24 md:self-start">
-          <div className="relative overflow-hidden rounded-[28px] bg-secondary shadow-xl">
+          <DoubleTapLike postId={id} className="overflow-hidden rounded-[28px] bg-secondary shadow-xl">
             {post.cover_image ? (
-              <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" className="max-h-[78vh] w-full object-cover" />
+              <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" draggable={false} className="max-h-[78vh] w-full object-cover" />
             ) : (
               <div className="aspect-[9/14] w-full" />
             )}
@@ -142,18 +140,18 @@ function OutfitPage() {
                 href={post.tiktok_url}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                className="group absolute inset-0 flex items-center justify-center"
-                aria-label={t("outfit.watchOn")}
+                className="group absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface"
               >
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface/90 shadow-lg transition-transform group-hover:scale-110">
-                  <Play className="ml-1 h-7 w-7 fill-current text-foreground" aria-hidden="true" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 transition-transform group-hover:scale-110">
+                  <Play className="ml-0.5 h-4 w-4 fill-current text-foreground" aria-hidden="true" />
                 </span>
-                <span className="absolute bottom-4 left-4 rounded-full bg-ink/90 px-3.5 py-2 text-sm font-bold text-surface">
-                  {t("outfit.watchOn")}
-                </span>
+                {t("outfit.watchOn")}
               </a>
             )}
-          </div>
+            <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-ink/70 px-3 py-1 text-[11px] font-semibold text-surface">
+              {t("engage.doubleTapHint")}
+            </span>
+          </DoubleTapLike>
         </div>
 
         <div className="fade-up" style={{ animationDelay: "120ms" }}>
@@ -222,6 +220,7 @@ function OutfitPage() {
 
           <div className="mt-6 flex gap-2.5">
             <SaveButton postId={id} variant="wide" />
+            <AddToCollectionButton postId={id} />
             <ShareButton
               title={post.title}
               text={`@${post.creator_username} sur WantedFashion`}
@@ -242,16 +241,20 @@ function OutfitPage() {
         </div>
       </div>
 
-      {similar.data && similar.data.length > 0 && (
-        <section className="mt-14">
-          <h2 className="font-display mb-5 text-3xl font-bold">{t("outfit.similar")}</h2>
-          <OutfitGrid outfits={similar.data} />
-        </section>
-      )}
-
       <div className="mt-10">
         <MadeWithBanner />
       </div>
+
+      <section className="mt-14">
+        <h2 className="font-display mb-5 text-3xl font-bold">{t("engage.moreLikeThis")}</h2>
+        <InfiniteOutfitFeed
+          key={id}
+          queryKey={["more-like-this", id]}
+          fetchPage={(page) => fetchMoreLikeThis(id, post.styles, page)}
+          excludeIds={[id]}
+        />
+      </section>
+
     </main>
   );
 }

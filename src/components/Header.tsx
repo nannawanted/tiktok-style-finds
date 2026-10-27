@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut } from "lucide-react";
+import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut, Bell } from "lucide-react";
+import { useNotifications } from "@/lib/social";
 import { toast } from "sonner";
 import { Logo } from "./Logo";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -144,6 +145,26 @@ function SearchBox({ className = "" }: { className?: string }) {
   );
 }
 
+function NotificationBell({ className = "" }: { className?: string }) {
+  const { t } = useTranslation();
+  const { data } = useNotifications();
+  const unread = data?.filter((n) => !n.read_at).length ?? 0;
+  return (
+    <Link
+      to="/notifications"
+      aria-label={unread ? `${t("engage.notifications")} (${unread})` : t("engage.notifications")}
+      className={`relative flex h-11 w-11 items-center justify-center rounded-full hover:bg-surface ${className}`}
+    >
+      <Bell className="h-5 w-5" aria-hidden="true" />
+      {unread > 0 && (
+        <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
+          {unread > 9 ? "9+" : unread}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 export function Header() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
@@ -181,6 +202,7 @@ export function Header() {
           <LanguageSwitch />
           {loading ? null : user ? (
             <>
+              <NotificationBell />
               <Link to="/enregistres" className={navLink} aria-label={t("nav2.saved")}>
                 <Heart className="h-5 w-5" aria-hidden="true" />
               </Link>
@@ -206,12 +228,13 @@ export function Header() {
           )}
         </div>
 
+        {user && <NotificationBell className="ml-auto md:hidden" />}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button
               type="button"
               aria-label={t("nav2.menu")}
-              className="ml-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface md:hidden"
+              className={`${user ? "" : "ml-auto "}flex h-11 w-11 items-center justify-center rounded-full bg-surface md:hidden`}
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>

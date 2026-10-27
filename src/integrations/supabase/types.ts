@@ -104,6 +104,21 @@ export type Database = {
           },
         ]
       }
+      collection_items: {
+        Row: { collection_id: string; created_at: string; post_id: string }
+        Insert: { collection_id: string; created_at?: string; post_id: string }
+        Update: { collection_id?: string; created_at?: string; post_id?: string }
+        Relationships: [
+          { foreignKeyName: "collection_items_collection_id_fkey"; columns: ["collection_id"]; isOneToOne: false; referencedRelation: "collections"; referencedColumns: ["id"] },
+          { foreignKeyName: "collection_items_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] },
+        ]
+      }
+      collections: {
+        Row: { created_at: string; id: string; name: string; user_id: string }
+        Insert: { created_at?: string; id?: string; name: string; user_id: string }
+        Update: { created_at?: string; id?: string; name?: string; user_id?: string }
+        Relationships: []
+      }
       creators: {
         Row: {
           banner_image: string | null
@@ -114,6 +129,7 @@ export type Database = {
           last_known_ip: string | null
           profile_image: string | null
           instagram_url: string | null
+          interests: string[]
           styles: string[]
           tiktok_url: string | null
           username: string
@@ -127,6 +143,7 @@ export type Database = {
           last_known_ip?: string | null
           profile_image?: string | null
           instagram_url?: string | null
+          interests?: string[]
           styles?: string[]
           tiktok_url?: string | null
           username: string
@@ -140,11 +157,20 @@ export type Database = {
           last_known_ip?: string | null
           profile_image?: string | null
           instagram_url?: string | null
+          interests?: string[]
           styles?: string[]
           tiktok_url?: string | null
           username?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: { actor_id: string | null; count: number | null; created_at: string; id: string; post_id: string | null; read_at: string | null; type: string; user_id: string }
+        Insert: { actor_id?: string | null; count?: number | null; created_at?: string; id?: string; post_id?: string | null; read_at?: string | null; type: string; user_id: string }
+        Update: { actor_id?: string | null; count?: number | null; created_at?: string; id?: string; post_id?: string | null; read_at?: string | null; type?: string; user_id?: string }
+        Relationships: [
+          { foreignKeyName: "notifications_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] },
+        ]
       }
       posts: {
         Row: {

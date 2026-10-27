@@ -10,6 +10,7 @@ export type OutfitCard = {
   title: string;
   cover_image: string | null;
   creator_username: string;
+  creator_id?: string;
   creator_avatar: string | null;
   tiktok_url: string | null;
   styles: StyleKey[];
@@ -32,6 +33,7 @@ const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, ti
 
 type RawOutfit = {
   id: string;
+  creator_id?: string;
   title: string;
   cover_image: string | null;
   creator_username: string;
@@ -94,6 +96,7 @@ async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
     title: r.title,
     cover_image: r.cover_image,
     creator_username: r.creator_username,
+    creator_id: r.creator_id,
     creator_avatar: avatars.get(r.creator_username) ?? null,
     tiktok_url: r.tiktok_url,
     styles: cleanStyles(r.styles),
@@ -321,4 +324,150 @@ export async function fetchSuggestions(opts: { styles: StyleKey[]; exclude: stri
     for (const c of (data ?? []).map(toCreatorCard)) if (c && !exclude.has(c.id) && !pool.some((p) => p.id === c.id)) pool.push(c);
   }
   return pool.slice(0, limit);
+}
+
+// ——— Fils infinis (pages successives) ———
+
+export type FeedKind = "trending" | "latest" | "foryou" | "following";
+export const FEED_PAGE = 24;
+
+const memo = new Map<string, { at: number; value: unknown }>();
+async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const hit = memo.get(key);
+  if (hit && Date.now() - hit.at < ttlMs) return hit.value as T;
+  const value = await fn();
+  memo.set(key, { at: Date.now(), value });
+  return value;
+}
+
+/** Tenues les plus récentes, en excluant éventuellement certaines (déjà affichées). */
+async function fetchLatestRange(opts: { style?: StyleKey | null; creatorIds?: string[]; excludeIds?: string[]; from: number; count: number }) {
+  if (opts.count <= 0) return [];
+  let query = supabase.from("posts").select(OUTFIT_COLUMNS);
+  if (opts.style) query = query.contains("styles", [opts.style]);
+  if (opts.creatorIds) {
+    if (!opts.creatorIds.length) return [];
+    query = query.in("creator_id", opts.creatorIds);
+  }
+  if (opts.excludeIds?.length) query = query.not("id", "in", `(${opts.excludeIds.join(",")})`);
+  const { data, error } = await query.order("created_at", { ascending: false }).range(opts.from, opts.from + opts.count - 1);
+  if (error) throw error;
+  return withAvatars((data ?? []) as RawOutfit[]);
+}
+
+/** Classement « Tendances » complet (cœurs des 7 derniers jours), gardé 1 minute en mémoire. */
+async function trendingRanked(style?: StyleKey | null): Promise<OutfitCard[]> {
+  return cached(`trending:${style ?? "all"}`, 60_000, async () => {
+    const { data: ranked } = await supabase.rpc("trending_posts", { p_days: 7, p_limit: 100 });
+    const order = (ranked ?? []).map((r) => r.post_id);
+    if (!order.length) return [];
+    let query = supabase.from("posts").select(OUTFIT_COLUMNS).in("id", order);
+    if (style) query = query.contains("styles", [style]);
+    const { data } = await query;
+    const pos = new Map(order.map((id, i) => [id, i]));
+    return (await withAvatars((data ?? []) as RawOutfit[])).sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0));
+  });
+}
+
+/** Tranche [from, from+count) du fil « Tendances » : classement de la semaine, puis les plus récentes. */
+async function trendingRange(style: StyleKey | null | undefined, from: number, count: number): Promise<OutfitCard[]> {
+  const ranked = await trendingRanked(style);
+  const head = ranked.slice(from, from + count);
+  if (head.length === count) return head;
+  const rest = await fetchLatestRange({
+    style,
+    excludeIds: ranked.map((o) => o.id),
+    from: Math.max(0, from - ranked.length),
+    count: count - head.length,
+  });
+  return [...head, ...rest];
+}
+
+export type ForYouSignals = {
+  interests: StyleKey[];
+  followedIds: string[];
+  likedStyles: Partial<Record<StyleKey, number>>;
+};
+
+const FOR_YOU_POOL = 120;
+
+/** Score « Pour toi » : styles choisis, créateurs suivis, styles déjà likés, popularité, fraîcheur. */
+function forYouScore(o: OutfitCard & { created_at?: string | null }, s: ForYouSignals, createdAt: Map<string, number>) {
+  const interestHits = o.styles.filter((x) => s.interests.includes(x)).length;
+  const likedHits = o.styles.reduce((sum, x) => sum + Math.min(s.likedStyles[x] ?? 0, 5), 0);
+  const followed = s.followedIds.includes(o.creator_id ?? "") ? 1 : 0;
+  const ageDays = (Date.now() - (createdAt.get(o.id) ?? Date.now())) / 86_400_000;
+  return interestHits * 3 + likedHits * 0.6 + followed * 4 + Math.log2(1 + o.likes) - ageDays * 0.12;
+}
+
+export async function fetchFeedPage(opts: {
+  kind: FeedKind;
+  style?: StyleKey | null;
+  page: number;
+  creatorIds?: string[];
+  signals?: ForYouSignals;
+}): Promise<OutfitCard[]> {
+  const from = opts.page * FEED_PAGE;
+  if (opts.kind === "latest") return fetchLatestRange({ style: opts.style, from, count: FEED_PAGE });
+  if (opts.kind === "following") return fetchLatestRange({ style: opts.style, creatorIds: opts.creatorIds ?? [], from, count: FEED_PAGE });
+
+  if (opts.kind === "trending") return trendingRange(opts.style, from, FEED_PAGE);
+
+  // « Pour toi » : on note les 120 tenues les plus récentes, puis on continue avec le reste
+  const signals = opts.signals ?? { interests: [], followedIds: [], likedStyles: {} };
+  const pool = await cached(`foryou-pool:${opts.style ?? "all"}`, 60_000, async () => {
+    let query = supabase.from("posts").select(OUTFIT_COLUMNS);
+    if (opts.style) query = query.contains("styles", [opts.style]);
+    const { data } = await query.order("created_at", { ascending: false }).limit(FOR_YOU_POOL);
+    const rows = (data ?? []) as (RawOutfit & { created_at: string | null })[];
+    const cards = await withAvatars(rows);
+    return { cards, createdAt: new Map(rows.map((r) => [r.id, r.created_at ? Date.parse(r.created_at) : Date.now()])) };
+  });
+  const sorted = [...pool.cards].sort((a, b) => forYouScore(b, signals, pool.createdAt) - forYouScore(a, signals, pool.createdAt));
+  const head = sorted.slice(from, from + FEED_PAGE);
+  if (head.length === FEED_PAGE || pool.cards.length < FOR_YOU_POOL) return head;
+  return [...head, ...(await fetchLatestRange({ style: opts.style, from: FOR_YOU_POOL + Math.max(0, from - pool.cards.length), count: FEED_PAGE - head.length }))];
+}
+
+/** « Plus comme ça » : tenues partageant au moins un style, page par page. */
+export async function fetchSimilarPage(id: string, styles: StyleKey[], page: number): Promise<OutfitCard[]> {
+  if (!styles.length) return [];
+  const from = page * FEED_PAGE;
+  const { data, error } = await supabase
+    .from("posts")
+    .select(OUTFIT_COLUMNS)
+    .overlaps("styles", styles)
+    .neq("id", id)
+    .order("created_at", { ascending: false })
+    .range(from, from + FEED_PAGE - 1);
+  if (error) throw error;
+  return withAvatars((data ?? []) as RawOutfit[]);
+}
+
+/**
+ * « Plus comme ça » sans fin (comme Pinterest) : d'abord toutes les tenues qui
+ * partagent un style avec celle-ci, puis la suite du fil « Tendances ».
+ */
+export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: number): Promise<OutfitCard[]> {
+  const total = styles.length
+    ? await cached(`similar-count:${id}`, 60_000, async () => {
+        const { count } = await supabase.from("posts").select("id", { count: "exact", head: true }).overlaps("styles", styles).neq("id", id);
+        return count ?? 0;
+      })
+    : 0;
+  const from = page * FEED_PAGE;
+  const out: OutfitCard[] = [];
+  if (from < total) {
+    const { data, error } = await supabase
+      .from("posts")
+      .select(OUTFIT_COLUMNS)
+      .overlaps("styles", styles)
+      .neq("id", id)
+      .order("created_at", { ascending: false })
+      .range(from, Math.min(from + FEED_PAGE, total) - 1);
+    if (error) throw error;
+    out.push(...(await withAvatars((data ?? []) as RawOutfit[])));
+  }
+  if (out.length < FEED_PAGE) out.push(...(await trendingRange(null, Math.max(0, from - total), FEED_PAGE - out.length)));
+  return out;
 }

@@ -13,6 +13,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { StylePicker } from "@/components/vitrine/StyleChips";
 import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
@@ -27,11 +28,12 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function Settings() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "", tiktok_url: "", instagram_url: "", styles: [] as StyleKey[] });
+  const [form, setForm] = useState({ username: "", bio: "", profile_image: "", banner_image: "", tiktok_url: "", instagram_url: "", styles: [] as StyleKey[], interests: [] as StyleKey[] });
   const [savedUsername, setSavedUsername] = useState("");
   const [pending, setPending] = useState<{ kind: "avatar" | "banner"; file: File } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +69,7 @@ function Settings() {
         tiktok_url: data.tiktok_url ?? "",
         instagram_url: data.instagram_url ?? "",
         styles: cleanStyles(data.styles),
+        interests: cleanStyles(data.interests),
       });
       if (data) setSavedUsername(data.username);
     });
@@ -129,9 +132,14 @@ function Settings() {
       tiktok_url: tiktok || null,
       instagram_url: insta || null,
       styles: form.styles,
+      interests: form.interests,
     }).eq("id", user.id);
     // Les tenues suivent automatiquement le nouveau username (géré par la base).
-    if (!error) setSavedUsername(clean);
+    if (!error) {
+      setSavedUsername(clean);
+      qc.invalidateQueries({ queryKey: ["my-interests"] });
+      qc.invalidateQueries({ queryKey: ["feed"] });
+    }
     setLoading(false);
     if (error) toast.error(error.message);
     else toast.success(t("settings.settingsSaved"));
@@ -215,6 +223,18 @@ function Settings() {
             max={MAX_STYLES}
             onMax={() => toast(t("creatorSettings.maxStyles"))}
             onChange={(styles) => setForm({ ...form, styles })}
+          />
+        </div>
+
+        {/* STYLES PRÉFÉRÉS (fil « Pour toi ») */}
+        <div>
+          <Label>{t("engage.interestsEdit")}</Label>
+          <p className="mb-2 mt-1 text-xs text-muted-foreground">{t("engage.interestsText")}</p>
+          <StylePicker
+            value={form.interests}
+            max={MAX_STYLES}
+            onMax={() => toast(t("creatorSettings.maxStyles"))}
+            onChange={(interests) => setForm({ ...form, interests })}
           />
         </div>
 
