@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Share2, Check, Link2, Mail, MoreHorizontal } from "lucide-react";
+import { Share, Check, Link2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
@@ -15,6 +15,8 @@ interface ShareButtonProps {
   image?: string | null;
   className?: string;
   iconClassName?: string;
+  /** Texte affiché à côté de l'icône (bouton large). Sans texte : icône seule. */
+  label?: string;
 }
 
 // Icônes des réseaux, dessinées simplement (pas de dépendance en plus)
@@ -58,7 +60,7 @@ const ICONS: Record<string, ReactNode> = {
  *
  * A utiliser sur toute nouvelle page qui a besoin d'une fonction de partage.
  */
-export function ShareButton({ title, text, url, image, className = "", iconClassName = "w-4 h-4" }: ShareButtonProps) {
+export function ShareButton({ title, text, url, image, className = "", iconClassName = "w-4 h-4", label }: ShareButtonProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -93,15 +95,6 @@ export function ShareButton({ title, text, url, image, className = "", iconClass
     }
   }
 
-  async function nativeShare() {
-    try {
-      await navigator.share({ title, text, url: shareUrl });
-      setOpen(false);
-    } catch {
-      /* partage annulé */
-    }
-  }
-
   const tile = "flex flex-col items-center gap-2 rounded-2xl p-2 text-xs font-semibold text-foreground transition-colors hover:bg-card";
   const bubble = "flex h-14 w-14 items-center justify-center rounded-full";
 
@@ -109,15 +102,26 @@ export function ShareButton({ title, text, url, image, className = "", iconClass
     <>
       <button
         type="button"
-        onClick={(ev) => {
+        onClick={async (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
+          // Sur téléphone : feuille de partage native (comme sur iPhone).
+          // Sur ordinateur (pas de partage natif) : fenêtre avec les réseaux.
+          if (canNativeShare) {
+            try {
+              await navigator.share({ title, text, url: shareUrl });
+            } catch (err) {
+              if ((err as Error)?.name !== "AbortError") setOpen(true);
+            }
+            return;
+          }
           setOpen(true);
         }}
-        aria-label={t("outfit.share")}
+        aria-label={label ? undefined : t("outfit.share")}
         className={className || "w-9 h-9 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-background/50 transition-colors duration-300"}
       >
-        <Share2 className={iconClassName} />
+        <Share className={iconClassName} aria-hidden="true" />
+        {label}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -144,14 +148,6 @@ export function ShareButton({ title, text, url, image, className = "", iconClass
               </span>
               E-mail
             </a>
-            {canNativeShare && (
-              <button type="button" className={tile} onClick={nativeShare}>
-                <span className={`${bubble} bg-ink text-surface`}>
-                  <MoreHorizontal className="h-6 w-6" aria-hidden="true" />
-                </span>
-                {t("share.more")}
-              </button>
-            )}
           </div>
 
           <div className="mt-3 flex items-center gap-2 rounded-full border border-border bg-background/60 p-1.5 pl-4">

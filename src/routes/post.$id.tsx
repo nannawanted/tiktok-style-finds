@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUpRight, Flag, Link2, Play } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft, ArrowUpRight, Flag, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchOutfit, fetchSimilarOutfits } from "@/lib/public-data";
@@ -115,15 +114,6 @@ function OutfitPage() {
   });
 
   const pageUrl = absoluteUrl(outfitPath(id));
-
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(pageUrl);
-      toast.success(t("outfit.linkCopied"));
-    } catch {
-      toast.error(t("card.actionError"));
-    }
-  }
 
   const reportHref = `mailto:nannawanted@gmail.com?subject=${encodeURIComponent(`${t("outfit.reportSubject")} ${id}`)}&body=${encodeURIComponent(`${t("outfit.reportBody")}\n\n${pageUrl}`)}`;
 
@@ -240,13 +230,15 @@ function OutfitPage() {
 
           <div className="mt-6 flex gap-2.5">
             <SaveButton postId={id} variant="wide" />
-            <button
-              type="button"
-              onClick={copyLink}
+            <ShareButton
+              title={post.title}
+              text={`@${post.creator_username} sur WantedFashion`}
+              url={pageUrl}
+              image={post.cover_image}
+              label={t("outfit.share")}
               className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-ink font-semibold text-surface transition-colors hover:bg-ink/85"
-            >
-              <Link2 className="h-5 w-5" aria-hidden="true" /> {t("outfit.copyLink")}
-            </button>
+              iconClassName="h-5 w-5"
+            />
           </div>
           {products.length === 0 && (
             <p className="mt-3 text-xs text-foreground/65">
