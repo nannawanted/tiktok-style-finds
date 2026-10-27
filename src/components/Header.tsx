@@ -41,6 +41,11 @@ function SearchBox({ className = "" }: { className?: string }) {
     },
   });
 
+  function closeMenu() {
+    setOpen(false);
+    (document.activeElement as HTMLElement | null)?.blur();
+  }
+
   function go() {
     setOpen(false);
     (document.activeElement as HTMLElement | null)?.blur();
@@ -83,7 +88,12 @@ function SearchBox({ className = "" }: { className?: string }) {
         />
       </label>
       {show && (
-        <div className="absolute inset-x-0 top-[calc(100%+6px)] z-50 max-h-[70vh] overflow-y-auto rounded-3xl border border-border bg-surface p-2 shadow-[var(--shadow-card-hover)]">
+        <div
+          // Empêche le champ de perdre le focus au toucher (sur iPhone, le menu se
+          // fermait avant que le clic sur un résultat soit pris en compte).
+          onPointerDown={(e) => e.preventDefault()}
+          className="absolute inset-x-0 top-[calc(100%+6px)] z-50 max-h-[70vh] overflow-y-auto rounded-3xl border border-border bg-surface p-2 shadow-[var(--shadow-card-hover)]"
+        >
           {suggestions.isLoading && <p className="px-3 py-3 text-sm text-foreground/60">…</p>}
           {empty && <p className="px-3 py-3 text-sm text-foreground/60">{t("explore.noOutfits")}</p>}
           {data && data.creators.length > 0 && (
@@ -94,7 +104,7 @@ function SearchBox({ className = "" }: { className?: string }) {
                   key={c.id}
                   to="/@{$username}"
                   params={{ username: c.username }}
-                  onClick={() => setOpen(false)}
+                  onClick={closeMenu}
                   className="flex items-center gap-3 rounded-2xl px-3 py-2 hover:bg-card"
                 >
                   <Avatar src={c.profile_image} name={c.username} className="h-9 w-9" />
@@ -111,7 +121,7 @@ function SearchBox({ className = "" }: { className?: string }) {
                   key={o.id}
                   to="/post/$id"
                   params={{ id: o.id }}
-                  onClick={() => setOpen(false)}
+                  onClick={closeMenu}
                   className="flex items-center gap-3 rounded-2xl px-3 py-2 hover:bg-card"
                 >
                   <span className="h-11 w-9 shrink-0 overflow-hidden rounded-lg bg-card">
