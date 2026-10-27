@@ -13,7 +13,6 @@ import { FollowButton } from "@/components/vitrine/FollowButton";
 import { MadeWithBanner } from "@/components/vitrine/MadeWith";
 import { DoubleTapLike } from "@/components/vitrine/DoubleTapLike";
 import { InfiniteOutfitFeed } from "@/components/vitrine/InfiniteOutfitFeed";
-import { TaggedImage } from "@/components/vitrine/TaggedImage";
 import { AddToCollectionButton } from "@/components/vitrine/AddToCollectionButton";
 
 export const Route = createFileRoute("/post/$id")({
@@ -132,16 +131,7 @@ function OutfitPage() {
         <div className="fade-up md:sticky md:top-24 md:self-start">
           <DoubleTapLike postId={id} className="overflow-hidden rounded-[28px] bg-secondary shadow-xl">
             {post.cover_image ? (
-              <TaggedImage
-                src={post.cover_image}
-                alt={post.title}
-                className="max-h-[78vh] w-full object-cover"
-                tags={products.flatMap((p, i) =>
-                  p.pos_x != null && p.pos_y != null
-                    ? [{ id: p.id, n: i + 1, x: p.pos_x, y: p.pos_y, name: p.name, brand: p.brand, price: p.price, href: `/go/${p.id}` }]
-                    : [],
-                )}
-              />
+              <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" draggable={false} className="max-h-[78vh] w-full object-cover" />
             ) : (
               <div className="aspect-[9/14] w-full" />
             )}

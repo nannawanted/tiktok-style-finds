@@ -86,47 +86,44 @@ export function ImageCropDialog({
       <DialogContent className="w-[calc(100vw-24px)] max-w-lg grid-cols-1 rounded-3xl border-border bg-surface p-5 [&>*]:min-w-0">
         <DialogTitle className="font-display text-2xl">{t("crop.title")}</DialogTitle>
         <DialogDescription className="text-foreground/70">{t("crop.hint")}</DialogDescription>
-        <div className="relative mt-2 h-[min(60vh,420px)] w-full overflow-hidden rounded-2xl bg-ink">
+        {/* Le cadre a la forme finale : on voit seulement l'image, sans bandes noires */}
+        <div
+          className="relative mx-auto mt-2 w-full overflow-hidden rounded-2xl bg-card"
+          style={{ aspectRatio: String(aspect), maxWidth: `min(100%, calc(min(62vh, 520px) * ${aspect}))` }}
+        >
           {src && (
             <Cropper
               image={src}
               crop={crop}
               zoom={zoom}
               aspect={aspect}
+              objectFit="cover"
               cropShape={round ? "round" : "rect"}
-              showGrid={!round}
+              showGrid={false}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onComplete}
+              style={{
+                containerStyle: { background: "transparent" },
+                // Tailwind limite les images à 100 % de large : on l'enlève, sinon l'image est écrasée
+                mediaStyle: { maxWidth: "none" },
+                cropAreaStyle: round ? { border: "none" } : { border: "none", boxShadow: "none" },
+              }}
             />
           )}
         </div>
-        <label className="mt-3 flex items-center gap-3 text-sm font-semibold">
-          {t("crop.zoom")}
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.01}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="flex-1 accent-[var(--color-primary)]"
-          />
-        </label>
-        <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={onCancel} className="h-11 rounded-full px-4 text-sm font-semibold hover:bg-card">
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <button type="button" onClick={onCancel} className="h-12 rounded-full text-sm font-semibold hover:bg-card">
             {t("crop.cancel")}
           </button>
-          {file && (
-            <button type="button" onClick={() => onDone(file)} className="h-11 rounded-full border border-border px-4 text-sm font-semibold hover:bg-card">
-              {t("crop.original")}
-            </button>
-          )}
+          <button type="button" disabled={!file} onClick={() => file && onDone(file)} className="h-12 rounded-full border border-border text-sm font-semibold hover:bg-card">
+            {t("crop.original")}
+          </button>
           <button
             type="button"
             disabled={busy || !area}
             onClick={confirm}
-            className="h-11 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground disabled:opacity-60"
+            className="h-12 rounded-full bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
             {t("crop.confirm")}
           </button>

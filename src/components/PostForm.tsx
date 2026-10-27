@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Check, Crop, Heart, ImagePlus, Link2, Loader2, MapPin, Pencil, Play, Plus, RefreshCw, X,
+  ArrowLeft, Check, Crop, Heart, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, X,
 } from "lucide-react";
+import { SiInstagram, SiTiktok } from "react-icons/si";
 import { StylePicker } from "@/components/vitrine/StyleChips";
 import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
 import { MAX_STYLES, type StyleKey } from "@/lib/styles";
@@ -27,9 +28,6 @@ export type ProductDraft = {
   price: string;
   image_url: string;
   affiliate_link: string;
-  /** Position du point sur la photo, en % (0–100). */
-  pos_x?: number | null;
-  pos_y?: number | null;
   /** Clé locale (non enregistrée). */
   _k?: string;
 };
@@ -108,16 +106,13 @@ export function PostForm({
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverNotice, setCoverNotice] = useState<string | null>(null);
   const [showVideoField, setShowVideoField] = useState(false);
-  const [showCoverUrl, setShowCoverUrl] = useState(false);
   const [pendingCover, setPendingCover] = useState<File | null>(null);
   const [productLoading, setProductLoading] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<string | null>(null);
-  const [placing, setPlacing] = useState<string | null>(null);
   const [pieceUrl, setPieceUrl] = useState("");
   const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const coverImgRef = useRef<HTMLImageElement>(null);
   const videoDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const productDebounce = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -176,7 +171,6 @@ export function PostForm({
   function go(n: number) {
     setStep(n);
     setReached((r) => Math.max(r, n));
-    setPlacing(null);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -316,7 +310,7 @@ export function PostForm({
       ...d,
       products: [
         ...d.products,
-        { _k: key, affiliate_link: url, brand: brand?.name ?? "", brand_id: brand?.id ?? null, name: "", price: "", image_url: "", pos_x: null, pos_y: null },
+        { _k: key, affiliate_link: url, brand: brand?.name ?? "", brand_id: brand?.id ?? null, name: "", price: "", image_url: "" },
       ],
     }));
     setPieceUrl("");
@@ -328,7 +322,7 @@ export function PostForm({
     const key = newKey();
     setData((d) => ({
       ...d,
-      products: [...d.products, { _k: key, affiliate_link: "", brand: "", brand_id: null, name: "", price: "", image_url: "", pos_x: null, pos_y: null }],
+      products: [...d.products, { _k: key, affiliate_link: "", brand: "", brand_id: null, name: "", price: "", image_url: "" }],
     }));
     setEditing(key);
   }
@@ -342,18 +336,7 @@ export function PostForm({
   function removeProduct(key: string) {
     clearTimeout(productDebounce.current[key]);
     setData((d) => ({ ...d, products: d.products.filter((p) => p._k !== key) }));
-    if (placing === key) setPlacing(null);
     if (editing === key) setEditing(null);
-  }
-
-  function onCoverClick(e: React.MouseEvent) {
-    if (!placing || !coverImgRef.current) return;
-    const r = coverImgRef.current.getBoundingClientRect();
-    const x = Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100));
-    const y = Math.min(100, Math.max(0, ((e.clientY - r.top) / r.height) * 100));
-    updateProduct(placing, { pos_x: Math.round(x * 10) / 10, pos_y: Math.round(y * 10) / 10 });
-    setPlacing(null);
-    toast(t("studio.placed"));
   }
 
   // ——— Validation & envoi ———
@@ -388,39 +371,15 @@ export function PostForm({
   }, [step, data, anyLoading, loading, submitLabel, mode, t]);
 
   const steps: TKey[] = ["studio.stepPhoto", "studio.stepPieces", "studio.stepStyle"];
-  const placedNumbers = data.products.map((p, i) => ({ p, n: i + 1 })).filter(({ p }) => p.pos_x != null && p.pos_y != null);
 
   // ——— Rendu ———
-  const coverBlock = (forPlacing: boolean) =>
+  // Photo issue d'une vidéo TikTok/Instagram : pas de recadrage (c'est la miniature de la vidéo)
+  const fromVideo = !!data.tiktok_url.trim();
+  const coverBlock = () =>
     data.cover_image ? (
-      <div
-        className={`relative mx-auto w-full overflow-hidden rounded-[28px] bg-card shadow-[0_20px_40px_-28px_rgba(40,20,10,.7)] ${forPlacing ? "max-w-[300px]" : "max-w-md"} ${forPlacing && placing ? "cursor-crosshair ring-4 ring-ink/80" : ""}`}
-        onClick={forPlacing ? onCoverClick : undefined}
-      >
-        <img
-          ref={forPlacing ? coverImgRef : undefined}
-          src={data.cover_image}
-          alt={t("studio.coverAlt")}
-          referrerPolicy="no-referrer"
-          draggable={false}
-          className="block w-full select-none"
-        />
-        {forPlacing &&
-          placedNumbers.map(({ p, n }) => (
-            <span
-              key={p._k}
-              className="heart-pop absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-surface text-[13px] font-bold text-foreground shadow-[0_0_0_4px_rgba(255,250,240,.45),0_6px_14px_-4px_rgba(0,0,0,.6)]"
-              style={{ left: `${p.pos_x}%`, top: `${p.pos_y}%` }}
-            >
-              {n}
-            </span>
-          ))}
-        {forPlacing && placing && (
-          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-surface">
-            <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" /> {t("studio.placeHint")}
-          </div>
-        )}
-        {!forPlacing && (
+      <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-[0_20px_40px_-28px_rgba(40,20,10,.7)]">
+        <img src={data.cover_image} alt={t("studio.coverAlt")} referrerPolicy="no-referrer" draggable={false} className="block w-full select-none" />
+        {!fromVideo && (
           <div className="absolute right-3 top-3 flex gap-2">
             <button type="button" onClick={recropCurrent} className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-2 text-[13px] font-semibold backdrop-blur">
               <Crop className="h-3.5 w-3.5" aria-hidden="true" /> {t("studio.crop")}
@@ -504,8 +463,9 @@ export function PostForm({
 
           <div className="rounded-3xl bg-surface p-4 shadow-[var(--shadow-card)]">
             <button type="button" onClick={() => setShowVideoField((v) => !v)} className="flex w-full items-center gap-3.5 text-left">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ink text-surface">
-                <Play className="h-5 w-5 fill-current" aria-hidden="true" />
+              <span className="flex h-12 w-14 shrink-0 items-center justify-center gap-1 rounded-2xl bg-ink text-surface">
+                <SiTiktok className="h-[18px] w-[18px]" aria-hidden="true" />
+                <SiInstagram className="h-[18px] w-[18px]" aria-hidden="true" />
               </span>
               <span className="min-w-0">
                 <span className="block text-[17px] font-bold">{t("studio.fromVideo")}</span>
@@ -534,7 +494,6 @@ export function PostForm({
                     </button>
                   )}
                 </div>
-                <p className="px-1 text-[13px] text-foreground/60">{t("studio.instaToo")}</p>
                 {coverNotice && <p className="rounded-xl bg-accent/30 px-3 py-2 text-[13px]">{coverNotice}</p>}
               </div>
             )}
@@ -550,21 +509,13 @@ export function PostForm({
             </span>
           </button>
 
-          <div className="flex flex-wrap justify-between gap-2 px-1 text-sm">
-            <button type="button" onClick={() => { setShowCoverUrl(true); go(1); }} className="font-semibold underline underline-offset-4">
-              {t("studio.fromLink")}
-            </button>
-            <button type="button" onClick={() => go(1)} className="font-semibold text-foreground/60 underline underline-offset-4">
-              {t("studio.skip")}
-            </button>
-          </div>
         </section>
       )}
 
       {/* 1 · Photo + nom */}
       {step === 1 && (
         <section className="fade-up flex flex-col gap-4">
-          {coverBlock(false)}
+          {coverBlock()}
           {coverNotice && <p className="rounded-xl bg-accent/30 px-3 py-2 text-[13px]">{coverNotice}</p>}
 
           <div className="rounded-3xl bg-surface px-4 py-3.5">
@@ -595,30 +546,28 @@ export function PostForm({
             </div>
           )}
 
-          <details className="rounded-3xl bg-surface/70 px-4 py-3" open={showVideoField || showCoverUrl || !!data.tiktok_url || undefined}>
-            <summary className="cursor-pointer text-sm font-semibold">{t("studio.moreOptions")}</summary>
-            <div className="mt-3 space-y-4">
-              <div>
-                <Label htmlFor="studio-video2">{t("studio.videoLabel")}</Label>
-                <div className="relative mt-1">
-                  <Input id="studio-video2" type="url" inputMode="url" value={data.tiktok_url} onChange={(e) => handleVideoUrlChange(e.target.value)} placeholder={t("studio.videoPlaceholder")} />
-                  {coverLoading && <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
-                </div>
-                <p className="mt-1 text-xs text-foreground/60">{t("studio.videoHint")}</p>
+          {fromVideo && (
+            <div className="rounded-3xl bg-surface/70 px-4 py-3">
+              <Label htmlFor="studio-video2">{t("studio.videoLabel")}</Label>
+              <div className="relative mt-1">
+                <Input id="studio-video2" type="url" inputMode="url" value={data.tiktok_url} onChange={(e) => handleVideoUrlChange(e.target.value)} placeholder={t("studio.videoPlaceholder")} />
+                {coverLoading && <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
               </div>
-              <div>
-                <Label htmlFor="studio-cover-url">{t("studio.coverUrlLabel")}</Label>
-                <Input id="studio-cover-url" type="url" inputMode="url" className="mt-1" value={data.cover_image} onChange={(e) => setData((d) => ({ ...d, cover_image: e.target.value }))} placeholder="https://…" />
-              </div>
+              <p className="mt-1 text-xs text-foreground/60">{t("studio.videoHint")}</p>
             </div>
-          </details>
+          )}
         </section>
       )}
 
       {/* 2 · Pièces */}
       {step === 2 && (
         <section className="fade-up flex flex-col gap-4">
-          {data.cover_image && coverBlock(true)}
+          {data.cover_image && (
+            <div className="flex items-center gap-3 rounded-[22px] bg-surface/70 p-2.5">
+              <img src={data.cover_image} alt="" referrerPolicy="no-referrer" className="h-16 w-12 shrink-0 rounded-xl object-cover" />
+              <span className="min-w-0 truncate font-display text-lg font-bold">{data.title}</span>
+            </div>
+          )}
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-display text-2xl font-bold">{t("studio.pieces")}</h2>
             <span className="rounded-full bg-ink px-2.5 py-0.5 text-[13px] font-bold text-surface tabular-nums">{data.products.length}</span>
@@ -666,7 +615,6 @@ export function PostForm({
                 const key = p._k ?? String(i);
                 const isLoading = !!productLoading[key];
                 const isEditing = editing === key;
-                const isPlaced = p.pos_x != null && p.pos_y != null;
                 return (
                   <li key={key} className="fade-up rounded-[22px] bg-surface p-2.5">
                     <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3">
@@ -701,20 +649,6 @@ export function PostForm({
                         )}
                       </span>
                       <span className="flex flex-col gap-1.5">
-                        {data.cover_image && (
-                          <button
-                            type="button"
-                            aria-label={t("studio.place")}
-                            aria-pressed={placing === key}
-                            onClick={() => {
-                              setPlacing(placing === key ? null : key);
-                              if (placing !== key) window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
-                            className={`flex h-9 w-9 items-center justify-center rounded-full ${placing === key ? "bg-ink text-surface" : isPlaced ? "bg-primary/15 text-primary" : "bg-background"}`}
-                          >
-                            <MapPin className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        )}
                         <button type="button" aria-label={isEditing ? t("studio.done") : t("studio.edit")} onClick={() => setEditing(isEditing ? null : key)} className={`flex h-9 w-9 items-center justify-center rounded-full ${isEditing ? "bg-ink text-surface" : "bg-background"}`}>
                           {isEditing ? <Check className="h-4 w-4" aria-hidden="true" /> : <Pencil className="h-4 w-4" aria-hidden="true" />}
                         </button>
@@ -744,11 +678,6 @@ export function PostForm({
                           <Input id={`pi-${key}`} type="url" className="mt-1" value={p.image_url} onChange={(e) => updateProduct(key, { image_url: e.target.value })} />
                         </div>
                         <div className="flex flex-wrap gap-2 sm:col-span-2">
-                          {isPlaced && (
-                            <button type="button" onClick={() => updateProduct(key, { pos_x: null, pos_y: null })} className="rounded-full border border-border px-3 py-1.5 text-[13px] font-semibold">
-                              {t("studio.unplace")}
-                            </button>
-                          )}
                           <button type="button" onClick={() => removeProduct(key)} className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1.5 text-[13px] font-semibold text-destructive">
                             <X className="h-3.5 w-3.5" aria-hidden="true" /> {t("postForm.remove")}
                           </button>

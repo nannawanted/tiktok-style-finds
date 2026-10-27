@@ -40,8 +40,6 @@ function EditPost() {
           price: p.price ?? "",
           image_url: p.image_url ?? "",
           affiliate_link: p.affiliate_link,
-          pos_x: p.pos_x ?? null,
-          pos_y: p.pos_y ?? null,
         })),
       };
     },
@@ -74,8 +72,6 @@ function EditPost() {
           image_url: p.image_url || null,
           affiliate_link: p.affiliate_link,
           position: i,
-          pos_x: p.pos_x ?? null,
-          pos_y: p.pos_y ?? null,
         }))
       );
       if (e2) {
