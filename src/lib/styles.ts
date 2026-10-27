@@ -13,6 +13,16 @@ export const STYLE_KEYS = [
   "sport",
   "vintage",
   "chic",
+  "preppy",
+  "boheme",
+  "grunge",
+  "gorpcore",
+  "techwear",
+  "coquette",
+  "skate",
+  "workwear",
+  "rock",
+  "ceremonie",
 ] as const;
 
 export type StyleKey = (typeof STYLE_KEYS)[number];

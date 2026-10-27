@@ -468,27 +468,31 @@ async function styleBasedRange(id: string, styles: StyleKey[], from: number, cou
   return out;
 }
 
-/** Identifiants des tenues qui se ressemblent visuellement (empreintes d'image), de la plus proche à la moins proche. */
-async function visualNeighbours(id: string): Promise<string[]> {
-  return cached(`visual:${id}`, 5 * 60_000, async () => {
-    const { data, error } = await supabase.rpc("visually_similar_posts" as never, { p_post: id, p_limit: 96 } as never);
+/**
+ * Classement « Plus comme ça » calculé par la base (fonction more_like_this) :
+ * ressemblance de la photo + styles en commun + popularité récente + fraîcheur.
+ */
+async function rankedSimilar(id: string): Promise<string[]> {
+  return cached(`more-like-this:${id}`, 5 * 60_000, async () => {
+    const { data, error } = await supabase.rpc("more_like_this" as never, { p_post: id, p_limit: 200 } as never);
     if (error) return [];
     return ((data ?? []) as { post_id: string }[]).map((r) => r.post_id);
   });
 }
 
 /**
- * « Plus comme ça » sans fin (comme Pinterest) : d'abord les tenues qui se
- * ressemblent visuellement (photo), puis celles qui partagent un style, puis
- * la suite du fil « Tendances ». Les doublons sont retirés par le fil.
+ * « Plus comme ça » sans fin, comme Pinterest : d'abord les tenues les plus
+ * proches (photo + styles), puis la suite du fil « Tendances ».
+ * Si le classement est indisponible, on se rabat sur les styles en commun.
  */
 export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: number): Promise<OutfitCard[]> {
-  const visual = await visualNeighbours(id);
+  const ranked = await rankedSimilar(id);
   const from = page * FEED_PAGE;
+  if (!ranked.length) return styleBasedRange(id, styles, from, FEED_PAGE);
   const out: OutfitCard[] = [];
-  if (from < visual.length) out.push(...(await fetchOutfitsByIds(visual.slice(from, from + FEED_PAGE))));
+  if (from < ranked.length) out.push(...(await fetchOutfitsByIds(ranked.slice(from, from + FEED_PAGE))));
   if (out.length < FEED_PAGE) {
-    out.push(...(await styleBasedRange(id, styles, Math.max(0, from - visual.length), FEED_PAGE - out.length)));
+    out.push(...(await trendingRange(null, Math.max(0, from - ranked.length), FEED_PAGE - out.length)));
   }
   return out;
 }
