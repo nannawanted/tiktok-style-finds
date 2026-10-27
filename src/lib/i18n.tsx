@@ -351,6 +351,7 @@ const dict = {
     pieces: { fr: "pièces", en: "pieces" },
     piece: { fr: "pièce", en: "piece" },
     video: { fr: "Vidéo", en: "Video" },
+    photo: { fr: "Photo", en: "Photo" },
     save: { fr: "Enregistrer", en: "Save" },
     saved: { fr: "Enregistré", en: "Saved" },
     unsave: { fr: "Retirer des enregistrés", en: "Remove from saved" },

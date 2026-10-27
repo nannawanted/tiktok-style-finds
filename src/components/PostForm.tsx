@@ -484,7 +484,15 @@ export function PostForm({
             )}
           </div>
 
-          <button type="button" onClick={() => fileRef.current?.click()} className="flex w-full items-center gap-3.5 rounded-3xl bg-surface p-4 text-left shadow-[var(--shadow-card)] transition-transform active:scale-[.98]">
+          <button
+            type="button"
+            onClick={() => {
+              // Photo de la galerie : pas de vidéo liée
+              setData((d) => ({ ...d, tiktok_url: "" }));
+              setShowVideoField(false);
+              fileRef.current?.click();
+            }}
+            className="flex w-full items-center gap-3.5 rounded-3xl bg-surface p-4 text-left shadow-[var(--shadow-card)] transition-transform active:scale-[.98]">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               {coverLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <ImagePlus className="h-5 w-5" aria-hidden="true" />}
             </span>

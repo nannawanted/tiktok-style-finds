@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, Flag, Info, Play } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Camera, Flag, Info, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
@@ -135,7 +135,7 @@ function OutfitPage() {
             ) : (
               <div className="aspect-[9/14] w-full" />
             )}
-            {post.tiktok_url && (
+            {post.tiktok_url ? (
               <a
                 href={post.tiktok_url}
                 target="_blank"
@@ -147,6 +147,13 @@ function OutfitPage() {
                 </span>
                 {t("outfit.watchOn")}
               </a>
+            ) : (
+              <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90">
+                  <Camera className="h-4 w-4 text-foreground" aria-hidden="true" />
+                </span>
+                {t("card.photo")}
+              </span>
             )}
             <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-ink/70 px-3 py-1 text-[11px] font-semibold text-surface">
               {t("engage.doubleTapHint")}
