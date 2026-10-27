@@ -10,7 +10,7 @@ import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
 import { MAX_STYLES, type StyleKey } from "@/lib/styles";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { fetchProductMetadata, fetchTikTokOembed, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
+import { fetchProductMetadata, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation, type TKey } from "@/lib/i18n";
@@ -107,15 +107,12 @@ export function PostForm({
   const [coverNotice, setCoverNotice] = useState<string | null>(null);
   const [showVideoField, setShowVideoField] = useState(false);
   const [pendingCover, setPendingCover] = useState<File | null>(null);
-  // D'où vient la photo actuelle (pour savoir si on propose le recadrage)
-  const [coverSource, setCoverSource] = useState<"video" | "photo" | null>(null);
   const [productLoading, setProductLoading] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [pieceUrl, setPieceUrl] = useState("");
   const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const videoDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const productDebounce = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const { data: myUsername } = useQuery({
@@ -186,11 +183,11 @@ export function PostForm({
       const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true });
       if (upErr) {
         setCoverNotice(t("postForm.uploadPhotoFailed"));
+        toast.error(t("postForm.uploadPhotoFailed"));
         return;
       }
       const { data: urlData } = supabase.storage.from("covers").getPublicUrl(path);
       setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
-      setCoverSource("photo");
       if (step === 0) go(1);
     } finally {
       setCoverLoading(false);
@@ -209,48 +206,12 @@ export function PostForm({
     }
   }
 
+  // Lien de la vidéo : on le garde pour le bouton « Voir la vidéo ». La couverture,
+  // elle, est toujours une photo importée (les miniatures de vidéo sont souvent
+  // moches et aident mal la recherche visuelle).
+  const isVideoLink = (url: string) => isTikTokUrl(url) || /(^|\.)instagram\.com$/.test(extractHostname(url));
   function handleVideoUrlChange(url: string) {
-    setData((d) => ({ ...d, tiktok_url: url }));
-    clearTimeout(videoDebounce.current);
-    setCoverNotice(null);
-    const isTikTok = isTikTokUrl(url);
-    const isInstagram = url.includes("instagram.com");
-    if (!isTikTok && !isInstagram) {
-      setCoverLoading(false);
-      return;
-    }
-    videoDebounce.current = setTimeout(async () => {
-      setCoverLoading(true);
-      try {
-        if (isTikTok) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const accessToken = sessionData.session?.access_token ?? "";
-          const result = await fetchTikTokOembed({ data: { url, accessToken } });
-          if (result.thumbnail_url) {
-            setData((d) => ({ ...d, cover_image: result.thumbnail_url ?? d.cover_image }));
-            setCoverSource("video");
-            toast(t("studio.coverReady"));
-            if (step === 0) go(1);
-          } else {
-            console.warn("[TikTok] miniature indisponible :", result.error);
-            setCoverNotice(`${t("studio.videoFail")} (${result.error ?? "?"})`);
-          }
-        } else {
-          const meta = await fetchProductMetadata({ data: { url } });
-          if (meta.image_url) {
-            setData((d) => ({ ...d, cover_image: meta.image_url ?? d.cover_image }));
-            setCoverSource("video");
-            toast(t("studio.coverReady"));
-            if (step === 0) go(1);
-          } else setCoverNotice(t("postForm.instagramThumbFail"));
-        }
-      } catch (e) {
-        console.warn("[vidéo] miniature indisponible :", e);
-        setCoverNotice(isTikTok ? `${t("studio.videoFail")} (${e instanceof Error ? e.message.slice(0, 60) : "?"})` : t("postForm.instagramThumbFail"));
-      } finally {
-        setCoverLoading(false);
-      }
-    }, URL_DEBOUNCE_MS);
+    setData((d) => ({ ...d, tiktok_url: url.trim() }));
   }
 
   async function pasteInto(apply: (v: string) => void, fallbackId: string) {
@@ -382,21 +343,16 @@ export function PostForm({
   const steps: TKey[] = ["studio.stepPhoto", "studio.stepPieces", "studio.stepStyle"];
 
   // ——— Rendu ———
-  // Photo issue d'une vidéo TikTok/Instagram : pas de recadrage (c'est la miniature de la vidéo)
-  const fromVideo = coverSource ? coverSource === "video" : !!data.tiktok_url.trim();
   const coverBlock = () =>
     data.cover_image ? (
       <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-[0_20px_40px_-28px_rgba(40,20,10,.7)]">
         <img src={data.cover_image} alt={t("studio.coverAlt")} referrerPolicy="no-referrer" draggable={false} className="block w-full select-none" />
         <div className="absolute right-3 top-3 flex gap-2">
-          {!fromVideo && (
             <button type="button" onClick={recropCurrent} className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-2 text-[13px] font-semibold backdrop-blur">
               <Crop className="h-3.5 w-3.5" aria-hidden="true" /> {t("studio.crop")}
             </button>
-          )}
-          {/* Vidéo : la miniature peut être remplacée par une photo de la galerie (avec recadrage) */}
           <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-2 text-[13px] font-semibold backdrop-blur">
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {fromVideo ? t("studio.changeCover") : t("studio.change")}
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {t("studio.change")}
           </button>
         </div>
         {coverLoading && (
@@ -496,19 +452,31 @@ export function PostForm({
                     aria-label={t("studio.videoLabel")}
                     className="min-w-0 flex-1 bg-transparent py-2 text-[15px] outline-none"
                   />
-                  {coverLoading ? (
-                    <Loader2 className="mr-3 h-4 w-4 animate-spin" aria-hidden="true" />
+                  {data.tiktok_url ? (
+                    <button type="button" aria-label={t("postForm.remove")} onClick={() => handleVideoUrlChange("")} className="flex h-10 w-10 items-center justify-center rounded-full">
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
                   ) : (
                     <button type="button" onClick={() => pasteInto(handleVideoUrlChange, "studio-video")} className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-surface">
                       {t("studio.paste")}
                     </button>
                   )}
                 </div>
-                {coverNotice && (
-                  <div className="space-y-2 rounded-xl bg-accent/30 px-3 py-2.5 text-[13px] leading-snug">
-                    <p>{coverNotice}</p>
-                    <button type="button" onClick={() => fileRef.current?.click()} className="font-semibold underline underline-offset-4">
-                      {t("studio.useGalleryInstead")}
+                {data.tiktok_url && !isVideoLink(data.tiktok_url) && (
+                  <p className="px-1 text-[13px] font-semibold text-primary">{t("studio.videoLinkInvalid")}</p>
+                )}
+                {isVideoLink(data.tiktok_url) && (
+                  <div className="space-y-2.5 pt-1">
+                    <p className="flex items-center gap-1.5 px-1 text-[13px] font-semibold text-emerald-700">
+                      <Check className="h-4 w-4" aria-hidden="true" /> {t("studio.videoLinkOk")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-[15px] font-bold text-primary-foreground"
+                    >
+                      {coverLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ImagePlus className="h-4 w-4" aria-hidden="true" />}
+                      {t("studio.importCover")}
                     </button>
                   </div>
                 )}
