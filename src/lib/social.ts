@@ -88,7 +88,9 @@ export function useToggleFollow() {
       qc.invalidateQueries({ queryKey: ["followed-ids", user?.id] });
       qc.invalidateQueries({ queryKey: ["following-feed", user?.id] });
       qc.invalidateQueries({ queryKey: ["follow-counts"] });
-      qc.invalidateQueries({ queryKey: ["follow-list"] });
+      // Les listes d'abonnés/abonnements ne sont PAS rechargées tout de suite :
+      // comme sur Instagram, la personne reste affichée (bouton « Suivre ») pour
+      // pouvoir se réabonner en cas d'erreur. La liste est relue à la prochaine ouverture.
     },
   });
 }

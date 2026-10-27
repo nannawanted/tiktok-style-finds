@@ -54,6 +54,10 @@ export function ProfileStats({ creatorId, outfitCount }: { creatorId: string; ou
     queryKey: ["follow-list", creatorId, open],
     enabled: !!open,
     queryFn: () => (open === "followers" ? fetchFollowers(creatorId) : fetchFollowing(creatorId)),
+    // Liste figée tant que la fenêtre est ouverte, oubliée dès qu'elle se ferme
+    staleTime: Infinity,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   const followers = counts.data?.followers ?? 0;

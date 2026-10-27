@@ -127,14 +127,6 @@ function OutfitPage() {
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t("outfit.back")}
         </button>
-        <ShareButton
-          title={post.title}
-          text={`@${post.creator_username} sur WantedFashion`}
-          url={pageUrl}
-          image={post.cover_image}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-surface hover:bg-card"
-          iconClassName="h-5 w-5"
-        />
       </div>
 
       <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
