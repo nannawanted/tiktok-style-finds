@@ -1,3 +1,4 @@
+import { indexPostImageLater } from "@/lib/visual-embedding";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +65,8 @@ function NewPost() {
       }
     }
 
+    // Empreinte visuelle pour « Plus comme ça » (en arrière-plan)
+    indexPostImageLater(post.id, data.cover_image);
     setLoading(false);
     toast.success(t("newPost.postPublished"));
     navigate({ to: "/dashboard" });

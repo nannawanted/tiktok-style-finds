@@ -444,18 +444,14 @@ export async function fetchSimilarPage(id: string, styles: StyleKey[], page: num
   return withAvatars((data ?? []) as RawOutfit[]);
 }
 
-/**
- * « Plus comme ça » sans fin (comme Pinterest) : d'abord toutes les tenues qui
- * partagent un style avec celle-ci, puis la suite du fil « Tendances ».
- */
-export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: number): Promise<OutfitCard[]> {
+/** Tenues qui partagent un style, puis la suite du fil « Tendances », à partir de la position `from`. */
+async function styleBasedRange(id: string, styles: StyleKey[], from: number, count: number): Promise<OutfitCard[]> {
   const total = styles.length
     ? await cached(`similar-count:${id}`, 60_000, async () => {
-        const { count } = await supabase.from("posts").select("id", { count: "exact", head: true }).overlaps("styles", styles).neq("id", id);
-        return count ?? 0;
+        const { count: c } = await supabase.from("posts").select("id", { count: "exact", head: true }).overlaps("styles", styles).neq("id", id);
+        return c ?? 0;
       })
     : 0;
-  const from = page * FEED_PAGE;
   const out: OutfitCard[] = [];
   if (from < total) {
     const { data, error } = await supabase
@@ -464,11 +460,36 @@ export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: nu
       .overlaps("styles", styles)
       .neq("id", id)
       .order("created_at", { ascending: false })
-      .range(from, Math.min(from + FEED_PAGE, total) - 1);
+      .range(from, Math.min(from + count, total) - 1);
     if (error) throw error;
     out.push(...(await withAvatars((data ?? []) as RawOutfit[])));
   }
-  if (out.length < FEED_PAGE) out.push(...(await trendingRange(null, Math.max(0, from - total), FEED_PAGE - out.length)));
+  if (out.length < count) out.push(...(await trendingRange(null, Math.max(0, from - total), count - out.length)));
+  return out;
+}
+
+/** Identifiants des tenues qui se ressemblent visuellement (empreintes d'image), de la plus proche à la moins proche. */
+async function visualNeighbours(id: string): Promise<string[]> {
+  return cached(`visual:${id}`, 5 * 60_000, async () => {
+    const { data, error } = await supabase.rpc("visually_similar_posts" as never, { p_post: id, p_limit: 96 } as never);
+    if (error) return [];
+    return ((data ?? []) as { post_id: string }[]).map((r) => r.post_id);
+  });
+}
+
+/**
+ * « Plus comme ça » sans fin (comme Pinterest) : d'abord les tenues qui se
+ * ressemblent visuellement (photo), puis celles qui partagent un style, puis
+ * la suite du fil « Tendances ». Les doublons sont retirés par le fil.
+ */
+export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: number): Promise<OutfitCard[]> {
+  const visual = await visualNeighbours(id);
+  const from = page * FEED_PAGE;
+  const out: OutfitCard[] = [];
+  if (from < visual.length) out.push(...(await fetchOutfitsByIds(visual.slice(from, from + FEED_PAGE))));
+  if (out.length < FEED_PAGE) {
+    out.push(...(await styleBasedRange(id, styles, Math.max(0, from - visual.length), FEED_PAGE - out.length)));
+  }
   return out;
 }
 

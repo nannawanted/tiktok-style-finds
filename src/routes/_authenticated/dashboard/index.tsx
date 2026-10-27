@@ -8,6 +8,7 @@ import { recordCreatorIp } from "@/lib/record-creator-ip";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { VisualIndexer } from "@/components/vitrine/VisualIndexer";
 import { Eye, MousePointerClick } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -108,6 +109,8 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      <VisualIndexer />
 
       {isLoading ? (
         <div className="space-y-3">

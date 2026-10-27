@@ -1,3 +1,4 @@
+import { indexPostImageLater } from "@/lib/visual-embedding";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -80,6 +81,7 @@ function EditPost() {
       }
     }
 
+    indexPostImageLater(id, form.cover_image);
     setLoading(false);
     toast.success(t("editPost.postUpdated"));
     navigate({ to: "/dashboard" });

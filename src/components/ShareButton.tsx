@@ -120,8 +120,8 @@ export function ShareButton({ title, text, url, image, className = "", iconClass
         aria-label={label ? undefined : t("outfit.share")}
         className={className || "w-9 h-9 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-background/50 transition-colors duration-300"}
       >
-        <Share className={iconClassName} aria-hidden="true" />
-        {label}
+        <Share className={`shrink-0 ${iconClassName}`} aria-hidden="true" />
+        {label && <span className="truncate">{label}</span>}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

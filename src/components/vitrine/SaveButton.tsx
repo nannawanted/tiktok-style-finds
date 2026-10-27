@@ -43,10 +43,10 @@ export function SaveButton({ postId, variant = "icon" }: { postId: string; varia
         type="button"
         onClick={onClick}
         aria-pressed={saved}
-        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface font-semibold text-foreground transition-colors hover:bg-card"
+        className="flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[15px] font-semibold sm:gap-2 sm:text-base text-foreground transition-colors hover:bg-card"
       >
-        <Heart key={String(saved)} className={`h-5 w-5 text-primary ${saved ? "heart-pop fill-current" : ""}`} />
-        {saved ? t("card.saved") : t("card.save")}
+        <Heart key={String(saved)} className={`h-5 w-5 shrink-0 text-primary ${saved ? "heart-pop fill-current" : ""}`} />
+        <span className="truncate">{saved ? t("card.saved") : t("card.save")}</span>
       </button>
     );
   }

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, Flag, Play } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Flag, Info, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
@@ -210,15 +210,17 @@ function OutfitPage() {
           </div>
 
           {products.length > 0 && (
-            <p className="mt-3 text-xs leading-relaxed text-foreground/65">
-              {t("outfit.disclosure")}{" "}
+            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground/50">
+              <span className="inline-flex items-center gap-1">
+                <Info className="h-3 w-3" aria-hidden="true" /> {t("outfit.disclosure")}
+              </span>
               <a href={reportHref} className="inline-flex items-center gap-1 underline hover:text-primary">
                 <Flag className="h-3 w-3" aria-hidden="true" /> {t("outfit.report")}
               </a>
             </p>
           )}
 
-          <div className="mt-6 flex gap-2.5">
+          <div className="mt-6 flex gap-2">
             <SaveButton postId={id} variant="wide" />
             <AddToCollectionButton postId={id} />
             <ShareButton
@@ -227,7 +229,7 @@ function OutfitPage() {
               url={pageUrl}
               image={post.cover_image}
               label={t("outfit.share")}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-ink font-semibold text-surface transition-colors hover:bg-ink/85"
+              className="flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink px-3 text-[15px] font-semibold sm:gap-2 sm:text-base text-surface transition-colors hover:bg-ink/85"
               iconClassName="h-5 w-5"
             />
           </div>
