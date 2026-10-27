@@ -231,6 +231,8 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          pos_x: number | null
+          pos_y: number | null
           position: number | null
           post_id: string
           price: string | null
@@ -242,6 +244,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          pos_x?: number | null
+          pos_y?: number | null
           position?: number | null
           post_id: string
           price?: string | null
@@ -253,6 +257,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          pos_x?: number | null
+          pos_y?: number | null
           position?: number | null
           post_id?: string
           price?: string | null
