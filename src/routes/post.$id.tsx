@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, Camera, Flag, Info } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Camera, Info } from "lucide-react";
+import { ReportButton } from "@/components/vitrine/ReportButton";
 import { VideoSourceIcon, videoPlatform } from "@/components/vitrine/VideoSourceIcon";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
@@ -114,7 +115,6 @@ function OutfitPage() {
 
   const pageUrl = absoluteUrl(outfitPath(id));
 
-  const reportHref = `mailto:nannawanted@gmail.com?subject=${encodeURIComponent(`${t("outfit.reportSubject")} ${id}`)}&body=${encodeURIComponent(`${t("outfit.reportBody")}\n\n${pageUrl}`)}`;
 
   return (
     <main className="mx-auto max-w-6xl px-4 pt-4 md:px-6 md:pt-8">
@@ -231,9 +231,7 @@ function OutfitPage() {
               <span className="inline-flex items-center gap-1">
                 <Info className="h-3 w-3" aria-hidden="true" /> {t("outfit.disclosure")}
               </span>
-              <a href={reportHref} className="inline-flex items-center gap-1 underline hover:text-primary">
-                <Flag className="h-3 w-3" aria-hidden="true" /> {t("outfit.report")}
-              </a>
+              <ReportButton postId={id} />
             </p>
           )}
 
@@ -252,9 +250,7 @@ function OutfitPage() {
           </div>
           {products.length === 0 && (
             <p className="mt-3 text-xs text-foreground/65">
-              <a href={reportHref} className="underline hover:text-primary">
-                {t("outfit.report")}
-              </a>
+              <ReportButton postId={id} />
             </p>
           )}
         </div>

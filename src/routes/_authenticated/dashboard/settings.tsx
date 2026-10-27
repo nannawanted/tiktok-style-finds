@@ -18,7 +18,7 @@ import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
 import { cleanStyles, MAX_STYLES, type StyleKey } from "@/lib/styles";
 import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 import { SITE_URL } from "@/lib/site";
-import { ArrowLeft, ArrowUpRight, Camera, ImagePlus, Loader2, LogOut, Mail } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Camera, Download, ImagePlus, Loader2, LogOut, Mail } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
@@ -41,6 +41,28 @@ function Settings() {
   const [pending, setPending] = useState<{ kind: "avatar" | "banner"; file: File } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const [exporting, setExporting] = useState(false);
+  // RGPD : télécharger toutes ses données (fichier JSON)
+  async function downloadMyData() {
+    setExporting(true);
+    const { data, error } = await supabase.rpc("export_my_data" as never);
+    setExporting(false);
+    if (error || !data) {
+      toast.error(t("settings.exportError"));
+      return;
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `wantedfashion-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast.success(t("settings.exportDone"));
+  }
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -315,6 +337,15 @@ function Settings() {
               className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-border px-4 py-2.5 text-sm font-semibold"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" /> {t("nav.logout")}
+            </button>
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={downloadMyData}
+              className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            >
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+              {t("settings.exportData")}
             </button>
           </div>
           <div className="mt-6 border-t border-border/70 pt-4">

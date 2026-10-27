@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Shirt, UserPlus } from "lucide-react";
+import { Heart, ShieldAlert, Shirt, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
-import { useMarkNotificationsRead, useNotifications } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, useMarkNotificationsRead, useModerationQueue, useNotifications } from "@/lib/social";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
@@ -52,9 +52,22 @@ function NotificationsPage() {
     },
   });
 
+  const { data: alerts } = useModerationQueue(REPORT_ALERT_THRESHOLD);
   return (
     <main className="mx-auto max-w-2xl px-4 pt-6 md:pt-10">
       <h1 className="font-display fade-up mb-6 text-4xl font-bold">{t("engage.notifications")}</h1>
+      {/* Admin : alerte de modération (look signalé 3 fois ou plus) */}
+      {alerts && alerts.length > 0 && (
+        <Link to="/dashboard/moderation" className="mb-5 flex items-center gap-3 rounded-3xl bg-primary/10 p-4 ring-2 ring-primary/40">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{alerts.length} {t("moderation.alert")}</span>
+            <span className="block text-sm text-foreground/65">{t("moderation.alertCta")} →</span>
+          </span>
+        </Link>
+      )}
       {isLoading ? (
         <p className="text-foreground/60">…</p>
       ) : !notifications?.length ? (

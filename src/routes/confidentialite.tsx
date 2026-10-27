@@ -26,6 +26,9 @@ function PrivacyPage() {
       <ul className="mb-4 list-disc space-y-1 pl-5">
         <li><strong>Visiteurs</strong> : adresse IP et navigateur au moment d'un clic sur un produit (pour le suivi d'affiliation), avec votre consentement.</li>
         <li><strong>Créateurs inscrits</strong> : adresse email, nom d'utilisateur, mot de passe (jamais stocké en clair), photo de profil et bannière, bio, les posts et produits que vous publiez.</li>
+        <li><strong>Activité sur le site (comptes connectés)</strong> : les looks que vous likez, les comptes que vous suivez, vos collections et les looks que vous signalez.</li>
+        <li><strong>Recherches</strong> : quand quelqu'un ouvre un look après une recherche, nous enregistrons le texte cherché et le look ouvert, sans savoir qui a cherché. Cela sert à améliorer la recherche.</li>
+        <li><strong>Photos des looks</strong> : une « empreinte » numérique de chaque photo publiée est calculée pour proposer des looks qui se ressemblent et pour la recherche par l'image.</li>
         <li><strong>Ventes et commissions</strong> : si vous êtes créateur, les ventes générées par vos liens et les montants qui vous sont dus.</li>
       </ul>
 
@@ -62,12 +65,14 @@ function PrivacyPage() {
       <p className="mb-4">
         Les données de compte sont conservées tant que le compte existe. Vous pouvez supprimer votre compte à tout
         moment depuis les paramètres de votre dashboard, ce qui supprime vos posts, produits et statistiques.
+        Les adresses IP et les informations de navigateur enregistrées lors des clics sont effacées automatiquement
+        après 30 jours.
       </p>
 
       <h2 className="mb-2 mt-6 font-bold">Vos droits</h2>
       <p className="mb-4">
-        Conformément au RGPD, vous pouvez demander l'accès, la rectification ou la suppression de vos données en
-        écrivant à <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a>.
+        Conformément au RGPD, vous pouvez télécharger toutes vos données à tout moment depuis Paramètres → Compte
+        → « Télécharger mes données », et demander leur rectification ou leur suppression en écrivant à <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a>.
       </p>
     </main>
   );

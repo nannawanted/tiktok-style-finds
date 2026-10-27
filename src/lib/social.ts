@@ -300,3 +300,46 @@ export function useCreatorSuggestions(fallback: CreatorCard[]) {
   for (const c of fallback) if (!exclude.has(c.id) && !list.some((m) => m.id === c.id)) list.push(c);
   return { creators: list.slice(0, 12), personal: (mutual ?? []).length > 0 };
 }
+
+// ——— Admin / modération ———
+
+export function useIsAdmin() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("creators").select("is_admin").eq("id", user!.id).maybeSingle();
+      return !!(data as { is_admin?: boolean } | null)?.is_admin;
+    },
+  });
+}
+
+export type ModerationItem = {
+  post_id: string;
+  title: string;
+  cover_image: string | null;
+  creator_username: string;
+  open_reports: number;
+  details: string[];
+  last_report: string;
+};
+
+/** Tenues signalées (admin). min = 3 pour les alertes, 1 pour tout voir. */
+export function useModerationQueue(min = 1) {
+  const { data: isAdmin } = useIsAdmin();
+  return useQuery({
+    queryKey: ["moderation-queue", min],
+    enabled: !!isAdmin,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("moderation_queue" as never, { p_min: min } as never);
+      if (error) throw error;
+      return ((data ?? []) as ModerationItem[]).map((r) => ({ ...r, open_reports: Number(r.open_reports) }));
+    },
+  });
+}
+
+/** Seuil d'alerte : à partir de 3 signalements, l'admin est prévenu. */
+export const REPORT_ALERT_THRESHOLD = 3;
