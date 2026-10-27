@@ -11,7 +11,12 @@ export const VISUAL_MODEL = "Xenova/mobileclip_s0";
 const TRANSFORMERS_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js";
 
 type Tensor = { normalize: () => { tolist: () => number[][] } };
+type TextTensor = { normalize: () => { tolist: () => number[][] } };
 type TransformersModule = {
+  AutoTokenizer: { from_pretrained: (id: string) => Promise<(texts: string[], opts: Record<string, unknown>) => unknown> };
+  CLIPTextModelWithProjection: {
+    from_pretrained: (id: string, opts?: Record<string, unknown>) => Promise<(inputs: unknown) => Promise<{ text_embeds: TextTensor }>>;
+  };
   AutoProcessor: { from_pretrained: (id: string) => Promise<(img: unknown) => Promise<unknown>> };
   CLIPVisionModelWithProjection: {
     from_pretrained: (id: string, opts?: Record<string, unknown>) => Promise<(inputs: unknown) => Promise<{ image_embeds: Tensor }>>;
@@ -67,4 +72,63 @@ export async function indexPostImage(postId: string, imageUrl: string | null | u
 export function indexPostImageLater(postId: string, imageUrl: string | null | undefined) {
   if (!imageUrl || typeof window === "undefined") return;
   void indexPostImage(postId, imageUrl);
+}
+
+// ——— Phrases (pour la recherche visuelle par mots) ———
+// Le modèle texte (~43 Mo) n'est chargé que par l'admin, une seule fois, pour
+// calculer les empreintes du vocabulaire ; les visiteurs ne le téléchargent jamais.
+
+let textLoader: Promise<{ tokenizer: (t: string[], o: Record<string, unknown>) => unknown; model: (i: unknown) => Promise<{ text_embeds: TextTensor }> }> | null = null;
+
+function loadText() {
+  if (typeof window === "undefined") return Promise.reject(new Error("browser_only"));
+  textLoader ??= (async () => {
+    const lib = (await import(/* @vite-ignore */ TRANSFORMERS_URL)) as TransformersModule;
+    const [tokenizer, model] = await Promise.all([
+      lib.AutoTokenizer.from_pretrained(VISUAL_MODEL),
+      lib.CLIPTextModelWithProjection.from_pretrained(VISUAL_MODEL, { dtype: "q8" }),
+    ]);
+    return { tokenizer, model };
+  })();
+  textLoader.catch(() => {
+    textLoader = null;
+  });
+  return textLoader;
+}
+
+export async function computeTextEmbeddings(texts: string[]): Promise<number[][]> {
+  const { tokenizer, model } = await loadText();
+  const inputs = tokenizer(texts, { padding: "max_length", truncation: true });
+  const { text_embeds } = await model(inputs);
+  return text_embeds.normalize().tolist().map((v) => v.map((x) => Math.round(x * 1e6) / 1e6));
+}
+
+/** Calcule et enregistre les empreintes des notions manquantes (admin). */
+export async function indexVisualConcepts(
+  concepts: { key: string; prompt: string }[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<{ done: number; failed: number }> {
+  let done = 0;
+  let failed = 0;
+  for (let i = 0; i < concepts.length; i += 8) {
+    const batch = concepts.slice(i, i + 8);
+    try {
+      const vectors = await computeTextEmbeddings(batch.map((c) => c.prompt));
+      for (let j = 0; j < batch.length; j++) {
+        const { error } = await supabase.rpc("set_visual_concept" as never, {
+          p_key: batch[j].key,
+          p_model: VISUAL_MODEL,
+          p_prompt: batch[j].prompt,
+          p_embedding: vectors[j],
+        } as never);
+        if (error) failed += 1;
+        else done += 1;
+      }
+    } catch (e) {
+      console.warn("[visual] notions impossibles", e);
+      failed += batch.length;
+    }
+    onProgress?.(done + failed, concepts.length);
+  }
+  return { done, failed };
 }

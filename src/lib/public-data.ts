@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { STYLE_KEYS, cleanStyles, type StyleKey } from "./styles";
 import { cleanTags, normalizeTag } from "./tags";
+import { detectVisualConcepts, normalizeText } from "./visual-concepts";
 
 // Lectures publiques (aucune donnée privée). Ces fonctions tournent aussi bien
 // sur le serveur (pages fabriquées côté serveur, pour Google et les aperçus de
@@ -184,35 +185,47 @@ export async function fetchCreators(opts: { style?: StyleKey | null; q?: string;
   return (data ?? []).map(toCreatorCard).filter((c): c is CreatorCard => c !== null);
 }
 
-/** Recherche des tenues par titre, ou par nom/marque d'une de leurs pièces. */
+/**
+ * Recherche « comme Google » : on mélange, dans cet ordre,
+ * 1. les correspondances exactes (hashtags, titre, pièces, marques, styles),
+ * 2. les correspondances approchées (fautes de frappe),
+ * 3. les photos qui correspondent visuellement (couleurs, vêtements, motifs, lieux…).
+ * « #mot » ne cherche que dans les hashtags.
+ */
 export async function searchOutfits(rawQ: string, style?: StyleKey | null, limit = 40): Promise<OutfitCard[]> {
   const q = cleanQuery(rawQ);
   if (!q) return fetchOutfits({ style, sort: "trending", limit });
-  // « #vintage » ne cherche que dans les hashtags ; sinon titre, pièces, hashtags et styles
   const tagOnly = q.startsWith("#");
   const words = q.replace(/#/g, " ").trim();
   const tag = normalizeTag(words.replace(/\s+/g, ""));
-  const styleMatch = STYLE_KEYS.filter((k) => normalizeTag(k) === tag || normalizeTag(k.replace(/-/g, "")) === tag);
-  const [byTitle, byPiece, byTag, byStyle] = await Promise.all([
+  const tokens = normalizeText(words).split(" ").filter(Boolean);
+  const grams = new Set([...tokens, ...tokens.slice(1).map((w, i) => `${tokens[i]}${w}`)]);
+  const styleMatch = STYLE_KEYS.filter((k) => grams.has(k.replace(/-/g, "")) || normalizeTag(k) === tag);
+  const visualKeys = tagOnly ? [] : detectVisualConcepts(words);
+  const rows = <T,>(r: { data: unknown } | null) => ((r?.data ?? []) as T[]);
+
+  const [byTitle, byPiece, byTag, byStyle, byFuzzy, byVisual] = await Promise.all([
     tagOnly || !words ? null : supabase.from("posts").select("id").ilike("title", `%${words}%`).limit(limit),
     tagOnly || !words ? null : supabase.from("products").select("post_id").or(`name.ilike.%${words}%,brand.ilike.%${words}%`).limit(limit * 2),
     tag ? supabase.rpc("posts_by_tag" as never, { p_q: tag, p_limit: limit } as never) : null,
-    !tagOnly && styleMatch.length ? supabase.from("posts").select("id").overlaps("styles", styleMatch).limit(limit) : null,
+    !tagOnly && styleMatch.length ? supabase.from("posts").select("id").overlaps("styles", styleMatch).order("views", { ascending: false }).limit(limit) : null,
+    tagOnly || words.length < 3 ? null : supabase.rpc("search_posts_fuzzy" as never, { p_q: words, p_limit: limit } as never),
+    visualKeys.length ? supabase.rpc("posts_by_visual" as never, { p_keys: visualKeys, p_limit: limit } as never) : null,
   ]);
+
   const ids = [
     ...new Set([
-      ...((byTag?.data ?? []) as { id: string }[]).map((r) => r.id),
-      ...(byTitle?.data ?? []).map((r) => r.id),
-      ...(byPiece?.data ?? []).map((r) => r.post_id),
-      ...(byStyle?.data ?? []).map((r) => r.id),
+      ...rows<{ id: string }>(byTag).map((r) => r.id),
+      ...rows<{ id: string }>(byTitle).map((r) => r.id),
+      ...rows<{ post_id: string }>(byPiece).map((r) => r.post_id),
+      ...rows<{ id: string }>(byStyle).map((r) => r.id),
+      ...rows<{ post_id: string }>(byFuzzy).map((r) => r.post_id),
+      ...rows<{ post_id: string }>(byVisual).map((r) => r.post_id),
     ]),
   ];
   if (!ids.length) return [];
-  let query = supabase.from("posts").select(OUTFIT_COLUMNS).in("id", ids.slice(0, 100));
-  if (style) query = query.contains("styles", [style]);
-  const { data, error } = await query.order("views", { ascending: false }).limit(limit);
-  if (error) throw error;
-  return withAvatars((data ?? []) as RawOutfit[]);
+  const cards = await fetchOutfitsByIds(ids.slice(0, 150));
+  return (style ? cards.filter((c) => c.styles.includes(style)) : cards).slice(0, limit);
 }
 
 export type OutfitDetail = {

@@ -4,7 +4,8 @@ import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
-import { indexPostImage, VISUAL_MODEL } from "@/lib/visual-embedding";
+import { indexPostImage, indexVisualConcepts, VISUAL_MODEL } from "@/lib/visual-embedding";
+import { VISUAL_CONCEPTS } from "@/lib/visual-concepts";
 
 type Missing = { id: string; cover_image: string | null };
 
@@ -38,6 +39,17 @@ export function VisualIndexer() {
     },
   });
 
+  // Admin : vocabulaire de la recherche visuelle (couleurs, vêtements…) pas encore calculé
+  const { data: missingConcepts } = useQuery({
+    queryKey: ["missing-concepts", user?.id],
+    enabled: !!isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("visual_concept_list" as never, { p_model: VISUAL_MODEL } as never);
+      const have = new Map(((data ?? []) as { key: string; prompt: string }[]).map((r) => [r.key, r.prompt]));
+      return VISUAL_CONCEPTS.filter((c) => have.get(c.key) !== c.prompt);
+    },
+  });
+
   async function run(list: Missing[]) {
     let done = 0;
     let failed = 0;
@@ -52,6 +64,18 @@ export function VisualIndexer() {
     qc.invalidateQueries({ queryKey: ["more-like-this"] });
   }
 
+  async function runAll() {
+    if (missing?.length) await run(missing);
+    if (isAdmin && missingConcepts?.length) {
+      let failed = 0;
+      setProgress({ done: 0, total: missingConcepts.length, failed: 0 });
+      const res = await indexVisualConcepts(missingConcepts, (done, total) => setProgress({ done, total, failed }));
+      failed = res.failed;
+      setProgress({ done: missingConcepts.length, total: missingConcepts.length, failed });
+      qc.invalidateQueries({ queryKey: ["missing-concepts", user?.id] });
+    }
+  }
+
   // Créateur (non admin) : rattrapage automatique et invisible de ses tenues
   useEffect(() => {
     if (isAdmin !== false || !missing?.length || autoStarted.current) return;
@@ -62,7 +86,7 @@ export function VisualIndexer() {
 
   if (!isAdmin) return null;
   const running = progress && progress.done < progress.total;
-  const count = missing?.length ?? 0;
+  const count = (missing?.length ?? 0) + (missingConcepts?.length ?? 0);
   if (!count && !progress) return null;
 
   return (
@@ -80,7 +104,7 @@ export function VisualIndexer() {
       {!running && count > 0 && (
         <button
           type="button"
-          onClick={() => missing && run(missing)}
+          onClick={() => void runAll()}
           className="mt-3 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-surface hover:bg-ink/85"
         >
           {t("visual.button")} ({count})

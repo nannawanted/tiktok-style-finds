@@ -359,12 +359,15 @@ export function PostForm({
     onSubmit({ ...data, tags, title: data.title.trim(), products: data.products.map(({ _k, ...p }) => p) });
   }
 
+  // Modification : tout sur une seule page (pas d'étapes)
+  const single = mode === "edit";
   const cta = useMemo(() => {
+    if (single) return { label: submitLabel, ok: !loading && !anyLoading, why: t("studio.loadingPieces"), sub: "" };
     if (step === 1) return { label: t("studio.toPieces"), ok: data.title.trim().length > 0, why: t("studio.needTitle"), sub: `${t("studio.step")} 1/3` };
     if (step === 2) return { label: t("studio.next"), ok: !anyLoading, why: t("studio.loadingPieces"), sub: data.products.length ? `${t("studio.step")} 2/3` : t("studio.noPiecesSoft") };
     if (step === 3) return { label: submitLabel, ok: !loading && !anyLoading, why: "", sub: mode === "new" ? t("studio.editableLater") : "" };
     return null;
-  }, [step, data, anyLoading, loading, submitLabel, mode, t]);
+  }, [step, data, anyLoading, loading, submitLabel, mode, single, t]);
 
   const steps: TKey[] = ["studio.stepPhoto", "studio.stepPieces", "studio.stepStyle"];
 
@@ -406,7 +409,7 @@ export function PostForm({
           <button
             type="button"
             aria-label={t("studio.back")}
-            onClick={() => (step > 1 || (step === 1 && mode === "new") ? go(step - 1) : window.history.back())}
+            onClick={() => (!single && (step > 1 || (step === 1 && mode === "new")) ? go(step - 1) : window.history.back())}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
@@ -422,7 +425,7 @@ export function PostForm({
             )}
           </div>
         </div>
-        {step > 0 && (
+        {step > 0 && !single && (
           <nav aria-label={t("studio.progress")} className="mt-4 grid grid-cols-3 gap-1.5">
             {steps.map((k, i) => {
               const n = i + 1;
@@ -532,8 +535,9 @@ export function PostForm({
       )}
 
       {/* 1 · Photo + nom */}
-      {step === 1 && (
+      {(single || step === 1) && (
         <section className="fade-up flex flex-col gap-4">
+          {single && <h2 className="font-display text-2xl font-bold">{t("studio.photoAndName")}</h2>}
           {coverBlock()}
           {coverNotice && <p className="rounded-xl bg-accent/30 px-3 py-2 text-[13px]">{coverNotice}</p>}
 
@@ -569,9 +573,9 @@ export function PostForm({
       )}
 
       {/* 2 · Pièces */}
-      {step === 2 && (
-        <section className="fade-up flex flex-col gap-4">
-          {data.cover_image && (
+      {(single || step === 2) && (
+        <section className={`fade-up flex flex-col gap-4 ${single ? "mt-12 border-t border-border/70 pt-8" : ""}`}>
+          {!single && data.cover_image && (
             <div className="flex items-center gap-3 rounded-[22px] bg-surface/70 p-2.5">
               <img src={data.cover_image} alt="" referrerPolicy="no-referrer" className="h-16 w-12 shrink-0 rounded-xl object-cover" />
               <span className="min-w-0 truncate font-display text-lg font-bold">{data.title}</span>
@@ -705,8 +709,8 @@ export function PostForm({
       )}
 
       {/* 3 · Style + aperçu */}
-      {step === 3 && (
-        <section className="fade-up flex flex-col gap-5">
+      {(single || step === 3) && (
+        <section className={`fade-up flex flex-col gap-5 ${single ? "mt-12 border-t border-border/70 pt-8" : ""}`}>
           <div>
             <h2 className="font-display text-2xl font-bold">{t("studio.styleTitle")}</h2>
             <p className="mt-1 text-[13px] text-foreground/60">{t("studio.styleHint")}</p>
@@ -806,8 +810,8 @@ export function PostForm({
             <button
               type="button"
               disabled={!cta.ok}
-              onClick={() => (step === 3 ? submit() : go(step + 1))}
-              className={`flex h-14 w-full items-center justify-center gap-2 rounded-full text-base font-bold transition-all active:scale-[.98] disabled:opacity-40 ${step === 3 ? "bg-primary text-primary-foreground" : "bg-ink text-surface"}`}
+              onClick={() => (single || step === 3 ? submit() : go(step + 1))}
+              className={`flex h-14 w-full items-center justify-center gap-2 rounded-full text-base font-bold transition-all active:scale-[.98] disabled:opacity-40 ${single || step === 3 ? "bg-primary text-primary-foreground" : "bg-ink text-surface"}`}
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {cta.label}
