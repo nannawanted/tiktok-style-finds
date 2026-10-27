@@ -116,7 +116,16 @@ export function ImageCropDialog({
           <button type="button" onClick={onCancel} className="h-12 rounded-full text-sm font-semibold hover:bg-card">
             {t("crop.cancel")}
           </button>
-          <button type="button" disabled={!file} onClick={() => file && onDone(file)} className="h-12 rounded-full border border-border text-sm font-semibold hover:bg-card">
+          {/* « Original » remet l'image comme au départ (sans zoom ni déplacement), sans fermer la fenêtre */}
+          <button
+            type="button"
+            disabled={zoom === 1 && crop.x === 0 && crop.y === 0}
+            onClick={() => {
+              setZoom(1);
+              setCrop({ x: 0, y: 0 });
+            }}
+            className="h-12 rounded-full border border-border text-sm font-semibold hover:bg-card disabled:opacity-40"
+          >
             {t("crop.original")}
           </button>
           <button
