@@ -150,7 +150,8 @@ const dict = {
     product: { fr: "produit", en: "product" },
     products: { fr: "produits", en: "products" },
     preview: { fr: "Aperçu", en: "Preview" },
-    edit: { fr: "Éditer", en: "Edit" },
+    edit: { fr: "Modifier", en: "Edit" },
+    more: { fr: "Plus d'options", en: "More options" },
     copyUrl: { fr: "Copier URL", en: "Copy URL" },
     urlCopied: { fr: "URL copiée", en: "URL copied" },
     delete: { fr: "Supprimer", en: "Delete" },
@@ -387,6 +388,7 @@ const dict = {
     outfitCount: { fr: "tenue", en: "outfit" },
   },
   explore: {
+    refine: { fr: "Affiner la recherche", en: "Refine search" },
     title: { fr: "Explorer", en: "Explore" },
     resultsFor: { fr: "Résultats pour", en: "Results for" },
     outfits: { fr: "Tenues", en: "Outfits" },

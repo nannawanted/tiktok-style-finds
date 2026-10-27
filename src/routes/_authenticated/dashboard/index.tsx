@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -8,13 +8,14 @@ import { recordCreatorIp } from "@/lib/record-creator-ip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { VisualIndexer } from "@/components/vitrine/VisualIndexer";
-import { ArrowUpRight, ExternalLink, Eye, Heart, Link2, MousePointerClick, Pencil, Plus, Settings, Shirt, Trash2 } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Eye, Heart, Link2, MoreHorizontal, MousePointerClick, Pencil, Plus, Settings, Shirt, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { absoluteUrl, outfitPath, profilePath } from "@/lib/site";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   head: () => ({ meta: [{ title: "Dashboard — Wanted Fashion" }] }),
@@ -25,6 +26,7 @@ function Dashboard() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const [toDelete, setToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -211,38 +213,56 @@ function Dashboard() {
                 </Link>
                 <h3 className="mt-2 line-clamp-1 px-0.5 text-[15px] font-semibold">{p.title}</h3>
                 <div className="mt-1.5 flex gap-1.5">
-                  <Link to="/dashboard/post/$id/edit" params={{ id: p.id }} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink text-[13px] font-semibold text-surface">
-                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> {t("dashboard.edit")}
+                  <Link to="/dashboard/post/$id/edit" params={{ id: p.id }} className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink px-3 text-[13px] font-semibold text-surface">
+                    <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{t("dashboard.edit")}</span>
                   </Link>
-                  <Link to="/post/$id" params={{ id: p.id }} aria-label={t("dashboard.preview")} className="flex h-9 w-9 items-center justify-center rounded-full bg-surface">
-                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                  <button type="button" aria-label={t("dashboard.copyUrl")} onClick={() => copy(absoluteUrl(outfitPath(p.id)), t("dashboard.urlCopied"))} className="flex h-9 w-9 items-center justify-center rounded-full bg-surface">
-                    <Link2 className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button type="button" aria-label={t("dashboard.delete")} className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-destructive">
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" aria-label={t("dashboard.more")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface">
+                        <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
                       </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t("dashboard.deletePostTitle")}</AlertDialogTitle>
-                        <AlertDialogDescription>{t("dashboard.deletePostDesc")}</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate(p.id)}>{t("dashboard.delete")}</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52 rounded-2xl border-border bg-surface p-1.5">
+                      <DropdownMenuItem asChild className="rounded-xl py-2.5">
+                        <Link to="/post/$id" params={{ id: p.id }}>
+                          <ExternalLink className="h-4 w-4" aria-hidden="true" /> {t("dashboard.preview")}
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-xl py-2.5" onSelect={() => copy(absoluteUrl(outfitPath(p.id)), t("dashboard.urlCopied"))}>
+                        <Link2 className="h-4 w-4" aria-hidden="true" /> {t("dashboard.copyUrl")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-xl py-2.5 text-destructive focus:text-destructive" onSelect={() => setToDelete(p.id)}>
+                        <Trash2 className="h-4 w-4" aria-hidden="true" /> {t("dashboard.delete")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </li>
             );
           })}
         </ul>
       )}
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("dashboard.deletePostTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("dashboard.deletePostDesc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (toDelete) del.mutate(toDelete);
+                setToDelete(null);
+              }}
+            >
+              {t("dashboard.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { cleanQuery, fetchCreators, searchOutfits } from "@/lib/public-data";
+import { searchCompletions } from "@/lib/visual-concepts";
+import { normalizeTag } from "@/lib/tags";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 
 function SearchBox({ className = "" }: { className?: string }) {
@@ -34,11 +36,16 @@ function SearchBox({ className = "" }: { className?: string }) {
     enabled: debounced.length >= 2,
     staleTime: 30_000,
     queryFn: async () => {
-      const [creators, outfits] = await Promise.all([
-        fetchCreators({ q: debounced, limit: 4 }),
-        searchOutfits(debounced, null, 5),
+      const [creators, outfits, tags] = await Promise.all([
+        fetchCreators({ q: debounced, limit: 3 }),
+        searchOutfits(debounced, null, 4),
+        supabase
+          .rpc("popular_tags" as never, { p_prefix: normalizeTag(debounced.replace(/\s+/g, "")), p_limit: 3 } as never)
+          .then(({ data }) => ((data ?? []) as { tag: string }[]).map((r) => `#${r.tag}`)),
       ]);
-      return { creators, outfits };
+      // Recherches proposées (comme Pinterest) : vocabulaire + hashtags populaires
+      const terms = [...new Set([...searchCompletions(debounced, 5), ...tags])].slice(0, 7);
+      return { creators, outfits, terms };
     },
   });
 
@@ -47,15 +54,16 @@ function SearchBox({ className = "" }: { className?: string }) {
     (document.activeElement as HTMLElement | null)?.blur();
   }
 
-  function go() {
+  function go(value = q) {
     setOpen(false);
     (document.activeElement as HTMLElement | null)?.blur();
-    navigate({ to: "/explorer", search: { q: q.trim() || undefined } });
+    setQ(value);
+    navigate({ to: "/explorer", search: { q: value.trim() || undefined } });
   }
 
   const data = suggestions.data;
   const show = open && debounced.length >= 2;
-  const empty = data && data.creators.length === 0 && data.outfits.length === 0;
+  const empty = data && data.creators.length === 0 && data.outfits.length === 0 && data.terms.length === 0;
 
   return (
     <form
@@ -97,6 +105,21 @@ function SearchBox({ className = "" }: { className?: string }) {
         >
           {suggestions.isLoading && <p className="px-3 py-3 text-sm text-foreground/60">…</p>}
           {empty && <p className="px-3 py-3 text-sm text-foreground/60">{t("explore.noOutfits")}</p>}
+          {data && data.terms.length > 0 && (
+            <div className="pb-1">
+              {data.terms.map((term) => (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => go(term)}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-card"
+                >
+                  <Search className="h-4 w-4 shrink-0 text-foreground/45" aria-hidden="true" />
+                  <span className="truncate text-[15px] font-semibold">{term}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {data && data.creators.length > 0 && (
             <div className="pb-1">
               <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-foreground/50">{t("explore.creators")}</p>

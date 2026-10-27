@@ -165,13 +165,13 @@ tattoos|detail|visible tattoos|tatouages,tattoo,tatoue
 braids|detail|braided hair|tresses,nattes,braids
 `;
 
-export type VisualConcept = { key: string; prompt: string; words: string[] };
+export type VisualConcept = { key: string; category: Cat; prompt: string; words: string[] };
 
 export const VISUAL_CONCEPTS: VisualConcept[] = RAW.trim()
   .split("\n")
   .map((line) => {
     const [key, cat, en, words] = line.split("|");
-    return { key, prompt: PROMPT[cat as Cat](en), words: words.split(",").map((w) => w.trim()).filter(Boolean) };
+    return { key, category: cat as Cat, prompt: PROMPT[cat as Cat](en), words: words.split(",").map((w) => w.trim()).filter(Boolean) };
   });
 
 const STOP = new Set(["de", "du", "des", "en", "avec", "a", "au", "aux", "la", "le", "les", "l", "un", "une", "et", "pour", "sur", "the", "with", "for", "and", "in", "of", "look", "looks", "tenue", "tenues", "outfit", "outfits"]);
@@ -223,3 +223,82 @@ export function detectVisualConcepts(query: string): string[] {
 }
 
 export const VISUAL_STOPWORDS = STOP;
+
+// ——— Autocomplétion et « affiner », comme Pinterest ———
+
+// Le vocabulaire est écrit sans accents (pour la comparaison) : on les remet pour l'affichage.
+const ACCENTS: Record<string, string> = {
+  debardeur: "débardeur", creme: "crème", ecru: "écru", dore: "doré", doree: "dorée", argente: "argenté", argentee: "argentée",
+  colore: "coloré", coloree: "colorée", survetement: "survêtement", survet: "survêt", leopard: "léopard", zebre: "zèbre",
+  raye: "rayé", rayee: "rayée", echarpe: "écharpe", ete: "été", elegant: "élégant", elegante: "élégante", epure: "épuré",
+  boheme: "bohème", randonnee: "randonnée", resille: "résille", boite: "boîte", fete: "fête", soiree: "soirée",
+  feminin: "féminin", imprime: "imprimé", feminine: "féminine", mariniere: "marinière", metallise: "métallisé", tricote: "tricoté",
+  ajuste: "ajusté", habille: "habillé", habillee: "habillée", ensoleille: "ensoleillé", estival: "estival", hivernal: "hivernal",
+  luxueux: "luxueux", annees: "années", retro: "rétro", epaules: "épaules", tatoue: "tatoué", foret: "forêt", a: "à",
+};
+export function displayWord(w: string): string {
+  return w
+    .split(" ")
+    .map((t) => ACCENTS[t] ?? t)
+    .join(" ")
+    .replace(/^t shirt/, "t-shirt")
+    .replace(/^tee shirt/, "tee-shirt")
+    .replace(/^coupe vent/, "coupe-vent")
+    .replace(/^k way/, "k-way");
+}
+
+// Mots proposés : un par notion (le plus parlant), en français quand il existe
+const FR_WORDS: { label: string; norm: string; key: string; category: Cat }[] = [];
+for (const c of VISUAL_CONCEPTS) {
+  for (const w of c.words.slice(0, 2)) {
+    const norm = normalizeText(w);
+    // pas de doublons ni de pluriels / féminins d'un mot déjà proposé (noir → noire, noirs)
+    if (!norm || FR_WORDS.some((x) => x.norm === norm || norm === `${x.norm}s` || norm === `${x.norm}e` || norm === `${x.norm}es`)) continue;
+    FR_WORDS.push({ label: displayWord(w), norm, key: c.key, category: c.category });
+  }
+}
+
+/** Complète ce qui est tapé (« ves » → veste, veste en cuir, veste en jean…). */
+export function searchCompletions(query: string, limit = 6): string[] {
+  const q = normalizeText(query);
+  if (q.length < 2) return [];
+  const starts = FR_WORDS.filter((w) => w.norm.startsWith(q));
+  const inside = FR_WORDS.filter((w) => !w.norm.startsWith(q) && w.norm.split(" ").some((t) => t.startsWith(q)));
+  const sort = (a: { norm: string }, b: { norm: string }) => a.norm.length - b.norm.length;
+  return [...starts.sort(sort), ...inside.sort(sort)].map((w) => w.label).slice(0, limit);
+}
+
+const REFINE: Record<Cat, string[]> = {
+  color: ["noir", "blanc", "beige", "marron", "gris", "bleu", "rouge", "vert", "rose", "kaki"],
+  item: ["veste", "jean", "robe", "baskets", "pull", "manteau", "jupe", "cargo", "sweat", "bottes"],
+  vibe: ["oversize", "elegant", "vintage", "streetwear", "minimaliste", "cosy", "sportif", "luxe"],
+  place: ["rue", "plage", "soiree", "bureau", "neige"],
+  pattern: ["rayures", "carreaux", "fleuri", "leopard"],
+  material: ["cuir", "jean", "laine", "satin", "daim"],
+  detail: [],
+};
+
+/** Puces « affiner » sous la recherche : ce qu'on peut ajouter pour préciser. */
+export function refineSuggestions(query: string, limit = 10): string[] {
+  const keys = detectVisualConcepts(query);
+  const cats = new Set(keys.map((k) => VISUAL_CONCEPTS.find((c) => c.key === k)?.category));
+  const order: Cat[] = cats.has("item")
+    ? ["color", "vibe", "material", "place"]
+    : cats.has("color")
+      ? ["item", "vibe", "pattern"]
+      : ["color", "item", "vibe"];
+  const have = new Set(normalizeText(query).split(" "));
+  // On alterne les familles (une couleur, une ambiance, une couleur…) comme Pinterest
+  const lists = order.map((cat) =>
+    REFINE[cat].filter((w) => {
+      if (have.has(w)) return false;
+      const key = detectVisualConcepts(w)[0];
+      return !(key && keys.includes(key));
+    }),
+  );
+  const out: string[] = [];
+  for (let i = 0; out.length < limit && lists.some((l) => l.length > i); i++) {
+    for (const l of lists) if (l[i] && out.length < limit) out.push(displayWord(l[i]));
+  }
+  return [...new Set(out)];
+}
