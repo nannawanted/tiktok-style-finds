@@ -341,8 +341,8 @@ const dict = {
     outfitsTitle: { fr: "Les tenues du moment", en: "Outfits of the moment" },
     creatorsTitle: { fr: "Créateurs à suivre", en: "Creators to follow" },
     seeAllCreators: { fr: "Voir tous les créateurs", en: "See all creators" },
-    ctaTitle: { fr: "Tu crées du contenu mode ?", en: "Do you create fashion content?" },
-    ctaText: { fr: "Une page gratuite pour toutes tes tenues, un seul lien en bio. Colle le lien d'un vêtement, on remplit le reste.", en: "A free page for all your outfits, one link in bio. Paste a link to a piece, we fill in the rest." },
+    ctaTitle: { fr: "Tes abonnés veulent ta tenue.", en: "Your followers want your outfit." },
+    ctaText: { fr: "Fini les « c'est de où ? » sous chaque vidéo. Sur WantedFashion, chaque look a sa page avec toutes les pièces et leurs liens. Un seul lien dans ta bio, et ta communauté shoppe ton style en un clic.", en: "No more \"where's it from?\" under every video. On WantedFashion, every look gets its own page with every piece and its link. One link in your bio, and your community shops your style in one tap." },
     ctaButton: { fr: "Créer ma page", en: "Create my page" },
     empty: { fr: "Aucune tenue pour l'instant.", en: "No outfits yet." },
     noResult: { fr: "Aucune tenue pour ce style pour l'instant.", en: "No outfits in this style yet." },
@@ -461,6 +461,8 @@ const dict = {
     noFollowers: { fr: "Personne ne suit encore ce profil.", en: "No followers yet." },
     noFollowing: { fr: "Ne suit personne pour l'instant.", en: "Not following anyone yet." },
     suggestions: { fr: "Suggestions pour toi", en: "Suggested for you" },
+    followedBy: { fr: "Suivi par", en: "Followed by" },
+    andOthers: { fr: "et", en: "and" },
     likes: { fr: "j'aime", en: "likes" },
   },
   crop: {
@@ -473,7 +475,7 @@ const dict = {
   },
   madeWith: {
     text: { fr: "Fait avec WantedFashion · Crée ta page", en: "Made with WantedFashion · Create your page" },
-    short: { fr: "Tu crées du contenu mode ? Ta page gratuite en 2 minutes.", en: "Do you create fashion content? Your free page in 2 minutes." },
+    short: { fr: "Tu crées du contenu mode ? Mets tous tes looks au même endroit, avec le lien de chaque pièce.", en: "Create fashion content? Put all your looks in one place, with a link to every piece." },
     button: { fr: "Créer ma page", en: "Create my page" },
   },
   savedPage: {

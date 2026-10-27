@@ -1,15 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Play, Sparkles } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
-import { useFollowedIds, useLikedStyles, useMyInterests } from "@/lib/social";
+import { useCreatorSuggestions } from "@/lib/social";
 import { fetchCreators, fetchFeedPage, fetchOutfits, type FeedKind, type OutfitCard } from "@/lib/public-data";
 import { isStyleKey, type StyleKey } from "@/lib/styles";
 import { DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/site";
 import { CreatorRow } from "@/components/vitrine/CreatorCard";
-import { StyleChips } from "@/components/vitrine/StyleChips";
-import { EmptyBox } from "@/components/vitrine/EmptyBox";
-import { InfiniteOutfitFeed } from "@/components/vitrine/InfiniteOutfitFeed";
+import { FeedSection } from "@/components/vitrine/FeedSection";
 
 type Tab = FeedKind;
 type Search = { style?: StyleKey; tab?: Tab };
@@ -91,27 +89,9 @@ function Home() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate({ from: "/" });
-  const { style, tab: tabParam } = Route.useSearch();
+  const { style, tab } = Route.useSearch();
   const { firstPage, creators, hero } = Route.useLoaderData();
-  const { data: followedIds } = useFollowedIds();
-  const { data: interests } = useMyInterests();
-  const { data: likedStyles } = useLikedStyles();
-  // Connecté : « Pour toi » par défaut. Visiteur : « Tendances ».
-  const tab: Tab = tabParam ?? (user ? "foryou" : "trending");
-
-  const setSearch = (next: Partial<Search>) =>
-    navigate({ search: (prev) => ({ ...prev, ...next }), resetScroll: false, replace: true });
-
-  const tabs: { key: Tab; label: string }[] = [
-    ...(user ? [{ key: "foryou" as Tab, label: t("engage.forYou") }] : []),
-    { key: "trending", label: t("home2.trending") },
-    { key: "latest", label: t("home2.latest") },
-    { key: "following", label: t("home2.following") },
-  ];
-
-  const followed = [...(followedIds ?? [])];
-  const signals = { interests: interests ?? [], followedIds: followed, likedStyles: likedStyles ?? {} };
-  const signalsKey = `${signals.interests.join(",")}|${followed.length}|${Object.values(signals.likedStyles).join(",")}`;
+  const suggestions = useCreatorSuggestions(creators);
 
   return (
     <main>
@@ -127,88 +107,45 @@ function Home() {
             >
               {t("hero.ctaExplore")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </a>
-            {!user && (
-              <Link to="/signup" className="inline-flex h-12 items-center rounded-full border border-border bg-surface px-6 font-bold">
-                {t("home2.ctaButton")}
-              </Link>
-            )}
           </div>
         </div>
         <HeroCollage outfits={hero} />
       </section>
 
-      {creators.length > 0 && (
-        <section className="mx-auto mb-8 max-w-7xl px-4 md:px-6">
+      {suggestions.creators.length > 0 && (
+        <section className="mx-auto mb-10 max-w-7xl px-4 md:px-6">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-3xl font-bold">{t("home2.creatorsTitle")}</h2>
-            <Link
-              to="/createurs"
-              search={{ style }}
-              className="group inline-flex items-center gap-1 text-sm font-bold text-primary"
-            >
+            <h2 className="font-display text-3xl font-bold">{suggestions.personal ? t("social.suggestions") : t("home2.creatorsTitle")}</h2>
+            <Link to="/createurs" search={{ style }} className="group inline-flex items-center gap-1 text-sm font-bold text-primary">
               {t("home2.seeAllCreators")} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-          <CreatorRow creators={creators} />
+          <CreatorRow creators={suggestions.creators} />
         </section>
       )}
 
-      <section id="tenues" className="mx-auto max-w-7xl scroll-mt-28 px-4 md:px-6">
-        <div className="sticky top-[118px] z-30 -mx-4 bg-background/90 px-4 py-3 backdrop-blur-md md:top-[72px] md:-mx-6 md:px-6">
-          <StyleChips value={style ?? null} onChange={(s) => setSearch({ style: s ?? undefined })} />
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-display text-3xl font-bold">{t("home2.outfitsTitle")}</h2>
-          <div className="flex gap-1.5 rounded-full bg-surface p-1" role="tablist">
-            {tabs.map((tb) => (
-              <button
-                key={tb.key}
-                type="button"
-                role="tab"
-                aria-selected={tab === tb.key}
-                onClick={() => setSearch({ tab: tb.key })}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                  tab === tb.key ? "bg-ink text-surface" : "text-foreground/75 hover:text-foreground"
-                }`}
-              >
-                {tb.label}
-              </button>
-            ))}
+      {!user && (
+        <section className="mx-auto mb-12 max-w-7xl px-4 md:px-6">
+          <div className="fade-up flex flex-col items-start gap-6 rounded-[28px] bg-secondary p-7 text-secondary-foreground md:flex-row md:items-center md:justify-between md:p-10">
+            <div className="max-w-xl">
+              <h2 className="font-display text-3xl font-bold leading-tight md:text-4xl">{t("home2.ctaTitle")}</h2>
+              <p className="mt-3 text-[16px] leading-relaxed opacity-90">{t("home2.ctaText")}</p>
+            </div>
+            <Link to="/signup" className="shrink-0 rounded-full bg-surface px-7 py-4 text-[16px] font-bold text-foreground shadow-lg transition-transform hover:-translate-y-1">
+              {t("home2.ctaButton")}
+            </Link>
           </div>
-        </div>
+        </section>
+      )}
 
-        <div className="mt-6">
-          {tab === "following" && !user ? (
-            <EmptyBox text={t("home2.loginToFollow")} action={{ to: "/login", label: t("nav2.login") }} />
-          ) : (
-            <>
-              {tab === "foryou" && user && interests && interests.length === 0 && <PersonalizeHint />}
-              <InfiniteOutfitFeed
-                key={`${tab}-${style ?? "all"}`}
-                queryKey={["home", tab, style ?? null, tab === "foryou" ? signalsKey : "", tab === "following" ? followed.join(",") : ""]}
-                fetchPage={(page) => fetchFeedPage({ kind: tab, style, page, creatorIds: followed, signals })}
-                initial={tab === "trending" ? firstPage : undefined}
-                empty={<EmptyBox text={tab === "following" ? t("home2.followingEmpty") : style ? t("home2.noResult") : t("home2.empty")} />}
-              />
-            </>
-          )}
-        </div>
-      </section>
-
+      <FeedSection
+        scope="home"
+        title={t("home2.outfitsTitle")}
+        tab={tab}
+        style={style}
+        firstPage={firstPage}
+        onChange={(next) => navigate({ search: (prev) => ({ ...prev, ...next }), resetScroll: false, replace: true })}
+      />
     </main>
-  );
-}
-
-/** Petit bandeau pour rouvrir le choix des styles (fil « Pour toi »). */
-function PersonalizeHint() {
-  const { t } = useTranslation();
-  return (
-    <Link
-      to="/dashboard/settings"
-      className="mb-5 flex items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/60 px-4 py-3 text-sm font-semibold hover:bg-surface"
-    >
-      <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" /> {t("engage.personalize")} →
-    </Link>
   );
 }

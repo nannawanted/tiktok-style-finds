@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { useFollowedIds } from "@/lib/social";
-import { fetchFollowCounts, fetchFollowers, fetchFollowing, fetchSuggestions, type CreatorCard } from "@/lib/public-data";
+import { fetchFollowCounts, fetchFollowers, fetchFollowing, fetchMutualSuggestions, fetchSuggestions, type CreatorCard } from "@/lib/public-data";
 import type { StyleKey } from "@/lib/styles";
 import { Avatar } from "./OutfitCard";
 import { FollowButton } from "./FollowButton";
@@ -119,7 +119,12 @@ export function FollowSuggestions({ creatorId, styles }: { creatorId: string; st
   const { data } = useQuery({
     queryKey: ["suggestions", creatorId, user?.id, exclude.length],
     enabled: !!user && !!followed,
-    queryFn: () => fetchSuggestions({ styles, exclude, limit: 10 }),
+    queryFn: async () => {
+      // D'abord les abonnements en commun, puis les styles proches
+      const mutual = await fetchMutualSuggestions(user!.id, [...(followed ?? [])], 10);
+      const more = await fetchSuggestions({ styles, exclude: [...exclude, ...mutual.map((m) => m.id)], limit: 10 });
+      return [...mutual, ...more].filter((c) => c.id !== creatorId).slice(0, 10);
+    },
   });
   if (!user || !data || data.length === 0) return null;
   return (

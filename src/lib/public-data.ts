@@ -471,3 +471,37 @@ export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: nu
   if (out.length < FEED_PAGE) out.push(...(await trendingRange(null, Math.max(0, from - total), FEED_PAGE - out.length)));
   return out;
 }
+
+// ——— Suggestions « Suivi par des personnes que tu suis » (comme Instagram) ———
+
+export type SuggestedCreator = CreatorCard & { mutual?: { count: number; names: string[] } };
+
+/**
+ * Créateurs suivis par les personnes que je suis, classés par nombre
+ * d'abonnements en commun. Exclut moi-même et ceux que je suis déjà.
+ */
+export async function fetchMutualSuggestions(userId: string, followedIds: string[], limit = 12): Promise<SuggestedCreator[]> {
+  if (!followedIds.length) return [];
+  const { data } = await supabase.from("follows").select("follower_id, creator_id").in("follower_id", followedIds.slice(0, 300)).limit(3000);
+  const exclude = new Set([userId, ...followedIds]);
+  const byCreator = new Map<string, string[]>();
+  for (const row of data ?? []) {
+    if (exclude.has(row.creator_id)) continue;
+    const list = byCreator.get(row.creator_id) ?? [];
+    list.push(row.follower_id);
+    byCreator.set(row.creator_id, list);
+  }
+  const ranked = [...byCreator.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, limit);
+  if (!ranked.length) return [];
+  const viaIds = [...new Set(ranked.flatMap(([, via]) => via.slice(0, 2)))];
+  const [cards, via] = await Promise.all([
+    creatorsByIds(ranked.map(([id]) => id)),
+    creatorsByIds(viaIds),
+  ]);
+  const viaName = new Map(via.map((c) => [c.id, c.username]));
+  const mutual = new Map(ranked.map(([id, list]) => [id, list]));
+  return cards.map((c) => {
+    const list = mutual.get(c.id) ?? [];
+    return { ...c, mutual: { count: list.length, names: list.slice(0, 2).map((id) => viaName.get(id)).filter((n): n is string => !!n) } };
+  });
+}

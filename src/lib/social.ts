@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth-context";
 import { cleanStyles, type StyleKey } from "./styles";
+import { fetchMutualSuggestions, type CreatorCard, type SuggestedCreator } from "./public-data";
 
 // « Enregistrer » une tenue et « suivre » un créateur. Les données sont privées :
 // la base ne laisse chacun lire et modifier que ses propres lignes.
@@ -251,4 +252,27 @@ export function useMarkNotificationsRead() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications", user?.id] }),
   });
+}
+
+// ——— Suggestions de créateurs à suivre ———
+
+/**
+ * Connecté : d'abord les créateurs suivis par des personnes que je suis
+ * (« Suivi par @x et 2 autres »), complétés par la liste par défaut.
+ * Visiteur : la liste par défaut.
+ */
+export function useCreatorSuggestions(fallback: CreatorCard[]) {
+  const { user } = useAuth();
+  const { data: followed } = useFollowedIds();
+  const followedList = [...(followed ?? [])];
+  const { data: mutual } = useQuery({
+    queryKey: ["mutual-suggestions", user?.id, followedList.length],
+    enabled: !!user && !!followed,
+    queryFn: () => fetchMutualSuggestions(user!.id, followedList, 12),
+  });
+  if (!user) return { creators: fallback as SuggestedCreator[], personal: false };
+  const exclude = new Set([user.id, ...followedList]);
+  const list: SuggestedCreator[] = [...(mutual ?? [])];
+  for (const c of fallback) if (!exclude.has(c.id) && !list.some((m) => m.id === c.id)) list.push(c);
+  return { creators: list.slice(0, 12), personal: (mutual ?? []).length > 0 };
 }

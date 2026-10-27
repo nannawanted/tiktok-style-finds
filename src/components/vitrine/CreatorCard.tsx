@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
-import type { CreatorCard as CreatorCardData } from "@/lib/public-data";
+import type { SuggestedCreator as CreatorCardData } from "@/lib/public-data";
 import { styleLabelKey } from "@/lib/styles";
 import { Avatar } from "./OutfitCard";
 import { FollowButton } from "./FollowButton";
@@ -22,7 +22,15 @@ export function CreatorCard({ creator, index = 0 }: { creator: CreatorCardData; 
         </span>
         <span className="text-[15px] font-bold text-foreground">@{creator.username}</span>
       </Link>
-      {creator.bio && <p className="line-clamp-2 text-[13px] leading-snug text-foreground/70">{creator.bio}</p>}
+      {creator.mutual && creator.mutual.count > 0 ? (
+        <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground/75">
+          {t("social.followedBy")} {creator.mutual.names.map((n) => `@${n}`).join(", ")}
+          {creator.mutual.count > creator.mutual.names.length &&
+            ` ${t("social.andOthers")} ${creator.mutual.count - creator.mutual.names.length}`}
+        </p>
+      ) : (
+        creator.bio && <p className="line-clamp-2 text-[13px] leading-snug text-foreground/70">{creator.bio}</p>
+      )}
       {creator.styles.length > 0 && (
         <ul className="flex flex-wrap justify-center gap-1.5">
           {creator.styles.slice(0, 3).map((s) => (
