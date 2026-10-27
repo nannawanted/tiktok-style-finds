@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+
+const DOUBLE_TAP_MS = 230;
 import { useQuickLike } from "./DoubleTapLike";
 import { Heart, Camera } from "lucide-react";
 import { VideoSourceIcon } from "./VideoSourceIcon";
@@ -34,18 +36,22 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
   const { t } = useTranslation();
   const h = hash(outfit.id);
   const pieces = `${outfit.pieceCount} ${outfit.pieceCount > 1 ? t("card.pieces") : t("card.piece")}`;
+  const navigate = useNavigate();
   const like = useQuickLike(outfit.id);
   const lastTap = useRef(0);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
 
-  // Un toucher = la tenue s'ouvre tout de suite (aucune attente).
-  // Deux touchers rapides = like en plus (le cœur apparaît et la tenue est likée).
-  // On ne peut pas savoir au 1er toucher s'il y en aura un 2e : on n'attend donc pas.
+  // Un toucher = ouvrir la tenue ; deux touchers rapides = liker SANS ouvrir.
+  // Pour savoir s'il y a un 2e toucher, on attend un très court instant (0,23 s,
+  // la durée d'un double-toucher rapide). Pendant ce temps la tenue est déjà
+  // préchargée (dès que le doigt touche l'écran), donc elle s'affiche aussitôt.
   function onCardClick(e: React.MouseEvent<HTMLAnchorElement>) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
     const now = Date.now();
-    if (now - lastTap.current < 350) {
-      e.preventDefault(); // la tenue est déjà en train de s'ouvrir
+    if (now - lastTap.current < DOUBLE_TAP_MS) {
+      clearTimeout(openTimer.current);
       lastTap.current = 0;
       const img = (e.currentTarget.querySelector("[data-cover]") as HTMLElement | null)?.getBoundingClientRect();
       if (img) setBurst({ x: e.clientX - img.left, y: Math.min(e.clientY - img.top, img.height - 48), key: now });
@@ -53,6 +59,7 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
       return;
     }
     lastTap.current = now;
+    openTimer.current = setTimeout(() => navigate({ to: "/post/$id", params: { id: outfit.id } }), DOUBLE_TAP_MS);
   }
 
   return (
