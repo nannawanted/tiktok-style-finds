@@ -10,12 +10,6 @@ import { SaveButton } from "./SaveButton";
 const TONES = ["#BFA587", "#8E6F55", "#CDB496", "#6B5240", "#D8C2A3", "#A0816A"];
 const RATIOS = ["aspect-[3/4]", "aspect-[4/5]", "aspect-[2/3]"];
 
-function formatCount(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
-  return String(n);
-}
-
 function hash(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -87,7 +81,7 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
             </span>
           )}
           <span className="absolute right-2 top-2">
-            <SaveButton postId={outfit.id} />
+            <SaveButton postId={outfit.id} count={outfit.likes} />
           </span>
           {outfit.tiktok_url ? (
             <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
@@ -112,26 +106,18 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
           {outfit.title}
         </h3>
       </Link>
-      <div className="mt-1.5 flex items-center justify-between gap-2 px-0.5">
-        {showCreator ? (
+      {showCreator && (
+        <div className="mt-1.5 px-0.5">
           <Link
             to="/@{$username}"
             params={{ username: outfit.creator_username }}
-            className="inline-flex min-w-0 items-center gap-2 text-[13px] text-foreground/75 hover:text-primary"
+            className="inline-flex min-w-0 max-w-full items-center gap-2 text-[13px] text-foreground/75 hover:text-primary"
           >
             <Avatar src={outfit.creator_avatar} name={outfit.creator_username} />
             <span className="truncate">@{outfit.creator_username}</span>
           </Link>
-        ) : (
-          <span />
-        )}
-        {outfit.likes > 0 && (
-          <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-foreground/70">
-            <Heart className="h-3.5 w-3.5 fill-current text-primary" aria-hidden="true" />
-            {formatCount(outfit.likes)}
-          </span>
-        )}
-      </div>
+        </div>
+      )}
     </article>
   );
 }

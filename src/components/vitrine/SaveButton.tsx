@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -6,7 +7,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useSavedIds, useToggleSave } from "@/lib/social";
 import { useCollectionPicker } from "./CollectionPicker";
 
-export function SaveButton({ postId, variant = "icon" }: { postId: string; variant?: "icon" | "wide" }) {
+export function SaveButton({ postId, variant = "icon", count }: { postId: string; variant?: "icon" | "wide"; count?: number }) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -36,6 +37,9 @@ export function SaveButton({ postId, variant = "icon" }: { postId: string; varia
   }
 
   const label = saved ? t("card.unsave") : t("card.save");
+  // État au chargement, pour ajuster le compteur sans attendre le serveur
+  const initiallySaved = useRef<boolean | null>(null);
+  if (initiallySaved.current === null && savedIds) initiallySaved.current = saved;
 
   if (variant === "wide") {
     return (
@@ -51,15 +55,24 @@ export function SaveButton({ postId, variant = "icon" }: { postId: string; varia
     );
   }
 
+  // Nombre de likes affiché à côté du cœur (mis à jour tout de suite quand on like)
+  const shown = count === undefined ? undefined : Math.max(0, count + (saved && !initiallySaved.current ? 1 : 0) - (!saved && initiallySaved.current ? 1 : 0));
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={label}
+      aria-label={shown ? `${label} (${shown})` : label}
       aria-pressed={saved}
-      className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/95 shadow-sm backdrop-blur transition-transform hover:scale-110 active:scale-95"
+      className={`flex h-10 items-center justify-center gap-1 rounded-full bg-surface/95 shadow-sm backdrop-blur transition-transform hover:scale-105 active:scale-95 ${shown ? "pl-2.5 pr-3" : "w-10"}`}
     >
-      <Heart key={String(saved)} className={`h-[18px] w-[18px] text-primary ${saved ? "heart-pop fill-current" : ""}`} />
+      <Heart key={String(saved)} className={`h-[18px] w-[18px] shrink-0 text-primary ${saved ? "heart-pop fill-current" : ""}`} />
+      {!!shown && <span className="text-[13px] font-bold tabular-nums text-foreground">{formatLikes(shown)}</span>}
     </button>
   );
+}
+
+function formatLikes(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return String(n);
 }

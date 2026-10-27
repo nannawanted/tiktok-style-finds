@@ -246,7 +246,7 @@ function ProfilePage() {
           </div>
         )}
         {outfitStyles.length > 0 && (
-          <div className="no-scrollbar -mx-4 mb-5 flex gap-2 overflow-x-auto px-4" role="group">
+          <div className="no-scrollbar sticky top-[var(--sticky-top,118px)] z-30 -mx-4 mb-5 flex gap-2 overflow-x-auto bg-background/90 px-4 py-2.5 backdrop-blur-md transition-[top] duration-300 md:mx-0 md:px-0" role="group">
             <button type="button" aria-pressed={!filter} className={chip(!filter)} onClick={() => setFilter(null)}>
               {t("profile.all")} · {outfits.length}
             </button>

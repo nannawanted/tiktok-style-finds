@@ -73,10 +73,7 @@ export function FeedSection({
             ))}
           </div>
         </div>
-        {/* En descendant, les styles se replient pour laisser la place aux tenues */}
-        <div className="collapse-on-scroll">
-          <StyleChips className="mt-2" value={style ?? null} onChange={(s) => onChange({ style: s ?? undefined })} />
-        </div>
+        <StyleChips className="mt-2" value={style ?? null} onChange={(s) => onChange({ style: s ?? undefined })} />
       </div>
 
       <div className="mt-5">

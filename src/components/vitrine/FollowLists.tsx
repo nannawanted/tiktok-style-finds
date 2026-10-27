@@ -116,7 +116,7 @@ export function ProfileStats({ creatorId, outfitCount }: { creatorId: string; ou
   const rank = (p: CreatorCard) => (myFollowing?.has(p.id) && myFollowers?.has(p.id) ? 0 : myFollowing?.has(p.id) ? 1 : 2);
   const visible = all
     .filter((p) => !q || p.username.includes(q))
-    .filter((p) => !onlyCommon || myFollowing?.has(p.id))
+    .filter((p) => !onlyCommon || !!q || myFollowing?.has(p.id))
     .map((p, i) => ({ p, i }))
     .sort((a, b) => rank(a.p) - rank(b.p) || a.i - b.i)
     .map(({ p }) => p);
@@ -162,7 +162,7 @@ export function ProfileStats({ creatorId, outfitCount }: { creatorId: string; ou
               className="min-w-0 flex-1 bg-transparent py-2.5 text-[15px] outline-none"
             />
           </label>
-          {user && commonCount > 0 && (
+          {user && commonCount > 0 && !q && (
             <div className="flex gap-2">
               <button type="button" onClick={() => setOnlyCommon(false)} className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold ${!onlyCommon ? "bg-ink text-surface" : "border border-border"}`}>
                 {t("social.all")}
