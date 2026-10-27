@@ -383,6 +383,8 @@ const dict = {
     back: { fr: "Retour", en: "Back" },
     share: { fr: "Partager", en: "Share" },
     watchOn: { fr: "Voir la vidéo", en: "Watch the video" },
+    watchOnTiktok: { fr: "Voir sur TikTok", en: "Watch on TikTok" },
+    watchOnInstagram: { fr: "Voir sur Instagram", en: "Watch on Instagram" },
     pieces: { fr: "Les pièces de la tenue", en: "The pieces of the outfit" },
     noPieces: { fr: "Aucune pièce ajoutée pour l'instant.", en: "No pieces added yet." },
     disclosure: { fr: "Liens affiliés possibles", en: "May contain affiliate links" },

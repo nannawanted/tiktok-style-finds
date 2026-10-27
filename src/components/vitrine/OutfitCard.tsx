@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, Camera, Play } from "lucide-react";
+import { Heart, Camera } from "lucide-react";
+import { VideoSourceIcon } from "./VideoSourceIcon";
 import { useTranslation } from "@/lib/i18n";
 import type { OutfitCard as OutfitCardData } from "@/lib/public-data";
 import { SaveButton } from "./SaveButton";
@@ -65,7 +66,7 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
           </span>
           {outfit.tiktok_url ? (
             <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
-              <Play className="h-3 w-3 fill-current" aria-hidden="true" /> {t("card.video")}
+              <VideoSourceIcon url={outfit.tiktok_url} className="h-3 w-3" /> {t("card.video")}
             </span>
           ) : (
             <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">

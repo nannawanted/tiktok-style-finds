@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, Camera, Flag, Info, Play } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Camera, Flag, Info } from "lucide-react";
+import { VideoSourceIcon, videoPlatform } from "@/components/vitrine/VideoSourceIcon";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
@@ -143,9 +144,9 @@ function OutfitPage() {
                 className="group absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 transition-transform group-hover:scale-110">
-                  <Play className="ml-0.5 h-4 w-4 fill-current text-foreground" aria-hidden="true" />
+                  <VideoSourceIcon url={post.tiktok_url} className="h-4 w-4 text-foreground" />
                 </span>
-                {t("outfit.watchOn")}
+                {videoPlatform(post.tiktok_url) === "tiktok" ? t("outfit.watchOnTiktok") : videoPlatform(post.tiktok_url) === "instagram" ? t("outfit.watchOnInstagram") : t("outfit.watchOn")}
               </a>
             ) : (
               <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface">
