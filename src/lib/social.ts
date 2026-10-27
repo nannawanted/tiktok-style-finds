@@ -63,6 +63,29 @@ export function useFollowedIds() {
   });
 }
 
+/** Qui me suit (pour savoir qui est « ami » = on se suit mutuellement). */
+export function useMyFollowerIds() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-follower-ids", user?.id],
+    enabled: !!user,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("follows").select("follower_id").eq("creator_id", user!.id).limit(5000);
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => r.follower_id));
+    },
+  });
+}
+
+/** Amis = personnes que je suis ET qui me suivent. */
+export function useFriendIds() {
+  const { data: following } = useFollowedIds();
+  const { data: followers } = useMyFollowerIds();
+  if (!following || !followers) return undefined;
+  return new Set([...following].filter((id) => followers.has(id)));
+}
+
 export function useToggleFollow() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -264,11 +287,12 @@ export function useMarkNotificationsRead() {
 export function useCreatorSuggestions(fallback: CreatorCard[]) {
   const { user } = useAuth();
   const { data: followed } = useFollowedIds();
+  const { data: myFollowers } = useMyFollowerIds();
   const followedList = [...(followed ?? [])];
   const { data: mutual } = useQuery({
-    queryKey: ["mutual-suggestions", user?.id, followedList.length],
-    enabled: !!user && !!followed,
-    queryFn: () => fetchMutualSuggestions(user!.id, followedList, 12),
+    queryKey: ["mutual-suggestions", user?.id, followedList.length, myFollowers?.size ?? 0],
+    enabled: !!user && !!followed && !!myFollowers,
+    queryFn: () => fetchMutualSuggestions(user!.id, followedList, 12, [...(myFollowers ?? [])]),
   });
   if (!user) return { creators: fallback as SuggestedCreator[], personal: false };
   const exclude = new Set([user.id, ...followedList]);

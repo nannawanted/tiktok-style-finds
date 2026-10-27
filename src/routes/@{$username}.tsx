@@ -14,7 +14,7 @@ import { FollowButton } from "@/components/vitrine/FollowButton";
 import { MadeWithBadge } from "@/components/vitrine/MadeWith";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
 import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
-import { FollowSuggestions, ProfileStats } from "@/components/vitrine/FollowLists";
+import { FollowedByLine, FollowSuggestions, ProfileStats } from "@/components/vitrine/FollowLists";
 
 export const Route = createFileRoute("/@{$username}")({
   loader: async ({ params }) => {
@@ -94,7 +94,10 @@ function ProfilePage() {
     outfits.forEach((o) => o.styles.forEach((x) => s.add(x)));
     return [...s];
   }, [outfits]);
-  const shown = filter ? outfits.filter((o) => o.styles.includes(filter)) : outfits;
+  const [sort, setSort] = useState<"recent" | "popular">("recent");
+  const filtered = filter ? outfits.filter((o) => o.styles.includes(filter)) : outfits;
+  // Tri pour les visiteurs : les plus récents (ordre de publication) ou les plus likés
+  const shown = sort === "popular" ? filtered.map((o, i) => ({ o, i })).sort((a, b) => b.o.likes - a.o.likes || a.i - b.i).map(({ o }) => o) : filtered;
 
   async function upload(kind: "avatars" | "banners", file: File) {
     if (!isOwner) return;
@@ -204,6 +207,7 @@ function ProfilePage() {
         )}
 
         <ProfileStats creatorId={creator.id} outfitCount={outfits.length} />
+        <FollowedByLine creatorId={creator.id} />
 
         <div className="mt-5 w-full max-w-sm">
           {isOwner ? (
@@ -222,6 +226,25 @@ function ProfilePage() {
       </div>
 
       <section className="mt-8 px-4 md:px-0">
+        {outfits.length > 1 && (
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-display text-2xl font-bold">{t("profile.looks")}</h2>
+            <div className="flex shrink-0 gap-1 rounded-full bg-surface p-1" role="tablist" aria-label={t("profile.sortLabel")}>
+              {(["recent", "popular"] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="tab"
+                  aria-selected={sort === k}
+                  onClick={() => setSort(k)}
+                  className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${sort === k ? "bg-ink text-surface" : "text-foreground/70"}`}
+                >
+                  {k === "recent" ? t("profile.sortRecent") : t("profile.sortPopular")}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {outfitStyles.length > 0 && (
           <div className="no-scrollbar -mx-4 mb-5 flex gap-2 overflow-x-auto px-4" role="group">
             <button type="button" aria-pressed={!filter} className={chip(!filter)} onClick={() => setFilter(null)}>

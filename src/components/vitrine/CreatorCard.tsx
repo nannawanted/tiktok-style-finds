@@ -22,6 +22,9 @@ export function CreatorCard({ creator, index = 0 }: { creator: CreatorCardData; 
         </span>
         <span className="text-[15px] font-bold text-foreground">@{creator.username}</span>
       </Link>
+      {creator.followsYou && (
+        <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">{t("social.followsYou")}</span>
+      )}
       {creator.mutual && creator.mutual.count > 0 ? (
         <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground/75">
           {t("social.followedBy")} {creator.mutual.names.map((n) => `@${n}`).join(", ")}

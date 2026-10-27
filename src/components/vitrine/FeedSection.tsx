@@ -54,7 +54,7 @@ export function FeedSection({
     <section id="tenues" className="mx-auto max-w-7xl scroll-mt-28 px-4 md:px-6">
       <Title className="font-display text-3xl font-bold md:text-4xl">{title}</Title>
 
-      <div className="sticky top-[118px] z-30 -mx-4 mt-3 bg-background/90 px-4 py-3 backdrop-blur-md md:top-[72px] md:-mx-6 md:px-6">
+      <div className="sticky top-[var(--sticky-top,118px)] z-30 -mx-4 mt-3 bg-background/90 px-4 py-2.5 backdrop-blur-md transition-[top] duration-300 md:-mx-6 md:px-6">
         <div className="no-scrollbar -mx-4 flex overflow-x-auto px-4">
           <div className="flex shrink-0 gap-1 rounded-full bg-surface p-1" role="tablist">
             {tabs.map((tb) => (
@@ -73,7 +73,10 @@ export function FeedSection({
             ))}
           </div>
         </div>
-        <StyleChips className="mt-2.5" value={style ?? null} onChange={(s) => onChange({ style: s ?? undefined })} />
+        {/* En descendant, les styles se replient pour laisser la place aux tenues */}
+        <div className="collapse-on-scroll">
+          <StyleChips className="mt-2" value={style ?? null} onChange={(s) => onChange({ style: s ?? undefined })} />
+        </div>
       </div>
 
       <div className="mt-5">

@@ -8,7 +8,7 @@ import { recordCreatorIp } from "@/lib/record-creator-ip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { VisualIndexer } from "@/components/vitrine/VisualIndexer";
-import { ArrowUpRight, ExternalLink, Eye, Heart, Link2, MoreHorizontal, MousePointerClick, Pencil, Plus, Settings, Shirt, Trash2 } from "lucide-react";
+import { ArrowUpRight, BarChart3, ExternalLink, Eye, Heart, Link2, MoreHorizontal, MousePointerClick, Pencil, Plus, Settings, Shirt, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { absoluteUrl, outfitPath, profilePath } from "@/lib/site";
 import {
@@ -86,6 +86,14 @@ function Dashboard() {
     },
   });
   const myUsername = me?.username ?? null;
+  const { data: isAdminUser } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("creators").select("is_admin").eq("id", user!.id).maybeSingle();
+      return !!(data as { is_admin?: boolean } | null)?.is_admin;
+    },
+  });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
@@ -130,6 +138,11 @@ function Dashboard() {
           <h1 className="font-display text-3xl font-bold leading-none">{t("dashboard.myPosts")}</h1>
           {myUsername && <p className="mt-1 truncate text-sm text-foreground/60">@{myUsername}</p>}
         </div>
+        {isAdminUser && (
+          <Link to="/dashboard/stats-marques" aria-label={t("brandStats.title")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
+            <BarChart3 className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        )}
         <Link to="/dashboard/settings" aria-label={t("dashboard.settings")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
           <Settings className="h-5 w-5" aria-hidden="true" />
         </Link>

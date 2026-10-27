@@ -1,4 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuickLike } from "./DoubleTapLike";
 import { Heart, Camera } from "lucide-react";
 import { VideoSourceIcon } from "./VideoSourceIcon";
 import { useTranslation } from "@/lib/i18n";
@@ -38,11 +40,34 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
   const { t } = useTranslation();
   const h = hash(outfit.id);
   const pieces = `${outfit.pieceCount} ${outfit.pieceCount > 1 ? t("card.pieces") : t("card.piece")}`;
+  const navigate = useNavigate();
+  const like = useQuickLike(outfit.id);
+  const lastTap = useRef(0);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
+
+  // Comme sur Instagram : double-toucher la photo = like ; un seul toucher = ouvrir la tenue
+  function onCardClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    const now = Date.now();
+    if (now - lastTap.current < 320) {
+      clearTimeout(openTimer.current);
+      lastTap.current = 0;
+      const img = (e.currentTarget.querySelector("[data-cover]") as HTMLElement | null)?.getBoundingClientRect();
+      if (img) setBurst({ x: e.clientX - img.left, y: Math.min(e.clientY - img.top, img.height - 48), key: now });
+      like();
+      return;
+    }
+    lastTap.current = now;
+    openTimer.current = setTimeout(() => navigate({ to: "/post/$id", params: { id: outfit.id } }), 320);
+  }
 
   return (
     <article className="fade-up group mb-4 md:mb-5" style={{ animationDelay: `${Math.min(index, 12) * 45}ms` }}>
-      <Link to="/post/$id" params={{ id: outfit.id }} className="block">
+      <Link to="/post/$id" params={{ id: outfit.id }} onClick={onCardClick} className="block touch-manipulation select-none">
         <div
+          data-cover
           className={`relative overflow-hidden rounded-2xl bg-card ${outfit.cover_image ? "" : RATIOS[h % RATIOS.length]}`}
           style={outfit.cover_image ? undefined : { background: TONES[h % TONES.length] }}
         >
@@ -72,6 +97,15 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
             <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
               <Camera className="h-3 w-3" aria-hidden="true" /> {t("card.photo")}
             </span>
+          )}
+          {burst && (
+            <Heart
+              key={burst.key}
+              aria-hidden="true"
+              onAnimationEnd={() => setBurst(null)}
+              className="heart-burst pointer-events-none absolute h-20 w-20 fill-current text-white drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]"
+              style={{ left: burst.x - 40, top: burst.y - 40 }}
+            />
           )}
         </div>
         <h3 className="mt-2.5 line-clamp-2 px-0.5 text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">

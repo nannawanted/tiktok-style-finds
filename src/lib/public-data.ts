@@ -342,6 +342,10 @@ async function creatorsByIds(ids: string[]): Promise<CreatorCard[]> {
     .sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0));
 }
 
+export function fetchCreatorsByIds(ids: string[]): Promise<CreatorCard[]> {
+  return creatorsByIds(ids);
+}
+
 export async function fetchFollowers(creatorId: string): Promise<CreatorCard[]> {
   const { data } = await supabase.from("follows").select("follower_id").eq("creator_id", creatorId).order("created_at", { ascending: false }).limit(500);
   return creatorsByIds((data ?? []).map((r) => r.follower_id));
@@ -542,16 +546,21 @@ export async function fetchMoreLikeThis(id: string, styles: StyleKey[], page: nu
 
 // ——— Suggestions « Suivi par des personnes que tu suis » (comme Instagram) ———
 
-export type SuggestedCreator = CreatorCard & { mutual?: { count: number; names: string[] } };
+export type SuggestedCreator = CreatorCard & { mutual?: { count: number; names: string[] }; followsYou?: boolean };
 
 /**
  * Créateurs suivis par les personnes que je suis, classés par nombre
  * d'abonnements en commun. Exclut moi-même et ceux que je suis déjà.
  */
-export async function fetchMutualSuggestions(userId: string, followedIds: string[], limit = 12): Promise<SuggestedCreator[]> {
-  if (!followedIds.length) return [];
-  const { data } = await supabase.from("follows").select("follower_id, creator_id").in("follower_id", followedIds.slice(0, 300)).limit(3000);
+export async function fetchMutualSuggestions(userId: string, followedIds: string[], limit = 12, myFollowerIds: string[] = []): Promise<SuggestedCreator[]> {
+  if (!followedIds.length && !myFollowerIds.length) return [];
+  const { data } = followedIds.length
+    ? await supabase.from("follows").select("follower_id, creator_id").in("follower_id", followedIds.slice(0, 300)).limit(3000)
+    : { data: [] as { follower_id: string; creator_id: string }[] };
   const exclude = new Set([userId, ...followedIds]);
+  const followers = new Set(myFollowerIds);
+  // Amis = on se suit mutuellement : leurs abonnements comptent double
+  const friends = new Set(followedIds.filter((id) => followers.has(id)));
   const byCreator = new Map<string, string[]>();
   for (const row of data ?? []) {
     if (exclude.has(row.creator_id)) continue;
@@ -559,7 +568,10 @@ export async function fetchMutualSuggestions(userId: string, followedIds: string
     list.push(row.follower_id);
     byCreator.set(row.creator_id, list);
   }
-  const ranked = [...byCreator.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, limit);
+  // Les personnes qui me suivent sans que je les suive : en tête (« Te suit »)
+  for (const id of myFollowerIds) if (!exclude.has(id) && !byCreator.has(id)) byCreator.set(id, []);
+  const weight = (id: string, via: string[]) => (followers.has(id) ? 100 : 0) + via.reduce((n, v) => n + (friends.has(v) ? 2 : 1), 0);
+  const ranked = [...byCreator.entries()].sort((a, b) => weight(b[0], b[1]) - weight(a[0], a[1])).slice(0, limit);
   if (!ranked.length) return [];
   const viaIds = [...new Set(ranked.flatMap(([, via]) => via.slice(0, 2)))];
   const [cards, via] = await Promise.all([
@@ -570,6 +582,6 @@ export async function fetchMutualSuggestions(userId: string, followedIds: string
   const mutual = new Map(ranked.map(([id, list]) => [id, list]));
   return cards.map((c) => {
     const list = mutual.get(c.id) ?? [];
-    return { ...c, mutual: { count: list.length, names: list.slice(0, 2).map((id) => viaName.get(id)).filter((n): n is string => !!n) } };
+    return { ...c, followsYou: followers.has(c.id), mutual: { count: list.length, names: list.slice(0, 2).map((id) => viaName.get(id)).filter((n): n is string => !!n) } };
   });
 }

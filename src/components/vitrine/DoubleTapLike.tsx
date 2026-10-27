@@ -74,3 +74,30 @@ export function DoubleTapLike({ postId, children, className = "" }: { postId: st
     </div>
   );
 }
+
+/** Like rapide (double-toucher sur une carte du fil) : même règle que sur la page de la tenue. */
+export function useQuickLike(postId: string) {
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { data: savedIds } = useSavedIds();
+  const toggle = useToggleSave();
+  const picker = useCollectionPicker();
+  return () => {
+    if (!user) {
+      toast(t("card.loginToSave"));
+      navigate({ to: "/login" });
+      return false;
+    }
+    if (!savedIds?.has(postId)) {
+      toggle.mutate(
+        { postId, saved: false },
+        {
+          onSuccess: () => toast(t("engage.savedToast"), { action: { label: t("engage.addToCollection"), onClick: () => picker.open(postId) } }),
+          onError: () => toast.error(t("card.actionError")),
+        },
+      );
+    }
+    return true;
+  };
+}

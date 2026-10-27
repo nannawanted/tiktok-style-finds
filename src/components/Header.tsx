@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut, Bell } from "lucide-react";
 import { useNotifications } from "@/lib/social";
@@ -196,6 +196,34 @@ export function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const [hidden, setHidden] = useState(false);
+
+  // Comme Instagram : l'en-tête se cache quand on descend et revient quand on remonte,
+  // pour laisser plus de place aux tenues. Les barres « collantes » suivent (--sticky-top).
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const dy = y - lastY;
+      if (Math.abs(dy) < 6) return;
+      const focused = headerRef.current?.contains(document.activeElement);
+      setHidden(dy > 0 && y > 160 && !focused);
+      lastY = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty("--sticky-top", hidden ? "0px" : `${el.offsetHeight}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    document.documentElement.toggleAttribute("data-scrolling-down", hidden);
+    return () => ro.disconnect();
+  }, [hidden]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -207,7 +235,10 @@ export function Header() {
     "rounded-full px-3 py-2 text-[15px] font-semibold text-foreground/85 transition-colors hover:bg-surface hover:text-foreground [&.active]:text-primary";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-md">
+    <header
+      ref={headerRef}
+      className={`sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-md transition-transform duration-300 ${hidden && !open ? "-translate-y-full" : ""}`}
+    >
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 md:gap-5 md:px-6">
         <Link to="/" aria-label="WantedFashion" className="shrink-0">
           <Logo className="h-12 md:h-14" />

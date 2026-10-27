@@ -138,3 +138,18 @@
     .heart-burst { opacity: 0; }
   }
 }
+
+/* Barres collantes : les filtres de style se replient quand on fait défiler vers le bas */
+.collapse-on-scroll {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s ease, opacity 0.3s ease;
+}
+.collapse-on-scroll > * {
+  min-height: 0;
+  overflow: hidden;
+}
+:root[data-scrolling-down] .collapse-on-scroll {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
