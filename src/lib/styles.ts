@@ -13,16 +13,18 @@ export const STYLE_KEYS = [
   "sport",
   "vintage",
   "chic",
-  "preppy",
-  "boheme",
-  "grunge",
-  "gorpcore",
-  "techwear",
+  // Esthétiques les plus présentes sur TikTok / Instagram (études Ipsos, Synthesio,
+  // classements 2025) — garder identique à public.is_valid_style_list
   "coquette",
-  "skate",
-  "workwear",
-  "rock",
-  "ceremonie",
+  "cottagecore",
+  "grunge",
+  "balletcore",
+  "office-siren",
+  "boheme",
+  "goth",
+  "preppy",
+  "blokecore",
+  "gorpcore",
 ] as const;
 
 export type StyleKey = (typeof STYLE_KEYS)[number];

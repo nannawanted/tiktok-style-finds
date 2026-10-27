@@ -8,6 +8,7 @@ import { PostForm, type PostFormData } from "@/components/PostForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cleanStyles } from "@/lib/styles";
+import { cleanTags } from "@/lib/tags";
 
 export const Route = createFileRoute("/_authenticated/dashboard/post/$id/edit")({
   head: () => ({ meta: [{ title: "Éditer post — Wanted Fashion" }] }),
@@ -32,6 +33,7 @@ function EditPost() {
         tiktok_url: post.tiktok_url ?? "",
         cover_image: post.cover_image ?? "",
         styles: cleanStyles(post.styles),
+        tags: cleanTags((post as { tags?: string[] }).tags),
         products: (products ?? []).map((p) => ({
           id: p.id,
           brand: p.brand ?? "",
@@ -52,6 +54,7 @@ function EditPost() {
       tiktok_url: form.tiktok_url || null,
       cover_image: form.cover_image || null,
       styles: form.styles,
+      tags: form.tags,
     }).eq("id", id);
     if (error) {
       setLoading(false);

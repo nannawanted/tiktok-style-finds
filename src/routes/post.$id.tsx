@@ -186,6 +186,15 @@ function OutfitPage() {
               ))}
             </ul>
           )}
+          {post.tags.length > 0 && (
+            <p className="mt-3 flex flex-wrap gap-x-2.5 gap-y-1 text-sm font-semibold">
+              {post.tags.map((tag) => (
+                <Link key={tag} to="/explorer" search={{ q: `#${tag}` }} className="text-primary hover:underline">
+                  #{tag}
+                </Link>
+              ))}
+            </p>
+          )}
 
           <h2 className="mt-8 text-lg font-bold">{t("outfit.pieces")}</h2>
           <div className="mt-3 flex flex-col gap-2.5">

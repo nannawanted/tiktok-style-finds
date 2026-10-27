@@ -14,6 +14,7 @@ import { fetchProductMetadata, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation, type TKey } from "@/lib/i18n";
+import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
 
 // Création / modification d'une tenue en 3 étapes (Photo · Pièces · Style),
 // comme une publication Instagram. Tout ce que faisait l'ancien formulaire
@@ -39,11 +40,13 @@ export type PostFormData = {
   tiktok_url: string;
   cover_image: string;
   styles: StyleKey[];
+  /** Hashtags (sans #) pour retrouver la tenue dans la recherche. */
+  tags: string[];
   products: ProductDraft[];
 };
 
 const URL_DEBOUNCE_MS = 600;
-const EMPTY: PostFormData = { title: "", tiktok_url: "", cover_image: "", styles: [], products: [] };
+const EMPTY: PostFormData = { title: "", tiktok_url: "", cover_image: "", styles: [], tags: [], products: [] };
 const SUGGESTIONS: TKey[] = ["studio.sugg1", "studio.sugg2", "studio.sugg3", "studio.sugg4", "studio.sugg5"];
 
 function extractHostname(url: string): string {
@@ -61,7 +64,7 @@ function matchBrandForUrl(url: string, brands: PartnerBrand[]): PartnerBrand | n
 }
 
 const newKey = () => Math.random().toString(36).slice(2, 10);
-const withKeys = (d: PostFormData): PostFormData => ({ ...d, products: d.products.map((p) => ({ ...p, _k: p._k ?? newKey() })) });
+const withKeys = (d: PostFormData): PostFormData => ({ ...d, tags: cleanTags(d.tags), products: d.products.map((p) => ({ ...p, _k: p._k ?? newKey() })) });
 const hasContent = (d: PostFormData) => !!(d.title.trim() || d.cover_image || d.tiktok_url || d.products.length);
 
 // ——— Brouillon (création seulement), gardé dans ce navigateur ———
@@ -110,6 +113,7 @@ export function PostForm({
   const [productLoading, setProductLoading] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [pieceUrl, setPieceUrl] = useState("");
+  const [tagInput, setTagInput] = useState("");
   const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -309,6 +313,27 @@ export function PostForm({
     if (editing === key) setEditing(null);
   }
 
+  // ——— Hashtags ———
+  function addTags(raw: string) {
+    const incoming = parseTags(raw);
+    if (!incoming.length) return;
+    setData((d) => {
+      const next = cleanTags([...d.tags, ...incoming]);
+      if (d.tags.length + incoming.length > MAX_TAGS) toast(t("studio.maxTags"));
+      return { ...d, tags: next };
+    });
+    setTagInput("");
+  }
+  const tagSuggestions = useMemo(() => {
+    const words = [
+      ...data.products.map((p) => p.brand),
+      ...data.title.split(/\s+/).filter((w) => w.length > 3),
+    ]
+      .map(normalizeTag)
+      .filter((w) => w.length > 1 && !data.tags.includes(w));
+    return [...new Set(words)].slice(0, 6);
+  }, [data.products, data.title, data.tags]);
+
   // ——— Validation & envoi ———
   const readyPieces = data.products.filter((p) => !productLoading[p._k ?? ""]);
   const anyLoading = data.products.some((p) => productLoading[p._k ?? ""]);
@@ -330,7 +355,8 @@ export function PostForm({
       toast(!isHttpUrl(bad.affiliate_link) ? t("studio.linkInvalid") : t("studio.nameRequired"));
       return;
     }
-    onSubmit({ ...data, title: data.title.trim(), products: data.products.map(({ _k, ...p }) => p) });
+    const tags = cleanTags([...data.tags, ...parseTags(tagInput)]);
+    onSubmit({ ...data, tags, title: data.title.trim(), products: data.products.map(({ _k, ...p }) => p) });
   }
 
   const cta = useMemo(() => {
@@ -686,6 +712,60 @@ export function PostForm({
             <p className="mt-1 text-[13px] text-foreground/60">{t("studio.styleHint")}</p>
           </div>
           <StylePicker value={data.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setData((d) => ({ ...d, styles }))} />
+
+          <div>
+            <h2 className="font-display text-2xl font-bold">{t("studio.tagsTitle")}</h2>
+            <p className="mt-1 text-[13px] text-foreground/60">{t("studio.tagsHint")}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-3xl border-[1.5px] border-border bg-surface p-2">
+              {data.tags.map((tag) => (
+                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-ink py-1.5 pl-3 pr-1.5 text-[13px] font-semibold text-surface">
+                  #{tag}
+                  <button
+                    type="button"
+                    aria-label={`${t("postForm.remove")} #${tag}`}
+                    onClick={() => setData((d) => ({ ...d, tags: d.tags.filter((x) => x !== tag) }))}
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-surface/20"
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+              {data.tags.length < MAX_TAGS && (
+                <input
+                  id="studio-tags"
+                  value={tagInput}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/[\s,;]$/.test(v)) addTags(v);
+                    else setTagInput(v);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTags(tagInput);
+                    } else if (e.key === "Backspace" && !tagInput && data.tags.length) {
+                      setData((d) => ({ ...d, tags: d.tags.slice(0, -1) }));
+                    }
+                  }}
+                  onBlur={() => tagInput && addTags(tagInput)}
+                  placeholder={data.tags.length ? t("studio.tagsMore") : t("studio.tagsPlaceholder")}
+                  aria-label={t("studio.tagsTitle")}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  className="min-w-[8rem] flex-1 bg-transparent px-2 py-1.5 text-[15px] outline-none"
+                />
+              )}
+            </div>
+            {tagSuggestions.length > 0 && data.tags.length < MAX_TAGS && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {tagSuggestions.map((s) => (
+                  <button key={s} type="button" onClick={() => addTags(s)} className="rounded-full border-[1.5px] border-border px-3 py-1 text-[13px] font-semibold text-foreground/75">
+                    + #{s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div>
             <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-foreground/60">{t("studio.preview")}</p>
             <div className="grid max-w-md grid-cols-2 gap-3">

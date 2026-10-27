@@ -180,6 +180,7 @@ export type Database = {
           creator_username: string
           id: string
           styles: string[]
+          tags: string[]
           tiktok_url: string | null
           title: string
           views: number
@@ -191,6 +192,7 @@ export type Database = {
           creator_username: string
           id?: string
           styles?: string[]
+          tags?: string[]
           tiktok_url?: string | null
           title: string
           views?: number
@@ -202,6 +204,7 @@ export type Database = {
           creator_username?: string
           id?: string
           styles?: string[]
+          tags?: string[]
           tiktok_url?: string | null
           title?: string
           views?: number

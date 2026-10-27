@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { cleanStyles, type StyleKey } from "./styles";
+import { STYLE_KEYS, cleanStyles, type StyleKey } from "./styles";
+import { cleanTags, normalizeTag } from "./tags";
 
 // Lectures publiques (aucune donnée privée). Ces fonctions tournent aussi bien
 // sur le serveur (pages fabriquées côté serveur, pour Google et les aperçus de
@@ -187,11 +188,25 @@ export async function fetchCreators(opts: { style?: StyleKey | null; q?: string;
 export async function searchOutfits(rawQ: string, style?: StyleKey | null, limit = 40): Promise<OutfitCard[]> {
   const q = cleanQuery(rawQ);
   if (!q) return fetchOutfits({ style, sort: "trending", limit });
-  const [byTitle, byPiece] = await Promise.all([
-    supabase.from("posts").select("id").ilike("title", `%${q}%`).limit(limit),
-    supabase.from("products").select("post_id").or(`name.ilike.%${q}%,brand.ilike.%${q}%`).limit(limit * 2),
+  // « #vintage » ne cherche que dans les hashtags ; sinon titre, pièces, hashtags et styles
+  const tagOnly = q.startsWith("#");
+  const words = q.replace(/#/g, " ").trim();
+  const tag = normalizeTag(words.replace(/\s+/g, ""));
+  const styleMatch = STYLE_KEYS.filter((k) => normalizeTag(k) === tag || normalizeTag(k.replace(/-/g, "")) === tag);
+  const [byTitle, byPiece, byTag, byStyle] = await Promise.all([
+    tagOnly || !words ? null : supabase.from("posts").select("id").ilike("title", `%${words}%`).limit(limit),
+    tagOnly || !words ? null : supabase.from("products").select("post_id").or(`name.ilike.%${words}%,brand.ilike.%${words}%`).limit(limit * 2),
+    tag ? supabase.rpc("posts_by_tag" as never, { p_q: tag, p_limit: limit } as never) : null,
+    !tagOnly && styleMatch.length ? supabase.from("posts").select("id").overlaps("styles", styleMatch).limit(limit) : null,
   ]);
-  const ids = [...new Set([...(byTitle.data ?? []).map((r) => r.id), ...(byPiece.data ?? []).map((r) => r.post_id)])];
+  const ids = [
+    ...new Set([
+      ...((byTag?.data ?? []) as { id: string }[]).map((r) => r.id),
+      ...(byTitle?.data ?? []).map((r) => r.id),
+      ...(byPiece?.data ?? []).map((r) => r.post_id),
+      ...(byStyle?.data ?? []).map((r) => r.id),
+    ]),
+  ];
   if (!ids.length) return [];
   let query = supabase.from("posts").select(OUTFIT_COLUMNS).in("id", ids.slice(0, 100));
   if (style) query = query.contains("styles", [style]);
@@ -209,6 +224,7 @@ export type OutfitDetail = {
     creator_id: string;
     creator_username: string;
     styles: StyleKey[];
+    tags: string[];
     created_at: string | null;
   };
   products: {
@@ -226,7 +242,7 @@ export async function fetchOutfit(id: string): Promise<OutfitDetail | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const { data: post, error } = await supabase
     .from("posts")
-    .select("id, title, cover_image, tiktok_url, creator_id, creator_username, styles, created_at")
+    .select("id, title, cover_image, tiktok_url, creator_id, creator_username, styles, tags, created_at")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -245,7 +261,7 @@ export async function fetchOutfit(id: string): Promise<OutfitDetail | null> {
   ]);
   if (e2) throw e2;
   return {
-    post: { ...post, styles: cleanStyles(post.styles) },
+    post: { ...post, styles: cleanStyles(post.styles), tags: cleanTags(post.tags) },
     products: products ?? [],
     creator: creator ? toCreatorCard(creator) : null,
   };
