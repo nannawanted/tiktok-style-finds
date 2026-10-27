@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useQuickLike } from "./DoubleTapLike";
 import { Heart, Camera } from "lucide-react";
 import { VideoSourceIcon } from "./VideoSourceIcon";
@@ -34,19 +34,18 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
   const { t } = useTranslation();
   const h = hash(outfit.id);
   const pieces = `${outfit.pieceCount} ${outfit.pieceCount > 1 ? t("card.pieces") : t("card.piece")}`;
-  const navigate = useNavigate();
   const like = useQuickLike(outfit.id);
   const lastTap = useRef(0);
-  const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
 
-  // Comme sur Instagram : double-toucher la photo = like ; un seul toucher = ouvrir la tenue
+  // Un toucher = la tenue s'ouvre tout de suite (aucune attente).
+  // Deux touchers rapides = like en plus (le cœur apparaît et la tenue est likée).
+  // On ne peut pas savoir au 1er toucher s'il y en aura un 2e : on n'attend donc pas.
   function onCardClick(e: React.MouseEvent<HTMLAnchorElement>) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
     const now = Date.now();
-    if (now - lastTap.current < 320) {
-      clearTimeout(openTimer.current);
+    if (now - lastTap.current < 350) {
+      e.preventDefault(); // la tenue est déjà en train de s'ouvrir
       lastTap.current = 0;
       const img = (e.currentTarget.querySelector("[data-cover]") as HTMLElement | null)?.getBoundingClientRect();
       if (img) setBurst({ x: e.clientX - img.left, y: Math.min(e.clientY - img.top, img.height - 48), key: now });
@@ -54,12 +53,11 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
       return;
     }
     lastTap.current = now;
-    openTimer.current = setTimeout(() => navigate({ to: "/post/$id", params: { id: outfit.id } }), 320);
   }
 
   return (
     <article className="fade-up group mb-4 md:mb-5" style={{ animationDelay: `${Math.min(index, 12) * 45}ms` }}>
-      <Link to="/post/$id" params={{ id: outfit.id }} onClick={onCardClick} className="block touch-manipulation select-none">
+      <Link to="/post/$id" params={{ id: outfit.id }} preload="intent" preloadDelay={0} onClick={onCardClick} className="block touch-manipulation select-none">
         <div
           data-cover
           className={`relative overflow-hidden rounded-2xl bg-card ${outfit.cover_image ? "" : RATIOS[h % RATIOS.length]}`}
