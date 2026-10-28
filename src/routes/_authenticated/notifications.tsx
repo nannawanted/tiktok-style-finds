@@ -3,8 +3,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, ShieldAlert, Shirt, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTranslation } from "@/lib/i18n";
-import { REPORT_ALERT_THRESHOLD, useMarkNotificationsRead, useModerationQueue, useNotifications } from "@/lib/social";
+import { useTranslation, type TKey } from "@/lib/i18n";
+
+const REASONS: Record<string, TKey> = {
+  broken_link: "report.brokenLink",
+  scam: "report.scam",
+  shocking: "report.shocking",
+  stolen_photo: "report.stolen",
+};
+import { REPORT_ALERT_THRESHOLD, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
@@ -26,6 +33,13 @@ function NotificationsPage() {
   const { t, lang } = useTranslation();
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationsRead();
+  const { data: notices } = useModerationNotices();
+  const markNoticesRead = useMarkModerationNoticesRead();
+  const unreadNotices = notices?.some((n) => !n.read_at);
+  useEffect(() => {
+    if (unreadNotices) markNoticesRead.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadNotices]);
 
   // Les notifications sont marquées comme lues en ouvrant la page
   const hasUnread = !!notifications?.some((n) => !n.read_at);
@@ -56,6 +70,31 @@ function NotificationsPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 pt-6 md:pt-10">
       <h1 className="font-display fade-up mb-6 text-4xl font-bold">{t("engage.notifications")}</h1>
+      {/* Messages de la modération (look supprimé, compte bloqué / débloqué) */}
+      {notices && notices.length > 0 && (
+        <ul className="mb-5 space-y-2">
+          {notices.slice(0, 5).map((n) => (
+            <li key={n.id} className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : "bg-destructive/10"}`}>
+              <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" ? "text-emerald-700" : "text-destructive"}`} aria-hidden="true" />
+              <div className="min-w-0 text-sm leading-relaxed">
+                {n.kind === "post_removed" ? (
+                  <>
+                    <p className="font-semibold">{t("moderation.noticeRemoved").replace("{title}", n.data?.title ?? "")}</p>
+                    {!!n.data?.reasons?.length && (
+                      <p className="text-foreground/70">
+                        {t("moderation.noticeReasons")} {n.data.reasons.map((r) => (REASONS[r] ? t(REASONS[r]) : r)).join(", ")}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="font-semibold">{n.kind === "account_blocked" ? t("moderation.noticeBlocked") : t("moderation.noticeUnblocked")}</p>
+                )}
+                <p className="mt-0.5 text-xs text-foreground/50">{new Date(n.created_at).toLocaleDateString("fr-BE")}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {/* Admin : alerte de modération (look signalé 3 fois ou plus) */}
       {alerts && alerts.length > 0 && (
         <Link to="/dashboard/moderation" className="mb-5 flex items-center gap-3 rounded-3xl bg-primary/10 p-4 ring-2 ring-primary/40">

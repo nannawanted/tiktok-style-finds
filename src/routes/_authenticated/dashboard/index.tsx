@@ -8,7 +8,7 @@ import { recordCreatorIp } from "@/lib/record-creator-ip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { VisualIndexer } from "@/components/vitrine/VisualIndexer";
-import { REPORT_ALERT_THRESHOLD, useModerationQueue } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, useModerationQueue, useMyAccountStatus } from "@/lib/social";
 import { ArrowUpRight, BarChart3, ShieldAlert, ExternalLink, Eye, Heart, Link2, MoreHorizontal, MousePointerClick, Pencil, Plus, Settings, Shirt, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { absoluteUrl, outfitPath, profilePath } from "@/lib/site";
@@ -88,6 +88,7 @@ function Dashboard() {
   });
   const myUsername = me?.username ?? null;
   const { data: modQueue } = useModerationQueue(REPORT_ALERT_THRESHOLD);
+  const { data: accountStatus } = useMyAccountStatus();
   const { data: isAdminUser } = useQuery({
     queryKey: ["is-admin", user?.id],
     enabled: !!user,
@@ -157,6 +158,10 @@ function Dashboard() {
           <Settings className="h-5 w-5" aria-hidden="true" />
         </Link>
       </header>
+
+      {accountStatus?.blocked && (
+        <p className="mt-4 rounded-3xl bg-destructive/10 p-4 text-sm font-semibold leading-relaxed text-destructive">{t("moderation.blockedBanner")}</p>
+      )}
 
       {/* CHIFFRES */}
       <dl className="mt-5 grid grid-cols-4 gap-2">

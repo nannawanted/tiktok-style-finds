@@ -37,6 +37,8 @@ export function ReportButton({ postId, className = "" }: { postId: string; class
     setReason(null);
     setDetails("");
     toast.success(t("report.thanks"));
+    // À 3 signalements, l'admin reçoit aussi un e-mail (si le service d'e-mail est configuré)
+    void supabase.functions.invoke("report-alert", { body: { post_id: postId } }).catch(() => undefined);
   }
 
   return (

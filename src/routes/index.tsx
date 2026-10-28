@@ -15,7 +15,7 @@ type Search = { style?: StyleKey; tab?: Tab };
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     style: isStyleKey(s.style) ? s.style : undefined,
-    tab: s.tab === "latest" || s.tab === "following" || s.tab === "trending" || s.tab === "foryou" ? s.tab : undefined,
+    tab: s.tab === "latest" || s.tab === "following" || s.tab === "friends" || s.tab === "trending" || s.tab === "foryou" ? s.tab : undefined,
   }),
   loaderDeps: ({ search }) => ({ style: search.style ?? null }),
   loader: async ({ deps }) => {

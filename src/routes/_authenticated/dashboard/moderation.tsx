@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, ExternalLink, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, Check, ExternalLink, ShieldAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,27 @@ function Moderation() {
   const { data: isAdmin } = useIsAdmin();
   const { data, isLoading } = useModerationQueue(1);
   const [toRemove, setToRemove] = useState<ModerationItem | null>(null);
+  const [toBlock, setToBlock] = useState<ModerationItem | null>(null);
+  const { data: blocked } = useQuery({
+    queryKey: ["blocked-users"],
+    enabled: !!isAdmin,
+    queryFn: async () => {
+      const { data: rows } = await supabase.rpc("blocked_users" as never);
+      return (rows ?? []) as { id: string; username: string; profile_image: string | null; blocked_at: string }[];
+    },
+  });
+
+  async function setBlocked(userId: string, block: boolean) {
+    const { error } = await supabase.rpc("moderate_user" as never, { p_user: userId, p_block: block } as never);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(block ? t("moderation.blocked") : t("moderation.unblocked"));
+    qc.invalidateQueries({ queryKey: ["blocked-users"] });
+    qc.invalidateQueries({ queryKey: ["moderation-queue"] });
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  }
 
   async function act(postId: string, action: "keep" | "remove") {
     const { error } = await supabase.rpc("moderate_post" as never, { p_post: postId, p_action: action } as never);
@@ -97,7 +118,12 @@ function Moderation() {
                       {it.open_reports} {it.open_reports > 1 ? t("moderation.reports") : t("moderation.report")}
                     </p>
                     <p className="truncate text-[15px] font-bold">{it.title}</p>
-                    <p className="truncate text-[13px] text-foreground/60">@{it.creator_username}</p>
+                    <p className="truncate text-[13px] text-foreground/60">
+                      @{it.creator_username}
+                      {it.creator_reported_posts > 1 && (
+                        <span className="ml-1.5 font-semibold text-primary">· {it.creator_reported_posts} {t("moderation.repeat")}</span>
+                      )}
+                    </p>
                     <ReasonCounts postId={it.post_id} />
                   </div>
                 </div>
@@ -119,11 +145,58 @@ function Moderation() {
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   </Link>
                 </div>
+                <button type="button" onClick={() => setToBlock(it)} className="mt-2 inline-flex items-center gap-1.5 px-1 text-[13px] font-semibold text-destructive underline underline-offset-4">
+                  <Ban className="h-3.5 w-3.5" aria-hidden="true" /> {t("moderation.blockUser")} @{it.creator_username}
+                </button>
               </li>
             );
           })}
         </ul>
       )}
+
+      {/* Comptes bloqués */}
+      <section className="mt-10">
+        <h2 className="font-display text-2xl font-bold">{t("moderation.blockedTitle")}</h2>
+        <p className="mt-1 text-sm text-foreground/60">{t("moderation.blockedHint")}</p>
+        {!blocked || blocked.length === 0 ? (
+          <p className="mt-3 text-sm text-foreground/55">{t("moderation.noBlocked")}</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border/60 rounded-3xl bg-surface px-4">
+            {blocked.map((b) => (
+              <li key={b.id} className="flex items-center gap-3 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">@{b.username}</span>
+                  <span className="block text-xs text-foreground/55">{new Date(b.blocked_at).toLocaleDateString("fr-BE")}</span>
+                </span>
+                <button type="button" onClick={() => setBlocked(b.id, false)} className="rounded-full border-[1.5px] border-border px-4 py-2 text-sm font-semibold">
+                  {t("moderation.unblock")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <AlertDialog open={!!toBlock} onOpenChange={(o) => !o && setToBlock(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("moderation.blockTitle")} @{toBlock?.creator_username}</AlertDialogTitle>
+            <AlertDialogDescription>{t("moderation.blockDesc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (toBlock) void setBlocked(toBlock.creator_id, true);
+                setToBlock(null);
+              }}
+            >
+              {t("moderation.blockUser")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && setToRemove(null)}>
         <AlertDialogContent>

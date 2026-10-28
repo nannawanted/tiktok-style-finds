@@ -375,7 +375,7 @@ export async function fetchSuggestions(opts: { styles: StyleKey[]; exclude: stri
 
 // ——— Fils infinis (pages successives) ———
 
-export type FeedKind = "trending" | "latest" | "foryou" | "following";
+export type FeedKind = "trending" | "latest" | "foryou" | "following" | "friends";
 export const FEED_PAGE = 24;
 
 const memo = new Map<string, { at: number; value: unknown }>();
@@ -456,7 +456,8 @@ export async function fetchFeedPage(opts: {
 }): Promise<OutfitCard[]> {
   const from = opts.page * FEED_PAGE;
   if (opts.kind === "latest") return fetchLatestRange({ style: opts.style, from, count: FEED_PAGE });
-  if (opts.kind === "following") return fetchLatestRange({ style: opts.style, creatorIds: opts.creatorIds ?? [], from, count: FEED_PAGE });
+  // « Amis » : mêmes règles que « Abonnements », mais seulement les comptes avec qui on se suit mutuellement
+  if (opts.kind === "following" || opts.kind === "friends") return fetchLatestRange({ style: opts.style, creatorIds: opts.creatorIds ?? [], from, count: FEED_PAGE });
 
   if (opts.kind === "trending") return trendingRange(opts.style, from, FEED_PAGE);
 

@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { PostForm, clearPostDraft, type PostFormData } from "@/components/PostForm";
 import { ShareButton } from "@/components/ShareButton";
+import { useMyAccountStatus } from "@/lib/social";
 import { absoluteUrl, outfitPath, profilePath } from "@/lib/site";
 import { toast } from "sonner";
 
@@ -25,6 +26,7 @@ function NewPost() {
   const [loading, setLoading] = useState(false);
   const [published, setPublished] = useState<Published | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const { data: accountStatus } = useMyAccountStatus();
   const draftKey = user ? `wf_post_draft:${user.id}` : undefined;
 
   async function onSubmit(data: PostFormData) {
@@ -95,6 +97,14 @@ function NewPost() {
           setFormKey((k) => k + 1);
         }}
       />
+    );
+  }
+
+  if (accountStatus?.blocked) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-10">
+        <p className="rounded-3xl bg-destructive/10 p-5 text-sm font-semibold leading-relaxed text-destructive">{t("moderation.blockedBanner")}</p>
+      </main>
     );
   }
 

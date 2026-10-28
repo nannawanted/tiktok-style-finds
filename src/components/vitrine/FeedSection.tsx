@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
-import { useFollowedIds, useLikedStyles, useMyInterests } from "@/lib/social";
+import { useFollowedIds, useFriendIds, useLikedStyles, useMyInterests } from "@/lib/social";
 import { fetchFeedPage, type FeedKind, type OutfitCard } from "@/lib/public-data";
 import type { StyleKey } from "@/lib/styles";
 import { StyleChips } from "./StyleChips";
@@ -43,9 +43,13 @@ export function FeedSection({
     { key: "trending", label: t("home2.trending") },
     { key: "latest", label: t("home2.latest") },
     { key: "following", label: t("home2.following") },
+    ...(user ? [{ key: "friends" as FeedKind, label: t("social.friendsTab") }] : []),
   ];
 
   const followed = [...(followedIds ?? [])];
+  const friendIds = useFriendIds();
+  const friends = [...(friendIds ?? [])];
+  const creatorIds = tab === "friends" ? friends : followed;
   const signals = { interests: interests ?? [], followedIds: followed, likedStyles: likedStyles ?? {} };
   const signalsKey = `${signals.interests.join(",")}|${followed.length}|${Object.values(signals.likedStyles).join(",")}`;
   const Title = titleAs;
@@ -77,7 +81,7 @@ export function FeedSection({
       </div>
 
       <div className="mt-5">
-        {tab === "following" && !user ? (
+        {(tab === "following" || tab === "friends") && !user ? (
           <EmptyBox text={t("home2.loginToFollow")} action={{ to: "/login", label: t("nav2.login") }} />
         ) : (
           <>
@@ -91,10 +95,10 @@ export function FeedSection({
             )}
             <InfiniteOutfitFeed
               key={`${scope}-${tab}-${style ?? "all"}`}
-              queryKey={[scope, tab, style ?? null, tab === "foryou" ? signalsKey : "", tab === "following" ? followed.join(",") : ""]}
-              fetchPage={(page) => fetchFeedPage({ kind: tab, style, page, creatorIds: followed, signals })}
+              queryKey={[scope, tab, style ?? null, tab === "foryou" ? signalsKey : "", tab === "following" || tab === "friends" ? creatorIds.join(",") : ""]}
+              fetchPage={(page) => fetchFeedPage({ kind: tab, style, page, creatorIds, signals })}
               initial={tab === "trending" ? firstPage : undefined}
-              empty={<EmptyBox text={tab === "following" ? t("home2.followingEmpty") : style ? t("home2.noResult") : t("home2.empty")} />}
+              empty={<EmptyBox text={tab === "friends" ? t("social.friendsEmpty") : tab === "following" ? t("home2.followingEmpty") : style ? t("home2.noResult") : t("home2.empty")} />}
             />
           </>
         )}

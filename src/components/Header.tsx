@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut, Bell } from "lucide-react";
-import { REPORT_ALERT_THRESHOLD, useModerationQueue, useNotifications } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { toast } from "sonner";
 import { Logo } from "./Logo";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -175,8 +175,9 @@ function NotificationBell({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
   const { data } = useNotifications();
   const { data: alerts } = useModerationQueue(REPORT_ALERT_THRESHOLD);
-  // Admin : les looks signalés 3 fois comptent dans la pastille
-  const unread = (data?.filter((n) => !n.read_at).length ?? 0) + (alerts?.length ?? 0);
+  const { data: notices } = useModerationNotices();
+  // Admin : les looks signalés 3 fois comptent dans la pastille ; créateur : les messages de modération
+  const unread = (data?.filter((n) => !n.read_at).length ?? 0) + (alerts?.length ?? 0) + (notices?.filter((n) => !n.read_at).length ?? 0);
   return (
     <Link
       to="/notifications"

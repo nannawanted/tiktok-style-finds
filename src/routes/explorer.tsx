@@ -16,7 +16,7 @@ export const Route = createFileRoute("/explorer")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     q: cleanQuery(s.q) || undefined,
     style: isStyleKey(s.style) ? s.style : undefined,
-    tab: s.tab === "latest" || s.tab === "following" || s.tab === "trending" || s.tab === "foryou" ? s.tab : undefined,
+    tab: s.tab === "latest" || s.tab === "following" || s.tab === "friends" || s.tab === "trending" || s.tab === "foryou" ? s.tab : undefined,
   }),
   loaderDeps: ({ search }) => ({ q: search.q ?? "", style: search.style ?? null }),
   loader: async ({ deps }) => {

@@ -320,7 +320,10 @@ export type ModerationItem = {
   post_id: string;
   title: string;
   cover_image: string | null;
+  creator_id: string;
   creator_username: string;
+  /** Nombre de looks de ce créateur déjà signalés ou supprimés (récidive) */
+  creator_reported_posts: number;
   open_reports: number;
   details: string[];
   last_report: string;
@@ -334,12 +337,67 @@ export function useModerationQueue(min = 1) {
     enabled: !!isAdmin,
     refetchInterval: 120_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("moderation_queue" as never, { p_min: min } as never);
+      const { data, error } = await supabase.rpc("moderation_queue_v2" as never, { p_min: min } as never);
       if (error) throw error;
-      return ((data ?? []) as ModerationItem[]).map((r) => ({ ...r, open_reports: Number(r.open_reports) }));
+      return ((data ?? []) as ModerationItem[]).map((r) => ({ ...r, open_reports: Number(r.open_reports), creator_reported_posts: Number(r.creator_reported_posts) }));
     },
   });
 }
 
 /** Seuil d'alerte : à partir de 3 signalements, l'admin est prévenu. */
 export const REPORT_ALERT_THRESHOLD = 3;
+
+// ——— Messages de modération pour le créateur ———
+
+export type ModerationNotice = {
+  id: string;
+  kind: "post_removed" | "account_blocked" | "account_unblocked";
+  data: { title?: string; reasons?: string[] } | null;
+  created_at: string;
+  read_at: string | null;
+};
+
+export function useModerationNotices() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["moderation-notices", user?.id],
+    enabled: !!user,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("moderation_notices" as never)
+        .select("id, kind, data, created_at, read_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data ?? []) as unknown as ModerationNotice[];
+    },
+  });
+}
+
+export function useMarkModerationNoticesRead() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      await supabase.from("moderation_notices" as never).update({ read_at: new Date().toISOString() } as never).eq("user_id", user.id).is("read_at", null);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["moderation-notices", user?.id] }),
+  });
+}
+
+/** Mon compte est-il bloqué par la modération ? */
+export function useMyAccountStatus() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-account-status", user?.id],
+    enabled: !!user,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("my_account_status" as never);
+      return (data ?? { blocked: false }) as { blocked: boolean; blocked_at: string | null };
+    },
+  });
+}
