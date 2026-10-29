@@ -60,7 +60,9 @@ function EditPost() {
       tags: form.tags,
       visual_tags: form.visual_tags,
       visual_tags_rejected: form.visual_tags_rejected,
-    }).eq("id", id);
+      // Nouvelle photo : résultat de la vérification ; même photo : on ne touche à rien
+      ...(form.topic_check ? { topic_check: form.topic_check } : {}),
+    } as never).eq("id", id);
     if (error) {
       setLoading(false);
       toast.error(error.message);

@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkUploadedImage } from "@/lib/nsfw-check";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
-import { offTopicReason, suggestVisualTags } from "@/lib/visual-embedding";
+import { checkPhotoTopic, preloadVision, suggestVisualTags, type TopicResult } from "@/lib/visual-embedding";
 import { conceptLabel } from "@/lib/visual-concepts";
 
 // Création / modification d'une tenue en 3 étapes (Photo · Pièces · Style),
@@ -48,6 +48,8 @@ export type PostFormData = {
   visual_tags: string[];
   visual_tags_rejected: string[];
   products: ProductDraft[];
+  /** « ok » = l'IA a confirmé que c'est une photo de mode ; « unchecked » = pas pu vérifier (l'admin la verra). */
+  topic_check?: "ok" | "unchecked";
 };
 
 const URL_DEBOUNCE_MS = 600;
@@ -65,12 +67,6 @@ function matchBrandForUrl(url: string, brands: PartnerBrand[]): PartnerBrand | n
   const hostname = extractHostname(url);
   if (!hostname) return null;
   return brands.find((b) => extractHostname(b.website_url) === hostname) ?? null;
-}
-
-const CHECK_TIMEOUT_MS = 10_000;
-/** Résultat de la promesse, ou undefined si elle met trop de temps. */
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | undefined> {
-  return Promise.race([p, new Promise<undefined>((r) => setTimeout(() => r(undefined), ms))]);
 }
 
 const newKey = () => Math.random().toString(36).slice(2, 10);
@@ -121,6 +117,11 @@ export function PostForm({
   const [pendingCover, setPendingCover] = useState<File | null>(null);
   const [productLoading, setProductLoading] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<string | null>(null);
+  // Vérification « photo de mode » : tourne en arrière-plan pendant qu'on ajoute les pièces,
+  // et doit être finie avant de publier (comme le « Vérification… » des grandes applis).
+  const topicRef = useRef<{ url: string; p: Promise<TopicResult> } | null>(null);
+  const [topic, setTopic] = useState<{ url: string; state: "checking" | "ok" | "error" } | null>(null);
+  const [verifying, setVerifying] = useState(false);
   // Lien refusé (dangereux, raccourci, pas une boutique, pas un vêtement…)
   const [linkIssue, setLinkIssue] = useState<Record<string, LinkProblem | undefined>>({});
   const [pieceUrl, setPieceUrl] = useState("");
@@ -200,6 +201,27 @@ export function PostForm({
   }, [data.cover_image]);
 
 
+  // L'IA mode se télécharge dès l'ouverture de la page, pour être prête quand la photo arrive
+  useEffect(() => preloadVision(), []);
+
+  function startTopicCheck(url: string) {
+    const p = checkPhotoTopic(url);
+    topicRef.current = { url, p };
+    setTopic({ url, state: "checking" });
+    void p.then((r) => {
+      if (topicRef.current?.url !== url) return;
+      if (r.status === "off") {
+        topicRef.current = null;
+        setTopic(null);
+        setData((d) => (d.cover_image === url ? { ...d, cover_image: "" } : d));
+        go(0);
+        toast.error(t("safety.offTopic").replace("{what}", r.reason), { duration: 8000 });
+        return;
+      }
+      setTopic({ url, state: r.status === "ok" ? "ok" : "error" });
+    });
+  }
+
   function go(n: number) {
     setStep(n);
     setReached((r) => Math.max(r, n));
@@ -221,28 +243,14 @@ export function PostForm({
         return;
       }
       const url = supabase.storage.from("covers").getPublicUrl(path).data.publicUrl;
-      // 1) Nudité : vérifiée sur le serveur (jamais bloquant : si pas vérifiable, la photo passe
-      //    et l'admin la voit dans « Photos non vérifiées »)
-      // 2) Photo liée à la mode : IA du téléphone, 10 s maximum puis en arrière-plan
-      const topicCheck = offTopicReason(url);
-      const [verdict, offTopic] = await Promise.all([checkUploadedImage("covers", path), withTimeout(topicCheck, CHECK_TIMEOUT_MS)]);
-      if (verdict === "explicit") {
+      // Nudité : vérifiée sur le serveur (Sightengine). Photo de mode : IA, en arrière-plan.
+      if ((await checkUploadedImage("covers", path)) === "explicit") {
         toast.error(t("safety.explicit"));
         return;
       }
-      if (offTopic) {
-        toast.error(t("safety.offTopic").replace("{what}", offTopic), { duration: 7000 });
-        return;
-      }
       setData((d) => ({ ...d, cover_image: url }));
+      startTopicCheck(url);
       if (step === 0) go(1);
-      if (offTopic === undefined) {
-        void topicCheck.then((why) => {
-          if (!why) return;
-          setData((d) => (d.cover_image === url ? { ...d, cover_image: "" } : d));
-          toast.error(t("safety.offTopic").replace("{what}", why), { duration: 7000 });
-        });
-      }
     } catch (e) {
       console.warn("[cover] envoi impossible", e);
       setCoverNotice(t("postForm.uploadPhotoFailed"));
@@ -423,7 +431,7 @@ export function PostForm({
     return data.products.find((p) => !isHttpUrl(p.affiliate_link) || !!linkIssue[p._k ?? ""] || !!checkLinkShape(p.affiliate_link) || !p.name.trim());
   }
 
-  function submit() {
+  async function submit() {
     if (data.title.trim().length < 1) {
       go(1);
       toast(t("studio.needTitle"));
@@ -443,19 +451,31 @@ export function PostForm({
       toast(issue ? t(`link.${issue}` as TKey) : !isHttpUrl(bad.affiliate_link) ? t("studio.linkInvalid") : t("studio.nameRequired"));
       return;
     }
+    // La vérification de la photo doit être finie avant de publier
+    let topic_check = data.topic_check;
+    const pending = topicRef.current;
+    if (pending && pending.url === data.cover_image) {
+      setVerifying(true);
+      // 60 s maximum : si l'IA ne répond pas, le look part dans « Photos non vérifiées » de l'admin
+      const r = await Promise.race([pending.p, new Promise<TopicResult>((res) => setTimeout(() => res({ status: "error" }), 60_000))]);
+      setVerifying(false);
+      if (r.status === "off") return; // photo retirée, message déjà affiché
+      topic_check = r.status === "ok" ? "ok" : "unchecked";
+    }
     const tags = cleanTags([...data.tags, ...parseTags(tagInput)]);
-    onSubmit({ ...data, tags, title: data.title.trim(), products: data.products.map(({ _k, ...p }) => p) });
+    onSubmit({ ...data, topic_check, tags, title: data.title.trim(), products: data.products.map(({ _k, ...p }) => p) });
   }
 
   // Modification : tout sur une seule page (pas d'étapes)
   const single = mode === "edit";
   const cta = useMemo(() => {
+    if (verifying) return { label: t("studio.verifyingPhoto"), ok: false, why: "", sub: "" };
     if (single) return { label: submitLabel, ok: !loading && !anyLoading, why: t("studio.loadingPieces"), sub: "" };
     if (step === 1) return { label: t("studio.toPieces"), ok: data.title.trim().length > 0, why: t("studio.needTitle"), sub: "" };
     if (step === 2) return { label: t("studio.next"), ok: !anyLoading && data.products.length > 0, why: anyLoading ? t("studio.loadingPieces") : t("studio.needPiece"), sub: "" };
     if (step === 3) return { label: submitLabel, ok: !loading && !anyLoading, why: "", sub: "" };
     return null;
-  }, [step, data, anyLoading, loading, submitLabel, mode, single, t]);
+  }, [step, data, anyLoading, loading, submitLabel, mode, single, t, verifying]);
 
   const steps: TKey[] = ["studio.stepPhoto", "studio.stepPieces", "studio.stepStyle"];
 
@@ -472,6 +492,12 @@ export function PostForm({
             <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {t("studio.change")}
           </button>
         </div>
+        {topic && topic.url === data.cover_image && topic.state !== "error" && (
+          <span className={`absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold backdrop-blur ${topic.state === "ok" ? "bg-emerald-600/90 text-white" : "bg-ink/80 text-surface"}`}>
+            {topic.state === "ok" ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+            {topic.state === "ok" ? t("studio.photoChecked") : t("studio.checkingPhoto")}
+          </span>
+        )}
         {coverLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 text-sm font-semibold">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> {t("studio.fetchingCover")}
@@ -847,10 +873,10 @@ export function PostForm({
             <button
               type="button"
               disabled={!cta.ok}
-              onClick={() => (single || step === 3 ? submit() : go(step + 1))}
+              onClick={() => (single || step === 3 ? void submit() : go(step + 1))}
               className={`flex h-14 w-full items-center justify-center gap-2 rounded-full text-base font-bold transition-all active:scale-[.98] disabled:opacity-40 ${single || step === 3 ? "bg-primary text-primary-foreground" : "bg-ink text-surface"}`}
             >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+              {(loading || verifying) && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {cta.label}
             </button>
             {(cta.ok ? cta.sub : cta.why) && <p className="mt-2 text-center text-xs text-foreground/60">{cta.ok ? cta.sub : cta.why}</p>}

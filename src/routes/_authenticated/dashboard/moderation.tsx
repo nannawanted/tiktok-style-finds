@@ -306,8 +306,11 @@ function UnverifiedPhotos({ onRemove }: { onRemove: (postId: string) => Promise<
   const { data: quota } = useImageQuota();
   const [toRemove, setToRemove] = useState<string | null>(null);
 
-  async function reviewed(checkId: number) {
-    const { error } = await supabase.rpc("mark_image_reviewed" as never, { p_check: checkId } as never);
+  async function reviewed(it: { kind: string; check_id: number | null; post_id: string }) {
+    const { error } =
+      it.kind === "topic"
+        ? await supabase.rpc("mark_post_topic_reviewed" as never, { p_post: it.post_id } as never)
+        : await supabase.rpc("mark_image_reviewed" as never, { p_check: it.check_id } as never);
     if (error) {
       toast.error(error.message);
       return;
@@ -331,14 +334,15 @@ function UnverifiedPhotos({ onRemove }: { onRemove: (postId: string) => Promise<
       ) : (
         <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map((it) => (
-            <li key={it.check_id} className="overflow-hidden rounded-2xl bg-surface">
+            <li key={`${it.kind}-${it.check_id ?? it.post_id}`} className="overflow-hidden rounded-2xl bg-surface">
               <Link to="/post/$id" params={{ id: it.post_id }} className="block aspect-[3/4] bg-card">
                 {it.cover_image && <img src={it.cover_image} alt={it.title} className="h-full w-full object-cover" />}
               </Link>
               <div className="p-2.5">
                 <p className="truncate text-[13px] font-semibold">@{it.creator_username}</p>
+                <p className="truncate text-[11px] text-foreground/55">{it.kind === "topic" ? t("imageCheck.kindTopic") : t("imageCheck.kindNudity")}</p>
                 <div className="mt-2 flex gap-1.5">
-                  <button type="button" onClick={() => reviewed(it.check_id)} className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-ink text-[13px] font-semibold text-surface">
+                  <button type="button" onClick={() => reviewed(it)} className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-ink text-[13px] font-semibold text-surface">
                     <Check className="h-3.5 w-3.5" aria-hidden="true" /> {t("imageCheck.ok")}
                   </button>
                   <button type="button" onClick={() => setToRemove(it.post_id)} aria-label={t("moderation.remove")} className="flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-destructive/40 text-destructive">

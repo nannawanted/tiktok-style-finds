@@ -51,7 +51,8 @@ function NewPost() {
       tags: data.tags,
       visual_tags: data.visual_tags,
       visual_tags_rejected: data.visual_tags_rejected,
-    }).select("id").single();
+      topic_check: data.topic_check ?? null,
+    } as never).select("id").single();
 
     if (error || !post) {
       setLoading(false);

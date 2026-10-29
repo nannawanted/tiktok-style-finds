@@ -448,7 +448,7 @@ export function quotaNearlyUsed(q: ImageQuota | null | undefined) {
   return !!q && (q.month_used >= q.month_limit * 0.9 || q.day_used >= q.day_limit * 0.9);
 }
 
-export type UnverifiedPost = { check_id: number; post_id: string; title: string; cover_image: string | null; creator_username: string; created_at: string };
+export type UnverifiedPost = { kind: "nudity" | "topic"; check_id: number | null; post_id: string; title: string; cover_image: string | null; creator_username: string; created_at: string };
 
 export function useUnverifiedPosts() {
   const { data: isAdmin } = useIsAdmin();
@@ -456,7 +456,7 @@ export function useUnverifiedPosts() {
     queryKey: ["unverified-posts"],
     enabled: !!isAdmin,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("unverified_posts" as never);
+      const { data, error } = await supabase.rpc("unverified_posts_v2" as never);
       if (error) throw error;
       return (data ?? []) as UnverifiedPost[];
     },

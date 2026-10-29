@@ -179,22 +179,30 @@ export async function indexVisualConcepts(
   return { done, failed };
 }
 
+/** Résultat de la vérification « est-ce une photo de mode ? ». */
+export type TopicResult = { status: "ok" } | { status: "off"; reason: string } | { status: "error" };
+
+/** Commence à télécharger l'IA mode en avance (dès l'ouverture de « Créer un look »). */
+export function preloadVision() {
+  void loadVision().catch(() => undefined);
+}
+
 /**
- * La photo a-t-elle un lien avec la mode ? Renvoie la raison si elle est nettement
- * hors sujet (« de la nourriture »…), sinon null. Si l'IA n'est pas disponible,
- * la photo passe (les signalements prennent le relais).
+ * La photo a-t-elle un lien avec la mode ? « off » + raison si elle est nettement
+ * hors sujet (« de la nourriture »…), « error » si l'IA n'a pas pu tourner.
  */
-export async function offTopicReason(imageUrl: string): Promise<string | null> {
+export async function checkPhotoTopic(imageUrl: string): Promise<TopicResult> {
   try {
     const embedding = await computeImageEmbedding(imageUrl);
     const { data, error } = await supabase.rpc("photo_subject_check" as never, { p_model: VISUAL_MODEL, p_embedding: embedding } as never);
     if (error) throw error;
     const row = ((data ?? []) as { top_key: string; fashion_prob: number }[])[0];
-    if (!row || row.fashion_prob >= 0.3 || !row.top_key?.startsWith("subj-n-")) return null;
+    if (!row) return { status: "error" };
+    if (row.fashion_prob >= 0.3 || !row.top_key?.startsWith("subj-n-")) return { status: "ok" };
     const { SUBJECT_CONCEPTS } = await import("./visual-concepts");
-    return SUBJECT_CONCEPTS.find((c) => c.key === row.top_key)?.label || null;
+    return { status: "off", reason: SUBJECT_CONCEPTS.find((c) => c.key === row.top_key)?.label || "autre chose" };
   } catch (e) {
     console.warn("[visual] vérification du sujet impossible", e);
-    return null;
+    return { status: "error" };
   }
 }
