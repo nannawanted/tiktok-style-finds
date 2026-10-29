@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, X,
+  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, Pencil, RefreshCw, X,
 } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 import { StylePicker } from "@/components/vitrine/StyleChips";
@@ -376,15 +376,6 @@ export function PostForm({
     setPieceUrl("");
     setProductLoading((s) => ({ ...s, [key]: true }));
     fetchPieceMeta(key, url, brand, true);
-  }
-
-  function addPieceManually() {
-    const key = newKey();
-    setData((d) => ({
-      ...d,
-      products: [...d.products, { _k: key, affiliate_link: "", brand: "", brand_id: null, name: "", price: "", image_url: "" }],
-    }));
-    setEditing(key);
   }
 
   function onPieceLinkEdited(key: string, url: string) {
@@ -807,9 +798,6 @@ export function PostForm({
               })}
             </ul>
           )}
-          <button type="button" onClick={addPieceManually} className="inline-flex items-center gap-1.5 self-start px-1 text-sm font-semibold underline underline-offset-4">
-            <Plus className="h-4 w-4" aria-hidden="true" /> {t("studio.addManually")}
-          </button>
         </section>
       )}
 
