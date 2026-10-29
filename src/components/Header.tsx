@@ -220,7 +220,9 @@ export function Header() {
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
-    const apply = () => document.documentElement.style.setProperty("--sticky-top", hidden ? "0px" : `${el.offsetHeight}px`);
+    // Caché : les barres de filtres remontent aussi hors de l'écran (valeur négative),
+    // donc toute la barre du haut disparaît d'un bloc et revient d'un bloc.
+    const apply = () => document.documentElement.style.setProperty("--sticky-top", hidden ? "-200px" : `${el.offsetHeight}px`);
     apply();
     const ro = new ResizeObserver(apply);
     ro.observe(el);
