@@ -16,6 +16,13 @@ const dict = {
     quotaTitle: { fr: "Vérifications de photos bientôt épuisées", en: "Photo checks almost used up" },
     quotaText: { fr: "Ce mois : {month} · Aujourd'hui : {day}. Au-delà, les photos passent sans vérification et s'affichent dans Modération.", en: "This month: {month} · Today: {day}. Beyond that, photos go through unchecked and show up in Moderation." },
   },
+  net: {
+    offline: { fr: "Tu es hors ligne", en: "You're offline" },
+    backOnline: { fr: "De retour en ligne", en: "Back online" },
+    errorTitle: { fr: "Pas de connexion", en: "No connection" },
+    errorText: { fr: "Les looks n'ont pas pu se charger. Vérifie ta connexion.", en: "Looks couldn't load. Check your connection." },
+    retry: { fr: "Réessayer", en: "Retry" },
+  },
   safety: {
     offTopic: { fr: "Cette photo ne montre pas de tenue : on dirait {what}. Choisis une photo où on voit ta tenue ou une pièce.", en: "This photo doesn't show an outfit: it looks like {what}. Pick a photo showing your outfit or a piece." },
     explicit: { fr: "Cette photo ne respecte pas les règles de WantedFashion (nudité ou contenu choquant).", en: "This photo breaks WantedFashion's rules (nudity or shocking content)." },

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
 import { FEED_PAGE, type OutfitCard } from "@/lib/public-data";
+import { RotateCw, WifiOff } from "lucide-react";
 import { OutfitGrid, OutfitGridSkeleton } from "./OutfitCard";
 
 /**
@@ -63,6 +64,8 @@ export function InfiniteOutfitFeed({
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, outfits.length]);
 
   if (query.isLoading) return <OutfitGridSkeleton />;
+  // Échec du chargement : on le dit (au lieu d'un faux « aucun look ») et on propose de réessayer
+  if (query.isError && !outfits.length) return <RetryBox onRetry={() => void query.refetch()} busy={query.isFetching} />;
   if (!outfits.length) return <>{empty ?? null}</>;
 
   return (
@@ -74,9 +77,33 @@ export function InfiniteOutfitFeed({
           {t("engage.loadingMore")}
         </p>
       )}
-      {!hasNextPage && outfits.length > FEED_PAGE && (
+      {query.isFetchNextPageError && !isFetchingNextPage && (
+        <div className="flex justify-center py-6">
+          <button type="button" onClick={() => void fetchNextPage()} className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-surface">
+            <RotateCw className="h-4 w-4" aria-hidden="true" /> {t("net.retry")}
+          </button>
+        </div>
+      )}
+      {!hasNextPage && !query.isFetchNextPageError && outfits.length > FEED_PAGE && (
         <p className="py-8 text-center text-sm text-foreground/60">{t("engage.endOfFeed")}</p>
       )}
     </>
+  );
+}
+
+/** Message « pas de connexion » + bouton Réessayer (comme Instagram). */
+export function RetryBox({ onRetry, busy = false }: { onRetry: () => void; busy?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface">
+        <WifiOff className="h-6 w-6 text-foreground/70" aria-hidden="true" />
+      </span>
+      <p className="font-display text-2xl font-bold">{t("net.errorTitle")}</p>
+      <p className="max-w-xs text-sm text-foreground/60">{t("net.errorText")}</p>
+      <button type="button" onClick={onRetry} disabled={busy} className="mt-1 inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-surface disabled:opacity-50">
+        <RotateCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} aria-hidden="true" /> {t("net.retry")}
+      </button>
+    </div>
   );
 }

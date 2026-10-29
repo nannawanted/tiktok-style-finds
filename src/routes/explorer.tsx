@@ -21,8 +21,12 @@ export const Route = createFileRoute("/explorer")({
   loaderDeps: ({ search }) => ({ q: search.q ?? "", style: search.style ?? null }),
   loader: async ({ deps }) => {
     // Avec une recherche : les tenues qui correspondent. Sans : première page « Tendances ».
-    if (deps.q) return { results: await searchOutfits(deps.q, deps.style, 60), firstPage: [] as OutfitCard[] };
-    return { results: null, firstPage: await fetchFeedPage({ kind: "trending", style: deps.style, page: 0 }) };
+    // Réseau lent ou coupé : la page s'affiche quand même (le fil propose « Réessayer »)
+    if (deps.q) {
+      const results = await searchOutfits(deps.q, deps.style, 60).catch(() => null);
+      if (results) return { results, firstPage: undefined as OutfitCard[] | undefined };
+    }
+    return { results: null, firstPage: await fetchFeedPage({ kind: "trending", style: deps.style, page: 0 }).catch(() => undefined) };
   },
   head: ({ match }) => {
     const q = (match.search as Search).q;

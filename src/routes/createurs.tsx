@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { RetryBox } from "@/components/vitrine/InfiniteOutfitFeed";
 import { Search } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { cleanQuery, fetchCreators } from "@/lib/public-data";
@@ -17,7 +18,8 @@ export const Route = createFileRoute("/createurs")({
     style: isStyleKey(s.style) ? s.style : undefined,
   }),
   loaderDeps: ({ search }) => ({ q: search.q ?? "", style: search.style ?? null }),
-  loader: ({ deps }) => fetchCreators({ q: deps.q, style: deps.style, limit: 60 }),
+  // Réseau lent ou coupé : null = on affiche « Pas de connexion / Réessayer » au lieu d'une page d'erreur
+  loader: ({ deps }) => fetchCreators({ q: deps.q, style: deps.style, limit: 60 }).catch(() => null),
   head: () => ({
     meta: [
       { title: "Créateurs mode francophones par style | WantedFashion" },
@@ -34,6 +36,7 @@ function CreatorsPage() {
   const navigate = useNavigate({ from: "/createurs" });
   const { q = "", style } = Route.useSearch();
   const creators = Route.useLoaderData();
+  const router = useRouter();
   const [text, setText] = useState(q);
   useEffect(() => setText(q), [q]);
 
@@ -72,7 +75,15 @@ function CreatorsPage() {
         />
       </div>
 
-      <div className="mt-6">{creators.length ? <CreatorGrid creators={creators} /> : <EmptyBox text={t("creatorsPage.empty")} />}</div>
+      <div className="mt-6">
+        {creators === null ? (
+          <RetryBox onRetry={() => void router.invalidate()} />
+        ) : creators.length ? (
+          <CreatorGrid creators={creators} />
+        ) : (
+          <EmptyBox text={t("creatorsPage.empty")} />
+        )}
+      </div>
     </main>
   );
 }

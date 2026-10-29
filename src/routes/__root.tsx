@@ -18,6 +18,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { CookieConsent } from "../components/CookieConsent";
 import { Toaster } from "../components/ui/sonner";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "../lib/site";
 import { CollectionPickerProvider } from "../components/vitrine/CollectionPicker";
 import { InterestsDialog } from "../components/vitrine/InterestsDialog";
@@ -134,6 +135,7 @@ function RootComponent() {
             <Outlet />
             <Footer />
             <CookieConsent />
+            <OfflineBanner />
             <InterestsDialog />
             <Toaster />
           </CollectionPickerProvider>

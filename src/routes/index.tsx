@@ -20,13 +20,14 @@ export const Route = createFileRoute("/")({
   loaderDeps: ({ search }) => ({ style: search.style ?? null }),
   loader: async ({ deps }) => {
     // Première page « Tendances » fabriquée côté serveur (Google + affichage immédiat)
+    // Réseau lent ou coupé : la page s'affiche quand même, le fil réessaie de son côté
     const [firstPage, creators, weekTop] = await Promise.all([
-      fetchFeedPage({ kind: "trending", style: deps.style, page: 0 }),
-      fetchCreators({ style: deps.style, limit: 12 }),
+      fetchFeedPage({ kind: "trending", style: deps.style, page: 0 }).catch(() => undefined),
+      fetchCreators({ style: deps.style, limit: 12 }).catch(() => []),
       // Le carrousel du haut montre toujours les tenues les plus aimées de la semaine
-      deps.style ? fetchOutfits({ sort: "trending", limit: 6 }) : Promise.resolve(null),
+      deps.style ? fetchOutfits({ sort: "trending", limit: 6 }).catch(() => null) : Promise.resolve(null),
     ]);
-    return { firstPage, creators, hero: weekTop ?? firstPage.slice(0, 6) };
+    return { firstPage, creators, hero: weekTop ?? (firstPage ?? []).slice(0, 6) };
   },
   head: () => ({
     meta: [
