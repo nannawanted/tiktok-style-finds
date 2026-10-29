@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { isExplicitImageWithin } from "@/lib/nsfw-check";
+import { checkUploadedImage } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { deleteAccount } from "@/lib/delete-account";
@@ -108,11 +108,12 @@ function Settings() {
   async function uploadAvatar(file: File) {
     if (!user) return;
     setUploading(true);
-    if (await isExplicitImageWithin(file)) { toast.error(t("safety.explicit")); setUploading(false); return; }
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    // Nom unique : si la photo est refusée, l'ancienne reste en place
+    const path = `${user.id}.${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
     if (upErr) { toast.error(t("settings.uploadPhotoError")); setUploading(false); return; }
+    if ((await checkUploadedImage("avatars", path)) === "explicit") { toast.error(t("safety.explicit")); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     setForm((f) => ({ ...f, profile_image: urlData.publicUrl }));
     toast.success(t("settings.photoUploaded"));
@@ -122,11 +123,12 @@ function Settings() {
   async function uploadBanner(file: File) {
     if (!user) return;
     setUploading(true);
-    if (await isExplicitImageWithin(file)) { toast.error(t("safety.explicit")); setUploading(false); return; }
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true });
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    // Nom unique : si la photo est refusée, l'ancienne reste en place
+    const path = `${user.id}.${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
     if (upErr) { toast.error(t("settings.uploadBannerError")); setUploading(false); return; }
+    if ((await checkUploadedImage("banners", path)) === "explicit") { toast.error(t("safety.explicit")); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
     setForm((f) => ({ ...f, banner_image: urlData.publicUrl }));
     toast.success(t("settings.bannerUploaded"));

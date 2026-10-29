@@ -11,7 +11,7 @@ const REASONS: Record<string, TKey> = {
   shocking: "report.shocking",
   stolen_photo: "report.stolen",
 };
-import { REPORT_ALERT_THRESHOLD, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
@@ -67,6 +67,7 @@ function NotificationsPage() {
   });
 
   const { data: alerts } = useModerationQueue(REPORT_ALERT_THRESHOLD);
+  const { data: quota } = useImageQuota();
   return (
     <main className="mx-auto max-w-2xl px-4 pt-6 md:pt-10">
       <h1 className="font-display fade-up mb-6 text-4xl font-bold">{t("engage.notifications")}</h1>
@@ -103,6 +104,32 @@ function NotificationsPage() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block font-bold">{alerts.length} {t("moderation.alert")}</span>
+            <span className="block text-sm text-foreground/65">{t("moderation.alertCta")} →</span>
+          </span>
+        </Link>
+      )}
+      {/* Admin : vérifications de photos bientôt épuisées (formule gratuite Sightengine) */}
+      {quota && quotaNearlyUsed(quota) && (
+        <div className="mb-5 flex items-center gap-3 rounded-3xl bg-amber-500/15 p-4 ring-2 ring-amber-500/40">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+            <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1 text-sm">
+            <span className="block font-bold">{t("imageCheck.quotaTitle")}</span>
+            <span className="block text-foreground/70">
+              {t("imageCheck.quotaText").replace("{month}", `${quota.month_used}/${quota.month_limit}`).replace("{day}", `${quota.day_used}/${quota.day_limit}`)}
+            </span>
+          </span>
+        </div>
+      )}
+      {/* Admin : looks dont la photo n'a pas pu être vérifiée */}
+      {!!quota?.unverified_open && (
+        <Link to="/dashboard/moderation" className="mb-5 flex items-center gap-3 rounded-3xl bg-surface p-4 ring-2 ring-border">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-surface">
+            <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{quota.unverified_open} {t("imageCheck.unverifiedAlert")}</span>
             <span className="block text-sm text-foreground/65">{t("moderation.alertCta")} →</span>
           </span>
         </Link>

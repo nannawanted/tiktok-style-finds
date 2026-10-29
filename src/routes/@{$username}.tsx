@@ -3,7 +3,7 @@ import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-rout
 import { Camera, Instagram, Music2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { isExplicitImageWithin } from "@/lib/nsfw-check";
+import { checkUploadedImage } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { fetchCreatorProfile } from "@/lib/public-data";
@@ -120,17 +120,17 @@ function ProfileContent() {
       return;
     }
     setUploading(true);
-    if (await isExplicitImageWithin(file)) {
-      setUploading(false);
-      toast.error(t("safety.explicit"));
-      return;
-    }
     const ext = file.type.split("/")[1].replace("jpeg", "jpg");
-    const path = `${creator.id}.${ext}`;
+    const path = `${creator.id}.${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from(kind).upload(path, file, { upsert: true, contentType: file.type });
     if (upErr) {
       setUploading(false);
       toast.error(t("profile.uploadError"));
+      return;
+    }
+    if ((await checkUploadedImage(kind, path)) === "explicit") {
+      setUploading(false);
+      toast.error(t("safety.explicit"));
       return;
     }
     const { data } = supabase.storage.from(kind).getPublicUrl(path);

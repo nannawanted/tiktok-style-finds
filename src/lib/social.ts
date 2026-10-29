@@ -422,3 +422,43 @@ export function usePinPost() {
     },
   });
 }
+
+// ——— Vérification des photos sur le serveur (Sightengine) ———
+
+export type ImageQuota = { month_used: number; month_limit: number; day_used: number; day_limit: number; unverified_open: number };
+
+/** Admin : vérifications utilisées ce mois / aujourd'hui, et looks dont la photo n'a pas pu être vérifiée. */
+export function useImageQuota() {
+  const { data: isAdmin } = useIsAdmin();
+  return useQuery({
+    queryKey: ["image-quota"],
+    enabled: !!isAdmin,
+    refetchInterval: 300_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("image_check_quota" as never);
+      if (error) throw error;
+      const r = ((data ?? []) as ImageQuota[])[0];
+      return r ? { month_used: Number(r.month_used), month_limit: Number(r.month_limit), day_used: Number(r.day_used), day_limit: Number(r.day_limit), unverified_open: Number(r.unverified_open) } : null;
+    },
+  });
+}
+
+/** Alerte quand il reste moins de 10 % des vérifications gratuites (mois ou jour). */
+export function quotaNearlyUsed(q: ImageQuota | null | undefined) {
+  return !!q && (q.month_used >= q.month_limit * 0.9 || q.day_used >= q.day_limit * 0.9);
+}
+
+export type UnverifiedPost = { check_id: number; post_id: string; title: string; cover_image: string | null; creator_username: string; created_at: string };
+
+export function useUnverifiedPosts() {
+  const { data: isAdmin } = useIsAdmin();
+  return useQuery({
+    queryKey: ["unverified-posts"],
+    enabled: !!isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("unverified_posts" as never);
+      if (error) throw error;
+      return (data ?? []) as UnverifiedPost[];
+    },
+  });
+}

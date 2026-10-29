@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { fetchProductMetadata, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
 import { checkLinkShape, type LinkProblem } from "@/lib/link-safety";
 import { supabase } from "@/integrations/supabase/client";
-import { isExplicitImage, preloadNsfwCheck } from "@/lib/nsfw-check";
+import { checkUploadedImage } from "@/lib/nsfw-check";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
 import { offTopicReason, suggestVisualTags } from "@/lib/visual-embedding";
@@ -199,9 +199,6 @@ export function PostForm({
     };
   }, [data.cover_image]);
 
-  // L'IA anti-nudité se télécharge pendant que le créateur colle son lien
-  useEffect(() => preloadNsfwCheck(), []);
-
 
   function go(n: number) {
     setStep(n);
@@ -214,15 +211,6 @@ export function PostForm({
     setCoverLoading(true);
     setCoverNotice(null);
     try {
-      // Vérifications par l'IA (nudité, photo de mode) : 10 s maximum. Si l'IA n'est pas
-      // encore prête (1re fois, réseau lent, vieux téléphone), la photo passe tout de suite
-      // et la vérification se termine en arrière-plan : la photo est retirée si elle ne va pas.
-      const explicitCheck = isExplicitImage(file);
-      const explicit = await withTimeout(explicitCheck, CHECK_TIMEOUT_MS);
-      if (explicit === true) {
-        toast.error(t("safety.explicit"));
-        return;
-      }
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
@@ -233,21 +221,28 @@ export function PostForm({
         return;
       }
       const url = supabase.storage.from("covers").getPublicUrl(path).data.publicUrl;
+      // 1) Nudité : vérifiée sur le serveur (jamais bloquant : si pas vérifiable, la photo passe
+      //    et l'admin la voit dans « Photos non vérifiées »)
+      // 2) Photo liée à la mode : IA du téléphone, 10 s maximum puis en arrière-plan
       const topicCheck = offTopicReason(url);
-      const offTopic = await withTimeout(topicCheck, CHECK_TIMEOUT_MS);
+      const [verdict, offTopic] = await Promise.all([checkUploadedImage("covers", path), withTimeout(topicCheck, CHECK_TIMEOUT_MS)]);
+      if (verdict === "explicit") {
+        toast.error(t("safety.explicit"));
+        return;
+      }
       if (offTopic) {
         toast.error(t("safety.offTopic").replace("{what}", offTopic), { duration: 7000 });
         return;
       }
       setData((d) => ({ ...d, cover_image: url }));
       if (step === 0) go(1);
-      // Vérifications pas encore finies : on retire la photo si elles la refusent
-      const removeCover = (msg: string) => {
-        setData((d) => (d.cover_image === url ? { ...d, cover_image: "" } : d));
-        toast.error(msg, { duration: 7000 });
-      };
-      if (explicit === undefined) void explicitCheck.then((bad) => bad && removeCover(t("safety.explicit")));
-      if (offTopic === undefined) void topicCheck.then((why) => why && removeCover(t("safety.offTopic").replace("{what}", why)));
+      if (offTopic === undefined) {
+        void topicCheck.then((why) => {
+          if (!why) return;
+          setData((d) => (d.cover_image === url ? { ...d, cover_image: "" } : d));
+          toast.error(t("safety.offTopic").replace("{what}", why), { duration: 7000 });
+        });
+      }
     } catch (e) {
       console.warn("[cover] envoi impossible", e);
       setCoverNotice(t("postForm.uploadPhotoFailed"));

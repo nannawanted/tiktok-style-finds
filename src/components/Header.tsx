@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut, Bell } from "lucide-react";
-import { REPORT_ALERT_THRESHOLD, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useImageQuota, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { toast } from "sonner";
 import { Logo } from "./Logo";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -177,7 +177,13 @@ function NotificationBell({ className = "" }: { className?: string }) {
   const { data: alerts } = useModerationQueue(REPORT_ALERT_THRESHOLD);
   const { data: notices } = useModerationNotices();
   // Admin : les looks signalés 3 fois comptent dans la pastille ; créateur : les messages de modération
-  const unread = (data?.filter((n) => !n.read_at).length ?? 0) + (alerts?.length ?? 0) + (notices?.filter((n) => !n.read_at).length ?? 0);
+  const { data: quota } = useImageQuota();
+  const unread =
+    (data?.filter((n) => !n.read_at).length ?? 0) +
+    (alerts?.length ?? 0) +
+    (notices?.filter((n) => !n.read_at).length ?? 0) +
+    (quotaNearlyUsed(quota) ? 1 : 0) +
+    (quota?.unverified_open ? 1 : 0);
   return (
     <Link
       to="/notifications"

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation, type TKey } from "@/lib/i18n";
-import { REPORT_ALERT_THRESHOLD, useIsAdmin, useModerationQueue, type ModerationItem } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, useImageQuota, useIsAdmin, useModerationQueue, useUnverifiedPosts, type ModerationItem } from "@/lib/social";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -175,6 +175,8 @@ function Moderation() {
         )}
       </section>
 
+      <UnverifiedPhotos onRemove={(id) => act(id, "remove")} />
+
       <BlockedSites />
 
       <AlertDialog open={!!toBlock} onOpenChange={(o) => !o && setToBlock(null)}>
@@ -292,6 +294,83 @@ function BlockedSites() {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** Looks publiés dont la photo n'a pas pu être vérifiée (quota gratuit épuisé, panne) : à regarder à la main. */
+function UnverifiedPhotos({ onRemove }: { onRemove: (postId: string) => Promise<void> | void }) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const { data: items } = useUnverifiedPosts();
+  const { data: quota } = useImageQuota();
+  const [toRemove, setToRemove] = useState<string | null>(null);
+
+  async function reviewed(checkId: number) {
+    const { error } = await supabase.rpc("mark_image_reviewed" as never, { p_check: checkId } as never);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["unverified-posts"] });
+    qc.invalidateQueries({ queryKey: ["image-quota"] });
+  }
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-2xl font-bold">{t("imageCheck.unverifiedTitle")}</h2>
+        {quota && (
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground/55">
+            {quota.month_used}/{quota.month_limit} {t("imageCheck.thisMonth")}
+          </span>
+        )}
+      </div>
+      {!items || items.length === 0 ? (
+        <p className="mt-3 text-sm text-foreground/55">{t("imageCheck.noneUnverified")}</p>
+      ) : (
+        <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {items.map((it) => (
+            <li key={it.check_id} className="overflow-hidden rounded-2xl bg-surface">
+              <Link to="/post/$id" params={{ id: it.post_id }} className="block aspect-[3/4] bg-card">
+                {it.cover_image && <img src={it.cover_image} alt={it.title} className="h-full w-full object-cover" />}
+              </Link>
+              <div className="p-2.5">
+                <p className="truncate text-[13px] font-semibold">@{it.creator_username}</p>
+                <div className="mt-2 flex gap-1.5">
+                  <button type="button" onClick={() => reviewed(it.check_id)} className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-ink text-[13px] font-semibold text-surface">
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" /> {t("imageCheck.ok")}
+                  </button>
+                  <button type="button" onClick={() => setToRemove(it.post_id)} aria-label={t("moderation.remove")} className="flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-destructive/40 text-destructive">
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && setToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("dashboard.deletePostTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className="sr-only">{t("dashboard.deletePostTitle")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (toRemove) await onRemove(toRemove);
+                setToRemove(null);
+                qc.invalidateQueries({ queryKey: ["unverified-posts"] });
+                qc.invalidateQueries({ queryKey: ["image-quota"] });
+              }}
+            >
+              {t("dashboard.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

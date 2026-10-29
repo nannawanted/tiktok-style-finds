@@ -5,6 +5,15 @@ export type Lang = "fr" | "en";
 // Dictionnaire centralisé. Ajoute une clé ici pour chaque nouveau texte,
 // avec sa version fr ET en, puis utilise t("ma.cle") dans tes composants.
 const dict = {
+  imageCheck: {
+    unverifiedTitle: { fr: "Photos non vérifiées", en: "Unchecked photos" },
+    noneUnverified: { fr: "Toutes les photos ont été vérifiées.", en: "All photos have been checked." },
+    thisMonth: { fr: "vérifications ce mois", en: "checks this month" },
+    ok: { fr: "Elle va bien", en: "It's fine" },
+    unverifiedAlert: { fr: "photo(s) de look non vérifiée(s)", en: "unchecked look photo(s)" },
+    quotaTitle: { fr: "Vérifications de photos bientôt épuisées", en: "Photo checks almost used up" },
+    quotaText: { fr: "Ce mois : {month} · Aujourd'hui : {day}. Au-delà, les photos passent sans vérification et s'affichent dans Modération.", en: "This month: {month} · Today: {day}. Beyond that, photos go through unchecked and show up in Moderation." },
+  },
   safety: {
     offTopic: { fr: "Cette photo ne montre pas de tenue : on dirait {what}. Choisis une photo où on voit ta tenue ou une pièce.", en: "This photo doesn't show an outfit: it looks like {what}. Pick a photo showing your outfit or a piece." },
     explicit: { fr: "Cette photo ne respecte pas les règles de WantedFashion (nudité ou contenu choquant).", en: "This photo breaks WantedFashion's rules (nudity or shocking content)." },
