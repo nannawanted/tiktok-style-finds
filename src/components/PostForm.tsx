@@ -120,6 +120,8 @@ export function PostForm({
   // Vérification « photo de mode » : tourne en arrière-plan pendant qu'on ajoute les pièces,
   // et doit être finie avant de publier (comme le « Vérification… » des grandes applis).
   const topicRef = useRef<{ url: string; p: Promise<TopicResult> } | null>(null);
+  const dataRef = useRef(data);
+  dataRef.current = data;
   const [topic, setTopic] = useState<{ url: string; state: "checking" | "ok" | "error" } | null>(null);
   const [verifying, setVerifying] = useState(false);
   // Lien refusé (dangereux, raccourci, pas une boutique, pas un vêtement…)
@@ -213,13 +215,15 @@ export function PostForm({
       if (r.status === "off") {
         topicRef.current = null;
         setTopic(null);
+        const shown = dataRef.current.cover_image === url;
         setData((d) => (d.cover_image === url ? { ...d, cover_image: "" } : d));
-        go(0);
+        if (shown) go(0); // photo déjà affichée (vérification lente) : on revient au choix
         toast.error(t("safety.offTopic").replace("{what}", r.reason), { duration: 8000 });
         return;
       }
       setTopic({ url, state: r.status === "ok" ? "ok" : "error" });
     });
+    return p;
   }
 
   function go(n: number) {
@@ -248,8 +252,12 @@ export function PostForm({
         toast.error(t("safety.explicit"));
         return;
       }
+      // On attend un court instant le verdict de l'IA mode avant d'afficher l'étape suivante :
+      // une photo hors sujet est refusée tout de suite, sans aller-retour entre les pages.
+      const p = startTopicCheck(url);
+      const quick = await Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), 4000))]);
+      if (quick?.status === "off") return; // message déjà affiché, on reste au choix de la photo
       setData((d) => ({ ...d, cover_image: url }));
-      startTopicCheck(url);
       if (step === 0) go(1);
     } catch (e) {
       console.warn("[cover] envoi impossible", e);
