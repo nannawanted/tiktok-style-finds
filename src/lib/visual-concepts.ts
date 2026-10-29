@@ -350,25 +350,25 @@ export function searchGroups(query: string): string[] {
 // elle est refusée avec la raison (« on dirait de la nourriture »).
 // Calculées une fois par l'admin avec le bouton « Analyser les photos ».
 const SUBJECT_RAW = `
-subj_f_outfit|a photo of a person wearing an outfit|
-subj_f_mirror|a mirror selfie showing an outfit|
-subj_f_clothes|a photo of a piece of clothing|
-subj_f_flatlay|a flat lay of clothes and accessories|
-subj_f_shoes|a photo of shoes or sneakers|
-subj_f_bag|a photo of a handbag|
-subj_f_jewelry|a photo of jewelry and accessories|
-subj_n_food|a photo of food or a meal|de la nourriture
-subj_n_drink|a photo of a drink|une boisson
-subj_n_landscape|a photo of a landscape or nature with no people|un paysage
-subj_n_city|a photo of a street or buildings with no people|une rue ou des bâtiments
-subj_n_room|a photo of an empty room or furniture|une pièce ou des meubles
-subj_n_car|a photo of a car or vehicle|un véhicule
-subj_n_animal|a photo of an animal or a pet|un animal
-subj_n_text|a screenshot of text or a document|une capture d'écran ou du texte
-subj_n_cartoon|a cartoon, drawing or meme|un dessin ou un mème
-subj_n_game|a screenshot of a video game|un jeu vidéo
-subj_n_device|a photo of a phone, computer or electronic device|un appareil électronique
-subj_n_face|a close-up photo of a face only|un visage en gros plan, sans la tenue
+subj-f-outfit|a photo of a person wearing an outfit|
+subj-f-mirror|a mirror selfie showing an outfit|
+subj-f-clothes|a photo of a piece of clothing|
+subj-f-flatlay|a flat lay of clothes and accessories|
+subj-f-shoes|a photo of shoes or sneakers|
+subj-f-bag|a photo of a handbag|
+subj-f-jewelry|a photo of jewelry and accessories|
+subj-n-food|a photo of food or a meal|de la nourriture
+subj-n-drink|a photo of a drink|une boisson
+subj-n-landscape|a photo of a landscape or nature with no people|un paysage
+subj-n-city|a photo of a street or buildings with no people|une rue ou des bâtiments
+subj-n-room|a photo of an empty room or furniture|une pièce ou des meubles
+subj-n-car|a photo of a car or vehicle|un véhicule
+subj-n-animal|a photo of an animal or a pet|un animal
+subj-n-text|a screenshot of text or a document|une capture d'écran ou du texte
+subj-n-cartoon|a cartoon, drawing or meme|un dessin ou un mème
+subj-n-game|a screenshot of a video game|un jeu vidéo
+subj-n-device|a photo of a phone, computer or electronic device|un appareil électronique
+subj-n-face|a close-up photo of a face only|un visage en gros plan, sans la tenue
 `;
 
 export type SubjectConcept = { key: string; category: "subject"; prompt: string; label: string };
