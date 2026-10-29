@@ -729,7 +729,7 @@ export function PostForm({
                         {isLoading ? (
                           <span className="block h-full w-full animate-pulse bg-card" />
                         ) : p.image_url ? (
-                          <img src={p.image_url} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+                          <img src={p.image_url} alt="" referrerPolicy="no-referrer" className="h-full w-full bg-white object-contain object-center p-1" />
                         ) : null}
                         <span className="absolute left-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[11px] font-bold text-surface">{i + 1}</span>
                       </span>
@@ -781,10 +781,6 @@ export function PostForm({
                         <div>
                           <Label htmlFor={`pb-${key}`}>{t("postForm.brand")}</Label>
                           <Input id={`pb-${key}`} className="mt-1" value={p.brand} onChange={(e) => updateProduct(key, { brand: e.target.value })} />
-                        </div>
-                        <div>
-                          <Label htmlFor={`pi-${key}`}>{t("postForm.imageUrl")}</Label>
-                          <Input id={`pi-${key}`} type="url" className="mt-1" value={p.image_url} onChange={(e) => updateProduct(key, { image_url: e.target.value })} />
                         </div>
                         <div className="flex flex-wrap gap-2 sm:col-span-2">
                           <button type="button" onClick={() => removeProduct(key)} className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1.5 text-[13px] font-semibold text-destructive">

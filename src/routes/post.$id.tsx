@@ -220,7 +220,7 @@ function OutfitPage() {
                 style={{ animationDelay: `${200 + i * 60}ms` }}
               >
                 <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-card">
-                  {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />}
+                  {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full bg-white object-contain object-center p-1.5 transition-transform duration-500 group-hover:scale-105" />}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   {p.brand && <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">{p.brand}</span>}
