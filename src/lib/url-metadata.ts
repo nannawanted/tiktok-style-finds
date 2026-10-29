@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { checkLinkShape, isFashionText, isKnownFashionShop, type LinkProblem } from "@/lib/link-safety";
 
 export type ProductMetadata = {
   name: string;
@@ -364,12 +365,44 @@ async function resolveProductMetadata(
   throw new Error("Impossible de récupérer les informations du produit");
 }
 
+export type CheckedProduct = ProductMetadata & { verdict: "ok" | "unverified" | LinkProblem };
+
+/**
+ * Infos d'une pièce + verdict de sécurité du lien :
+ * - lien mal formé / raccourci / fichier / réseau social → refusé sans visiter la page ;
+ * - site bloqué par l'admin → refusé ;
+ * - page lisible mais qui ne parle pas d'un vêtement ou accessoire → refusé ;
+ * - page illisible → « unverified » (le créateur remplit à la main, les signalements restent le filet de sécurité).
+ */
 export const fetchProductMetadata = createServerFn({ method: "POST" })
   .inputValidator((data: { url: string }) => {
     parseHttpUrl(data.url);
     return data;
   })
-  .handler(async ({ data }) => resolveProductMetadata(data.url));
+  .handler(async ({ data }): Promise<CheckedProduct> => {
+    const empty = { name: "", image_url: "", price: "", brand: "" };
+    const shape = checkLinkShape(data.url);
+    if (shape) return { ...empty, verdict: shape };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: blocked } = await supabaseAdmin.rpc("is_domain_blocked" as never, { p_url: data.url } as never);
+    if (blocked) return { ...empty, verdict: "blocked" };
+    let meta: ProductMetadata | null = null;
+    try {
+      meta = await resolveProductMetadata(data.url);
+    } catch {
+      /* page illisible */
+    }
+    const known = isKnownFashionShop(data.url);
+    if (!meta || (!meta.name && !meta.image_url)) return { ...(meta ?? empty), verdict: known ? "ok" : "unverified" };
+    let path = "";
+    try {
+      path = decodeURIComponent(new URL(data.url).pathname);
+    } catch {
+      /* ignore */
+    }
+    const fashion = known || isFashionText(meta.name, meta.brand, path);
+    return { ...meta, verdict: fashion ? "ok" : "not_fashion" };
+  });
 
 // Hébergeurs d'images autorisés pour la copie des miniatures (évite qu'on
 // fasse télécharger n'importe quelle adresse au serveur).

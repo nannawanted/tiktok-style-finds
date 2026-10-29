@@ -129,7 +129,6 @@ function Home() {
           <div className="fade-up flex flex-col items-start gap-6 rounded-[28px] bg-secondary p-7 text-secondary-foreground md:flex-row md:items-center md:justify-between md:p-10">
             <div className="max-w-xl">
               <h2 className="font-display text-3xl font-bold leading-tight md:text-4xl">{t("home2.ctaTitle")}</h2>
-              <p className="mt-3 text-[16px] leading-relaxed opacity-90">{t("home2.ctaText")}</p>
             </div>
             <Link to="/signup" className="shrink-0 rounded-full bg-surface px-7 py-4 text-[16px] font-bold text-foreground shadow-lg transition-transform hover:-translate-y-1">
               {t("home2.ctaButton")}

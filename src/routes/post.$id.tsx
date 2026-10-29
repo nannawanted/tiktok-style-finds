@@ -117,7 +117,7 @@ function OutfitPage() {
 
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-4 md:px-6 md:pt-8">
+    <main className="mx-auto max-w-6xl overflow-x-clip px-4 pt-4 md:px-6 md:pt-8">
       <div className="mb-4 flex items-center justify-between">
         <button
           type="button"
@@ -128,7 +128,7 @@ function OutfitPage() {
         </button>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
         <div className="fade-up md:sticky md:top-24 md:self-start">
           <DoubleTapLike postId={id} className="overflow-hidden rounded-[28px] bg-secondary shadow-xl">
             {post.cover_image ? (
@@ -156,9 +156,6 @@ function OutfitPage() {
                 {t("card.photo")}
               </span>
             )}
-            <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-ink/70 px-3 py-1 text-[11px] font-semibold text-surface">
-              {t("engage.doubleTapHint")}
-            </span>
           </DoubleTapLike>
         </div>
 
@@ -256,9 +253,7 @@ function OutfitPage() {
         </div>
       </div>
 
-      <div className="mt-10">
-        <MadeWithBanner />
-      </div>
+      <MadeWithBanner className="mt-10" />
 
       <section className="mt-14">
         <h2 className="font-display mb-5 text-3xl font-bold">{t("engage.moreLikeThis")}</h2>

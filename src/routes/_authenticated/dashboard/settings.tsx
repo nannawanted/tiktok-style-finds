@@ -290,7 +290,6 @@ function Settings() {
         {/* RÉSEAUX */}
         <section className={section}>
           <h2 className={h2}>{t("settings.socialSection")}</h2>
-          <p className={hint}>{t("settings.socialHint")}</p>
           <div className="mt-4 space-y-3">
             <label className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background px-3 focus-within:border-foreground/50">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink text-surface"><SiTiktok className="h-4 w-4" aria-hidden="true" /></span>
@@ -308,15 +307,17 @@ function Settings() {
         {/* STYLES */}
         <section className={section}>
           <h2 className={h2}>{t("creatorSettings.stylesTitle")}</h2>
-          <p className={`${hint} mb-3`}>{t("creatorSettings.stylesHint")}</p>
-          <StylePicker value={form.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setForm({ ...form, styles })} />
+          <div className="mt-3">
+            <StylePicker value={form.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setForm({ ...form, styles })} />
+          </div>
         </section>
 
         {/* STYLES PRÉFÉRÉS (fil « Pour toi ») */}
         <section className={section}>
           <h2 className={h2}>{t("engage.interestsEdit")}</h2>
-          <p className={`${hint} mb-3`}>{t("engage.interestsText")}</p>
-          <StylePicker value={form.interests} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(interests) => setForm({ ...form, interests })} />
+          <div className="mt-3">
+            <StylePicker value={form.interests} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(interests) => setForm({ ...form, interests })} />
+          </div>
         </section>
 
         {/* COMPTE */}

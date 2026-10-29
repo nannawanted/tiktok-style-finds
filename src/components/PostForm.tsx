@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Check, Crop, Heart, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, Sparkles, X,
+  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, Sparkles, X,
 } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 import { StylePicker } from "@/components/vitrine/StyleChips";
@@ -11,8 +10,8 @@ import { MAX_STYLES, type StyleKey } from "@/lib/styles";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchProductMetadata, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
+import { checkLinkShape, type LinkProblem } from "@/lib/link-safety";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
 import { suggestVisualTags } from "@/lib/visual-embedding";
@@ -107,7 +106,6 @@ export function PostForm({
   draftKey?: string;
 }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [data, setData] = useState<PostFormData>(() => withKeys(initial ?? EMPTY));
   const [step, setStep] = useState(() => (mode === "new" && !initial?.cover_image ? 0 : 1));
   const [reached, setReached] = useState(() => (mode === "edit" ? 3 : 1));
@@ -117,6 +115,8 @@ export function PostForm({
   const [pendingCover, setPendingCover] = useState<File | null>(null);
   const [productLoading, setProductLoading] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<string | null>(null);
+  // Lien refusé (dangereux, raccourci, pas une boutique, pas un vêtement…)
+  const [linkIssue, setLinkIssue] = useState<Record<string, LinkProblem | undefined>>({});
   const [pieceUrl, setPieceUrl] = useState("");
   const [tagInput, setTagInput] = useState("");
   // Ce que l'IA voit sur la photo (calculé dès que la photo est choisie)
@@ -125,15 +125,6 @@ export function PostForm({
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const productDebounce = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const { data: myUsername } = useQuery({
-    queryKey: ["my-username", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data: row } = await supabase.from("creators").select("username").eq("id", user!.id).maybeSingle();
-      return row?.username ?? "";
-    },
-  });
 
   useEffect(() => {
     supabase
@@ -291,6 +282,17 @@ export function PostForm({
       let gotPrice = false;
       try {
         const meta = await fetchProductMetadata({ data: { url } });
+        if (meta.verdict !== "ok" && meta.verdict !== "unverified") {
+          setLinkIssue((s) => ({ ...s, [key]: meta.verdict as LinkProblem }));
+          if (announce) {
+            // Lien refusé : la pièce n'est pas ajoutée
+            setData((d) => ({ ...d, products: d.products.filter((p) => p._k !== key) }));
+            toast.error(t(`link.${meta.verdict}` as TKey));
+            announce = false;
+          }
+          return;
+        }
+        setLinkIssue((s) => ({ ...s, [key]: undefined }));
         gotName = !!meta.name;
         gotPrice = !!meta.price;
         updateProduct(key, {
@@ -320,6 +322,11 @@ export function PostForm({
       toast(t("studio.linkInvalid"));
       return;
     }
+    const problem = checkLinkShape(url);
+    if (problem) {
+      toast.error(t(`link.${problem}` as TKey));
+      return;
+    }
     const key = newKey();
     const brand = matchBrandForUrl(url, partnerBrands);
     setData((d) => ({
@@ -346,7 +353,8 @@ export function PostForm({
   function onPieceLinkEdited(key: string, url: string) {
     const brand = matchBrandForUrl(url, partnerBrands);
     updateProduct(key, { affiliate_link: url, brand_id: brand?.id ?? null, ...(brand ? { brand: brand.name } : {}) });
-    fetchPieceMeta(key, url, brand, false);
+    setLinkIssue((s) => ({ ...s, [key]: isHttpUrl(url) ? (checkLinkShape(url) ?? undefined) : undefined }));
+    if (!checkLinkShape(url)) fetchPieceMeta(key, url, brand, false);
   }
 
   function removeProduct(key: string) {
@@ -377,11 +385,10 @@ export function PostForm({
   }, [data.products, data.title, data.tags]);
 
   // ——— Validation & envoi ———
-  const readyPieces = data.products.filter((p) => !productLoading[p._k ?? ""]);
   const anyLoading = data.products.some((p) => productLoading[p._k ?? ""]);
 
   function firstInvalidPiece() {
-    return data.products.find((p) => !isHttpUrl(p.affiliate_link) || !p.name.trim());
+    return data.products.find((p) => !isHttpUrl(p.affiliate_link) || !!linkIssue[p._k ?? ""] || !!checkLinkShape(p.affiliate_link) || !p.name.trim());
   }
 
   function submit() {
@@ -394,7 +401,8 @@ export function PostForm({
     if (bad) {
       go(2);
       setEditing(bad._k ?? null);
-      toast(!isHttpUrl(bad.affiliate_link) ? t("studio.linkInvalid") : t("studio.nameRequired"));
+      const issue = linkIssue[bad._k ?? ""] ?? (isHttpUrl(bad.affiliate_link) ? checkLinkShape(bad.affiliate_link) : null);
+      toast(issue ? t(`link.${issue}` as TKey) : !isHttpUrl(bad.affiliate_link) ? t("studio.linkInvalid") : t("studio.nameRequired"));
       return;
     }
     const tags = cleanTags([...data.tags, ...parseTags(tagInput)]);
@@ -405,9 +413,9 @@ export function PostForm({
   const single = mode === "edit";
   const cta = useMemo(() => {
     if (single) return { label: submitLabel, ok: !loading && !anyLoading, why: t("studio.loadingPieces"), sub: "" };
-    if (step === 1) return { label: t("studio.toPieces"), ok: data.title.trim().length > 0, why: t("studio.needTitle"), sub: `${t("studio.step")} 1/3` };
-    if (step === 2) return { label: t("studio.next"), ok: !anyLoading, why: t("studio.loadingPieces"), sub: data.products.length ? `${t("studio.step")} 2/3` : t("studio.noPiecesSoft") };
-    if (step === 3) return { label: submitLabel, ok: !loading && !anyLoading, why: "", sub: mode === "new" ? t("studio.editableLater") : "" };
+    if (step === 1) return { label: t("studio.toPieces"), ok: data.title.trim().length > 0, why: t("studio.needTitle"), sub: "" };
+    if (step === 2) return { label: t("studio.next"), ok: !anyLoading, why: t("studio.loadingPieces"), sub: "" };
+    if (step === 3) return { label: submitLabel, ok: !loading && !anyLoading, why: "", sub: "" };
     return null;
   }, [step, data, anyLoading, loading, submitLabel, mode, single, t]);
 
@@ -496,7 +504,6 @@ export function PostForm({
       {step === 0 && (
         <section className="fade-up flex flex-col gap-4">
           <h2 className="font-display text-4xl font-bold leading-[1.02] [text-wrap:balance]">{t("studio.startTitle")}</h2>
-          <p className="text-base leading-relaxed text-foreground/70">{t("studio.startLead")}</p>
 
           <div className="rounded-3xl bg-surface p-4 shadow-[var(--shadow-card)]">
             <button type="button" onClick={() => setShowVideoField((v) => !v)} className="flex w-full items-center gap-3.5 text-left">
@@ -506,7 +513,6 @@ export function PostForm({
               </span>
               <span className="min-w-0">
                 <span className="block text-[17px] font-bold">{t("studio.fromVideo")}</span>
-                <span className="block text-[13.5px] leading-snug text-foreground/65">{t("studio.fromVideoHint")}</span>
               </span>
             </button>
             {showVideoField && (
@@ -569,7 +575,6 @@ export function PostForm({
             </span>
             <span className="min-w-0">
               <span className="block text-[17px] font-bold">{t("studio.fromGallery")}</span>
-              <span className="block text-[13.5px] leading-snug text-foreground/65">{t("studio.fromGalleryHint")}</span>
             </span>
           </button>
 
@@ -596,10 +601,7 @@ export function PostForm({
               autoComplete="off"
               className="font-display w-full bg-transparent py-1 text-2xl font-bold outline-none placeholder:text-foreground/30"
             />
-            <div className="flex justify-between gap-3 text-xs text-foreground/60">
-              <span>{t("studio.titleHint")}</span>
-              <span className="tabular-nums">{data.title.length}/120</span>
-            </div>
+            {data.title.length > 100 && <p className="text-right text-xs tabular-nums text-foreground/60">{data.title.length}/120</p>}
           </div>
           {!data.title && (
             <div className="flex flex-wrap gap-2">
@@ -660,11 +662,7 @@ export function PostForm({
               </button>
             )}
           </form>
-          <p className="-mt-1 px-1 text-[13px] leading-snug text-foreground/60">{t("studio.piecesHint")}</p>
-
-          {data.products.length === 0 ? (
-            <div className="rounded-3xl border-[1.5px] border-dashed border-border p-5 text-center text-sm leading-relaxed text-foreground/65">{t("studio.noPieces")}</div>
-          ) : (
+          {data.products.length > 0 && (
             <ul className="flex flex-col gap-2.5">
               {data.products.map((p, i) => {
                 const key = p._k ?? String(i);
@@ -709,12 +707,14 @@ export function PostForm({
                         </button>
                       </span>
                     </div>
+                    {linkIssue[key] && (
+                      <p className="mt-2 rounded-xl bg-destructive/10 px-3 py-2 text-[13px] font-semibold text-destructive">{t(`link.${linkIssue[key]}` as TKey)}</p>
+                    )}
                     {isEditing && (
                       <div className="mt-3 grid gap-3 border-t border-border/60 px-1 pb-1 pt-3 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                           <Label htmlFor={`pl-${key}`}>{t("postForm.buyLink")}</Label>
                           <Input id={`pl-${key}`} type="url" inputMode="url" className="mt-1" value={p.affiliate_link} onChange={(e) => onPieceLinkEdited(key, e.target.value)} placeholder="https://…" />
-                          <p className="mt-1 text-xs text-foreground/60">{t("postForm.buyLinkHint")}</p>
                         </div>
                         <div>
                           <Label htmlFor={`pn-${key}`}>{t("postForm.name")}</Label>
@@ -753,10 +753,7 @@ export function PostForm({
       {/* 3 · Style + aperçu */}
       {(single || step === 3) && (
         <section className={`fade-up flex flex-col gap-5 ${single ? "mt-12 border-t border-border/70 pt-8" : ""}`}>
-          <div>
-            <h2 className="font-display text-2xl font-bold">{t("studio.styleTitle")}</h2>
-            <p className="mt-1 text-[13px] text-foreground/60">{t("studio.styleHint")}</p>
-          </div>
+          <h2 className="font-display text-2xl font-bold">{t("studio.styleTitle")}</h2>
           <StylePicker value={data.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setData((d) => ({ ...d, styles }))} />
 
           {data.cover_image && (
@@ -764,7 +761,6 @@ export function PostForm({
               <h2 className="font-display flex items-center gap-2 text-2xl font-bold">
                 <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" /> {t("studio.aiTitle")}
               </h2>
-              <p className="mt-1 text-[13px] text-foreground/60">{t("studio.aiHint")}</p>
               {ai.status === "loading" ? (
                 <p className="mt-3 flex items-center gap-2 rounded-2xl bg-surface px-4 py-3 text-sm font-semibold">
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> {t("studio.aiLoading")}
@@ -798,7 +794,6 @@ export function PostForm({
 
           <div>
             <h2 className="font-display text-2xl font-bold">{t("studio.tagsTitle")}</h2>
-            <p className="mt-1 text-[13px] text-foreground/60">{t("studio.tagsHint")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-3xl border-[1.5px] border-border bg-surface p-2">
               {data.tags.map((tag) => (
                 <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-ink py-1.5 pl-3 pr-1.5 text-[13px] font-semibold text-surface">
@@ -849,36 +844,6 @@ export function PostForm({
               </div>
             )}
           </div>
-          <div>
-            <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-foreground/60">{t("studio.preview")}</p>
-            <div className="grid max-w-md grid-cols-2 gap-3">
-              <article>
-                <div className="relative overflow-hidden rounded-2xl bg-card">
-                  {data.cover_image ? (
-                    <img src={data.cover_image} alt="" referrerPolicy="no-referrer" className="block w-full object-cover" />
-                  ) : (
-                    <div className="aspect-[3/4]" />
-                  )}
-                  {readyPieces.length > 0 && (
-                    <span className="absolute left-2.5 top-2.5 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-bold">
-                      {readyPieces.length} {readyPieces.length > 1 ? t("card.pieces") : t("card.piece")}
-                    </span>
-                  )}
-                  <span className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-surface/95 text-primary">
-                    <Heart className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                </div>
-                <h3 className="mt-2 line-clamp-2 text-[15px] font-semibold leading-snug">{data.title || t("studio.yourLook")}</h3>
-                {myUsername && <p className="mt-1 text-xs text-foreground/60">@{myUsername}</p>}
-              </article>
-              <div aria-hidden="true" className="opacity-35">
-                <div className="aspect-[3/4] rounded-2xl bg-card" />
-                <div className="mt-2 h-3.5 w-4/5 rounded bg-card" />
-                <div className="mt-2 h-3 w-1/2 rounded bg-card" />
-              </div>
-            </div>
-          </div>
-          <p className="text-[13px] leading-relaxed text-foreground/60">{t("studio.previewNote")}</p>
         </section>
       )}
 

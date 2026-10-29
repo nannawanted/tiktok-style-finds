@@ -158,7 +158,6 @@ function BrandStats() {
           })}
         </ol>
       )}
-      <p className="mt-6 text-xs leading-relaxed text-foreground/55">{t("brandStats.note")}</p>
     </main>
   );
 }

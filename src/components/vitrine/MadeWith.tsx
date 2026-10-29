@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
 
 /** Badge « Fait avec WantedFashion » : chaque page partagée fait connaître le site. */
 export function MadeWithBadge() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  if (user) return null; // déjà inscrit : inutile de lui proposer de créer sa page
   return (
     <Link
       to="/signup"
@@ -15,10 +18,12 @@ export function MadeWithBadge() {
   );
 }
 
-export function MadeWithBanner() {
+export function MadeWithBanner({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  if (user) return null;
   return (
-    <div className="flex items-center gap-3 rounded-3xl bg-secondary p-4 text-secondary-foreground sm:p-5">
+    <div className={`${className} flex items-center gap-3 rounded-3xl bg-secondary p-4 text-secondary-foreground sm:p-5`}>
       <p className="flex-1 text-sm leading-snug sm:text-base">{t("madeWith.short")}</p>
       <Link
         to="/signup"

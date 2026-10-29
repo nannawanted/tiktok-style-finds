@@ -50,7 +50,6 @@ function CreatorsPage() {
     <main className="mx-auto max-w-7xl px-4 pt-6 md:px-6 md:pt-10">
       <div className="fade-up max-w-2xl">
         <h1 className="font-display text-4xl font-bold md:text-5xl">{t("creatorsPage.title")}</h1>
-        <p className="mt-3 text-[17px] text-foreground/75">{t("creatorsPage.subtitle")}</p>
       </div>
 
       <label className="mt-6 flex h-12 max-w-xl items-center gap-2.5 rounded-full border border-border bg-surface px-4 focus-within:border-foreground/50">

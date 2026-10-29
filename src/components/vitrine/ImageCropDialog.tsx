@@ -85,7 +85,7 @@ export function ImageCropDialog({
     <Dialog open={!!file} onOpenChange={(o) => !o && onCancel()}>
       <DialogContent className="w-[calc(100vw-24px)] max-w-lg grid-cols-1 rounded-3xl border-border bg-surface p-5 [&>*]:min-w-0">
         <DialogTitle className="font-display text-2xl">{t("crop.title")}</DialogTitle>
-        <DialogDescription className="text-foreground/70">{t("crop.hint")}</DialogDescription>
+        <DialogDescription className="sr-only">{t("crop.hint")}</DialogDescription>
         {/* Le cadre a la forme finale : on voit seulement l'image, sans bandes noires */}
         <div
           className="relative mx-auto mt-2 w-full overflow-hidden rounded-2xl bg-card"

@@ -18,6 +18,8 @@ export type OutfitCard = {
   styles: StyleKey[];
   pieceCount: number;
   likes: number;
+  /** Épinglé en haut du profil du créateur (date) */
+  pinned_at?: string | null;
 };
 
 export type CreatorCard = {
@@ -31,7 +33,7 @@ export type CreatorCard = {
   instagram_url: string | null;
 };
 
-const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, tiktok_url, styles, views, created_at, products(id)";
+const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, tiktok_url, styles, views, created_at, pinned_at, products(id)";
 
 type RawOutfit = {
   id: string;
@@ -42,6 +44,7 @@ type RawOutfit = {
   tiktok_url: string | null;
   styles: string[] | null;
   products: { id: string }[] | null;
+  pinned_at?: string | null;
 };
 
 /** Nettoie une recherche tapée par un visiteur (caractères spéciaux de l'API retirés). */
@@ -104,6 +107,7 @@ async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
     styles: cleanStyles(r.styles),
     pieceCount: r.products?.length ?? 0,
     likes: likes.get(r.id) ?? 0,
+    pinned_at: r.pinned_at ?? null,
   }));
 }
 

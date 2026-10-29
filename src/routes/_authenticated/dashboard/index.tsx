@@ -8,8 +8,8 @@ import { recordCreatorIp } from "@/lib/record-creator-ip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { VisualIndexer } from "@/components/vitrine/VisualIndexer";
-import { REPORT_ALERT_THRESHOLD, useModerationQueue, useMyAccountStatus } from "@/lib/social";
-import { ArrowUpRight, BarChart3, ShieldAlert, ExternalLink, Eye, Heart, Link2, MoreHorizontal, MousePointerClick, Pencil, Plus, Settings, Shirt, Trash2 } from "lucide-react";
+import { REPORT_ALERT_THRESHOLD, useModerationQueue, useMyAccountStatus, usePinPost } from "@/lib/social";
+import { ArrowUpRight, BarChart3, ShieldAlert, ExternalLink, Eye, Heart, Link2, MoreHorizontal, MousePointerClick, Pencil, Pin, PinOff, Plus, Settings, Shirt, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { absoluteUrl, outfitPath, profilePath } from "@/lib/site";
 import {
@@ -43,7 +43,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("id, title, cover_image, created_at, views, products(id)")
+        .select("id, title, cover_image, created_at, views, pinned_at, products(id)")
         .eq("creator_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -97,6 +97,20 @@ function Dashboard() {
       return !!(data as { is_admin?: boolean } | null)?.is_admin;
     },
   });
+
+  const pin = usePinPost();
+  function togglePin(id: string, pinned: boolean) {
+    pin.mutate(
+      { postId: id, pinned },
+      {
+        onSuccess: (r) => {
+          if (r === "max_pins") toast(t("profile.maxPins"));
+          else toast.success(pinned ? t("profile.pinned") : t("profile.unpin"));
+        },
+        onError: () => toast.error(t("newPost.genericError")),
+      },
+    );
+  }
 
   const del = useMutation({
     mutationFn: async (id: string) => {
@@ -217,7 +231,6 @@ function Dashboard() {
         <div className="mt-4 flex flex-col items-center gap-3 rounded-[28px] border-[1.5px] border-dashed border-border px-6 py-12 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface"><Shirt className="h-6 w-6" aria-hidden="true" /></span>
           <p className="font-display text-2xl font-bold">{t("dashboard.emptyTitle")}</p>
-          <p className="max-w-sm text-sm leading-relaxed text-foreground/65">{t("dashboard.emptyText")}</p>
           <Link to="/dashboard/post/new" className="mt-2 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 font-bold text-surface">
             <Plus className="h-4 w-4" aria-hidden="true" /> {t("dashboard.createFirstPost")}
           </Link>
@@ -233,6 +246,11 @@ function Dashboard() {
                   <span className="absolute left-2 top-2 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-bold">
                     {pieces} {pieces > 1 ? t("card.pieces") : t("card.piece")}
                   </span>
+                  {p.pinned_at && (
+                    <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-surface" aria-label={t("profile.pinned")}>
+                      <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                  )}
                   <span className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/60 to-transparent px-2.5 pb-2 pt-8 text-[12px] font-semibold text-white">
                     <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" aria-hidden="true" />{fmt(p.views ?? 0)}</span>
                     <span className="inline-flex items-center gap-1"><MousePointerClick className="h-3.5 w-3.5" aria-hidden="true" />{fmt(clickCounts?.[p.id] ?? 0)}</span>
@@ -256,6 +274,10 @@ function Dashboard() {
                         <Link to="/post/$id" params={{ id: p.id }}>
                           <ExternalLink className="h-4 w-4" aria-hidden="true" /> {t("dashboard.preview")}
                         </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-xl py-2.5" onSelect={() => togglePin(p.id, !p.pinned_at)}>
+                        {p.pinned_at ? <PinOff className="h-4 w-4" aria-hidden="true" /> : <Pin className="h-4 w-4" aria-hidden="true" />}
+                        {p.pinned_at ? t("profile.unpin") : t("profile.pin")}
                       </DropdownMenuItem>
                       <DropdownMenuItem className="rounded-xl py-2.5" onSelect={() => copy(absoluteUrl(outfitPath(p.id)), t("dashboard.urlCopied"))}>
                         <Link2 className="h-4 w-4" aria-hidden="true" /> {t("dashboard.copyUrl")}

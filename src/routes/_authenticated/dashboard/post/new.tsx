@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
+import { linkErrorKey } from "@/lib/link-safety";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
@@ -73,7 +74,7 @@ function NewPost() {
       );
       if (e2) {
         setLoading(false);
-        toast.error(t("newPost.postCreatedProductsFailed") + " " + e2.message);
+        toast.error(linkErrorKey(e2.message) ? t(linkErrorKey(e2.message)!) : t("newPost.postCreatedProductsFailed") + " " + e2.message);
         return;
       }
     }
@@ -142,7 +143,6 @@ function PublishedScreen({ published, onAnother }: { published: Published; onAno
         </span>
       </div>
       <h1 className="font-display text-4xl font-bold">{t("studio.published")}</h1>
-      <p className="text-base leading-relaxed text-foreground/70">{t("studio.publishedLead")}</p>
       <div className="flex w-full items-center gap-2 rounded-full bg-surface py-1.5 pl-4 pr-1.5">
         <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold">{profileUrl.replace(/^https:\/\//, "")}</span>
         <button type="button" onClick={copy} className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-surface">

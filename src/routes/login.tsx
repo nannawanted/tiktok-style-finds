@@ -55,7 +55,6 @@ function LoginPage() {
     <main className="mx-auto max-w-sm px-4 py-10">
       <div className="rounded-xl bg-white p-6 shadow-card">
         <h1 className="text-2xl font-black">{t("auth.loginTitle")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("auth.loginSubtitle")}</p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="email">{t("auth.email")}</Label>

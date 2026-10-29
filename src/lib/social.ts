@@ -401,3 +401,18 @@ export function useMyAccountStatus() {
     },
   });
 }
+
+/** Épingler / désépingler un de ses looks en haut de son profil (3 maximum). */
+export function usePinPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId, pinned }: { postId: string; pinned: boolean }) => {
+      const { data, error } = await supabase.rpc("set_post_pinned" as never, { p_post: postId, p_pinned: pinned } as never);
+      if (error) throw error;
+      return data as unknown as "ok" | "max_pins";
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-posts"] });
+    },
+  });
+}

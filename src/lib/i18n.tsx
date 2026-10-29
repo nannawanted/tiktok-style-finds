@@ -5,6 +5,15 @@ export type Lang = "fr" | "en";
 // Dictionnaire centralisé. Ajoute une clé ici pour chaque nouveau texte,
 // avec sa version fr ET en, puis utilise t("ma.cle") dans tes composants.
 const dict = {
+  link: {
+    not_https: { fr: "Ce lien n'est pas sécurisé (il doit commencer par https://).", en: "This link isn't secure (it must start with https://)." },
+    bad_host: { fr: "Ce lien n'est pas valide.", en: "This link isn't valid." },
+    shortener: { fr: "Les liens raccourcis ne sont pas acceptés : colle le lien de la page du produit.", en: "Short links aren't allowed: paste the product page link." },
+    file: { fr: "Ce lien mène à un fichier, pas à un produit.", en: "This link leads to a file, not a product." },
+    not_shop: { fr: "Ce lien ne mène pas à une boutique.", en: "This link doesn't lead to a shop." },
+    blocked: { fr: "Ce site est bloqué sur WantedFashion.", en: "This site is blocked on WantedFashion." },
+    not_fashion: { fr: "Ce lien ne mène pas à un vêtement ou un accessoire.", en: "This link doesn't lead to clothing or an accessory." },
+  },
   nav: {
     explore: { fr: "Explorer", en: "Explore" },
     creators: { fr: "Créateurs", en: "Creators" },
@@ -432,6 +441,10 @@ const dict = {
     looks: { fr: "Looks", en: "Looks" },
     sortLabel: { fr: "Trier", en: "Sort" },
     sortRecent: { fr: "Récents", en: "Recent" },
+    pin: { fr: "Épingler", en: "Pin" },
+    unpin: { fr: "Désépingler", en: "Unpin" },
+    pinned: { fr: "Épinglé", en: "Pinned" },
+    maxPins: { fr: "3 looks épinglés maximum. Désépingles-en un d'abord.", en: "3 pinned looks max. Unpin one first." },
     sortPopular: { fr: "Populaires", en: "Popular" },
     edit: { fr: "Modifier mon profil", en: "Edit my profile" },
     changePhoto: { fr: "Changer la photo", en: "Change photo" },
@@ -654,6 +667,9 @@ const dict = {
     blocked: { fr: "Compte bloqué", en: "Account blocked" },
     unblocked: { fr: "Compte débloqué", en: "Account unblocked" },
     blockedTitle: { fr: "Comptes bloqués", en: "Blocked accounts" },
+    sitesTitle: { fr: "Sites bloqués", en: "Blocked sites" },
+    blockSite: { fr: "Bloquer", en: "Block" },
+    siteBlocked: { fr: "Site bloqué", en: "Site blocked" },
     blockedHint: { fr: "Leurs looks et leur profil sont cachés, ils ne peuvent plus publier.", en: "Their looks and profile are hidden; they can't post." },
     noBlocked: { fr: "Aucun compte bloqué.", en: "No blocked accounts." },
     unblock: { fr: "Débloquer", en: "Unblock" },

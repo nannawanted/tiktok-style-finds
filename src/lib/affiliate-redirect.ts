@@ -33,6 +33,9 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!product || !isSafeRedirectTarget(product.affiliate_link)) return { found: false };
+    // Site bloqué par l'admin depuis la publication : on n'envoie plus personne dessus
+    const { data: blocked } = await supabaseAdmin.rpc("is_domain_blocked" as never, { p_url: product.affiliate_link } as never);
+    if (blocked) return { found: false };
 
     const { data: post } = await supabaseAdmin
       .from("posts")

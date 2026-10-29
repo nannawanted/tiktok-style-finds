@@ -60,7 +60,7 @@ export function ReportButton({ postId, className = "" }: { postId: string; class
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-md grid-cols-1 rounded-3xl border-border bg-surface p-5 [&>*]:min-w-0">
           <DialogTitle className="font-display text-2xl">{t("report.title")}</DialogTitle>
-          <DialogDescription className="text-foreground/65">{t("report.subtitle")}</DialogDescription>
+          <DialogDescription className="sr-only">{t("report.subtitle")}</DialogDescription>
           <div className="mt-1 flex flex-col gap-2" role="radiogroup">
             {REASONS.map((r) => (
               <button

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { Camera, Instagram, Music2, Plus } from "lucide-react";
+import { Camera, Instagram, Music2, Pin, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -76,7 +76,13 @@ function NotFoundProfile() {
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+// Changer de profil = repartir de zéro (filtres et tri remis par défaut)
 function ProfilePage() {
+  const { creator } = Route.useLoaderData();
+  return <ProfileContent key={creator.id} />;
+}
+
+function ProfileContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
@@ -95,9 +101,15 @@ function ProfilePage() {
     return [...s];
   }, [outfits]);
   const [sort, setSort] = useState<"recent" | "popular">("recent");
-  const filtered = filter ? outfits.filter((o) => o.styles.includes(filter)) : outfits;
-  // Tri pour les visiteurs : les plus récents (ordre de publication) ou les plus likés
-  const shown = sort === "popular" ? filtered.map((o, i) => ({ o, i })).sort((a, b) => b.o.likes - a.o.likes || a.i - b.i).map(({ o }) => o) : filtered;
+  const activeFilter = filter && outfitStyles.includes(filter) ? filter : null;
+  const filtered = activeFilter ? outfits.filter((o) => o.styles.includes(activeFilter)) : outfits;
+  // Récents : looks épinglés d'abord (comme Insta), puis ordre de publication. Populaires : les plus likés.
+  const pinned =
+    sort === "recent" ? filtered.filter((o) => o.pinned_at).sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? "")) : [];
+  const shown =
+    sort === "popular"
+      ? filtered.map((o, i) => ({ o, i })).sort((a, b) => b.o.likes - a.o.likes || a.i - b.i).map(({ o }) => o)
+      : filtered.filter((o) => !pinned.includes(o));
 
   async function upload(kind: "avatars" | "banners", file: File) {
     if (!isOwner) return;
@@ -247,19 +259,33 @@ function ProfilePage() {
         )}
         {outfitStyles.length > 0 && (
           <div className="no-scrollbar sticky top-[var(--sticky-top,118px)] z-30 -mx-4 mb-5 flex gap-2 overflow-x-auto bg-background/90 px-4 py-2.5 backdrop-blur-md transition-[top] duration-300 md:mx-0 md:px-0" role="group">
-            <button type="button" aria-pressed={!filter} className={chip(!filter)} onClick={() => setFilter(null)}>
+            <button type="button" aria-pressed={!activeFilter} className={chip(!activeFilter)} onClick={() => setFilter(null)}>
               {t("profile.all")} · {outfits.length}
             </button>
             {outfitStyles.map((s) => (
-              <button key={s} type="button" aria-pressed={filter === s} className={chip(filter === s)} onClick={() => setFilter(filter === s ? null : s)}>
+              <button key={s} type="button" aria-pressed={activeFilter === s} className={chip(activeFilter === s)} onClick={() => setFilter(activeFilter === s ? null : s)}>
                 {t(styleLabelKey(s))}
               </button>
             ))}
           </div>
         )}
+        {pinned.length > 0 && (
+          <ul className="mb-5 grid grid-cols-3 gap-2">
+            {pinned.map((o) => (
+              <li key={o.id}>
+                <Link to="/post/$id" params={{ id: o.id }} className="relative block aspect-[3/4] overflow-hidden rounded-2xl bg-card">
+                  {o.cover_image && <img src={o.cover_image} alt={o.title} referrerPolicy="no-referrer" className="h-full w-full object-cover" />}
+                  <span className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink/85 text-surface" aria-label={t("profile.pinned")}>
+                    <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
         {shown.length ? (
           <OutfitGrid outfits={shown} showCreator={false} />
-        ) : isOwner ? (
+        ) : pinned.length ? null : isOwner ? (
           <EmptyBox text={t("profile.emptyOwner")} action={{ to: "/dashboard/post/new", label: t("profile.publish") }} />
         ) : (
           <EmptyBox text={t("profile.empty")} />
@@ -268,7 +294,7 @@ function ProfilePage() {
 
       <FollowSuggestions creatorId={creator.id} styles={creator.styles} />
 
-      <div className="mt-12 flex justify-center px-4">
+      <div className="mt-12 flex justify-center px-4 empty:hidden">
         <MadeWithBadge />
       </div>
 

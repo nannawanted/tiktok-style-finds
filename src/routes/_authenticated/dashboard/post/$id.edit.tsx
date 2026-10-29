@@ -2,6 +2,7 @@ import { indexPostImageLater } from "@/lib/visual-embedding";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { linkErrorKey } from "@/lib/link-safety";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { PostForm, type PostFormData } from "@/components/PostForm";
@@ -83,7 +84,7 @@ function EditPost() {
       );
       if (e2) {
         setLoading(false);
-        toast.error(e2.message);
+        toast.error(linkErrorKey(e2.message) ? t(linkErrorKey(e2.message)!) : e2.message);
         return;
       }
     }

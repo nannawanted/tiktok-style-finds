@@ -76,6 +76,9 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Filet de sécurité : rien ne peut élargir la page au-delà de l'écran
+       (« clip » ne casse pas les barres collantes, contrairement à « hidden »). */
+    overflow-x: clip;
   }
   h1, h2, h3, h4 {
     font-family: var(--font-sans);

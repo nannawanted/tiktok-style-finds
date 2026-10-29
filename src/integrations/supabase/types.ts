@@ -183,6 +183,7 @@ export type Database = {
           tags: string[]
           visual_tags: string[]
           visual_tags_rejected: string[]
+          pinned_at: string | null
           tiktok_url: string | null
           title: string
           views: number
@@ -197,6 +198,7 @@ export type Database = {
           tags?: string[]
           visual_tags?: string[]
           visual_tags_rejected?: string[]
+          pinned_at?: string | null
           tiktok_url?: string | null
           title: string
           views?: number
@@ -211,6 +213,7 @@ export type Database = {
           tags?: string[]
           visual_tags?: string[]
           visual_tags_rejected?: string[]
+          pinned_at?: string | null
           tiktok_url?: string | null
           title?: string
           views?: number

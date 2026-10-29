@@ -96,7 +96,6 @@ function Moderation() {
         </Link>
         <h1 className="font-display text-3xl font-bold">{t("moderation.title")}</h1>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-foreground/65">{t("moderation.intro")}</p>
 
       {isLoading ? (
         <p className="mt-6 text-sm text-foreground/60">…</p>
@@ -157,7 +156,6 @@ function Moderation() {
       {/* Comptes bloqués */}
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t("moderation.blockedTitle")}</h2>
-        <p className="mt-1 text-sm text-foreground/60">{t("moderation.blockedHint")}</p>
         {!blocked || blocked.length === 0 ? (
           <p className="mt-3 text-sm text-foreground/55">{t("moderation.noBlocked")}</p>
         ) : (
@@ -176,6 +174,8 @@ function Moderation() {
           </ul>
         )}
       </section>
+
+      <BlockedSites />
 
       <AlertDialog open={!!toBlock} onOpenChange={(o) => !o && setToBlock(null)}>
         <AlertDialogContent>
@@ -219,5 +219,81 @@ function Moderation() {
         </AlertDialogContent>
       </AlertDialog>
     </main>
+  );
+}
+
+/** Sites interdits : plus aucun lien vers eux ne peut être ajouté, et les liens existants ne redirigent plus. */
+function BlockedSites() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [domain, setDomain] = useState("");
+  const { data: sites } = useQuery({
+    queryKey: ["blocked-domains"],
+    queryFn: async () => {
+      const { data } = await supabase.from("blocked_domains" as never).select("domain, created_at").order("created_at", { ascending: false });
+      return (data ?? []) as unknown as { domain: string; created_at: string }[];
+    },
+  });
+
+  async function add() {
+    const d = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[/?#:]/)[0];
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)) {
+      toast.error(t("link.bad_host"));
+      return;
+    }
+    const { error } = await supabase.from("blocked_domains" as never).insert({ domain: d } as never);
+    if (error && !error.message.includes("duplicate")) {
+      toast.error(error.message);
+      return;
+    }
+    setDomain("");
+    toast.success(t("moderation.siteBlocked"));
+    qc.invalidateQueries({ queryKey: ["blocked-domains"] });
+  }
+
+  async function remove(d: string) {
+    const { error } = await supabase.from("blocked_domains" as never).delete().eq("domain" as never, d as never);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["blocked-domains"] });
+  }
+
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-2xl font-bold">{t("moderation.sitesTitle")}</h2>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void add();
+        }}
+        className="mt-3 flex items-center gap-2 rounded-full border-[1.5px] border-border bg-surface py-1.5 pl-4 pr-1.5"
+      >
+        <input
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          placeholder="exemple.com"
+          aria-label={t("moderation.sitesTitle")}
+          autoCapitalize="none"
+          className="min-w-0 flex-1 bg-transparent py-2 text-[15px] outline-none"
+        />
+        <button type="submit" disabled={!domain.trim()} className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-40">
+          {t("moderation.blockSite")}
+        </button>
+      </form>
+      {sites && sites.length > 0 && (
+        <ul className="mt-3 divide-y divide-border/60 rounded-3xl bg-surface px-4">
+          {sites.map((s) => (
+            <li key={s.domain} className="flex items-center gap-3 py-3">
+              <span className="min-w-0 flex-1 truncate font-semibold">{s.domain}</span>
+              <button type="button" onClick={() => remove(s.domain)} className="rounded-full border-[1.5px] border-border px-4 py-2 text-sm font-semibold">
+                {t("moderation.unblock")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

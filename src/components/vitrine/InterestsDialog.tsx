@@ -50,7 +50,7 @@ export function InterestsDialog() {
     <Dialog open={open} onOpenChange={(o) => !o && skip()}>
       <DialogContent className="w-[calc(100vw-24px)] max-w-md grid-cols-1 rounded-3xl border-border bg-surface p-6 [&>*]:min-w-0">
         <DialogTitle className="font-display text-3xl">{t("engage.interestsTitle")}</DialogTitle>
-        <DialogDescription className="text-foreground/70">{t("engage.interestsText")}</DialogDescription>
+        <DialogDescription className="sr-only">{t("engage.interestsText")}</DialogDescription>
         <StylePicker value={picked} onChange={setPicked} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} />
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={skip} className="h-12 flex-1 rounded-full border border-border font-semibold">
