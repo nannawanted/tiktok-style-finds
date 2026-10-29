@@ -285,7 +285,8 @@ function Settings() {
             </div>
             <div>
               <Label htmlFor="b">{t("settings.bio")}</Label>
-              <Textarea id="b" className="mt-1.5 rounded-2xl border-[1.5px] bg-background text-[15px]" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} placeholder={t("settings.bioPlaceholder")} />
+              <Textarea id="b" maxLength={100} className="mt-1.5 rounded-2xl border-[1.5px] bg-background text-[15px]" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 100) })} rows={3} placeholder={t("settings.bioPlaceholder")} />
+              <p className={`mt-1 text-right text-xs tabular-nums ${form.bio.length >= 100 ? "font-semibold text-primary" : "text-foreground/50"}`}>{form.bio.length}/100</p>
             </div>
           </div>
         </section>

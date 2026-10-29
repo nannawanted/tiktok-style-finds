@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isExplicitImage, preloadNsfwCheck } from "@/lib/nsfw-check";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
-import { suggestVisualTags } from "@/lib/visual-embedding";
+import { offTopicReason, suggestVisualTags } from "@/lib/visual-embedding";
 import { conceptLabel } from "@/lib/visual-concepts";
 
 // Création / modification d'une tenue en 3 étapes (Photo · Pièces · Style),
@@ -221,6 +221,12 @@ export function PostForm({
         return;
       }
       const { data: urlData } = supabase.storage.from("covers").getPublicUrl(path);
+      // La photo doit avoir un lien avec la mode (une tenue, une pièce, des chaussures…)
+      const offTopic = await offTopicReason(urlData.publicUrl);
+      if (offTopic) {
+        toast.error(t("safety.offTopic").replace("{what}", offTopic), { duration: 7000 });
+        return;
+      }
       setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
       if (step === 0) go(1);
     } finally {
@@ -405,6 +411,12 @@ export function PostForm({
       toast(t("studio.needTitle"));
       return;
     }
+    // Comme sur une boutique : pas de look sans au moins une pièce
+    if (data.products.length === 0) {
+      go(2);
+      toast(t("studio.needPiece"));
+      return;
+    }
     const bad = firstInvalidPiece();
     if (bad) {
       go(2);
@@ -422,7 +434,7 @@ export function PostForm({
   const cta = useMemo(() => {
     if (single) return { label: submitLabel, ok: !loading && !anyLoading, why: t("studio.loadingPieces"), sub: "" };
     if (step === 1) return { label: t("studio.toPieces"), ok: data.title.trim().length > 0, why: t("studio.needTitle"), sub: "" };
-    if (step === 2) return { label: t("studio.next"), ok: !anyLoading, why: t("studio.loadingPieces"), sub: "" };
+    if (step === 2) return { label: t("studio.next"), ok: !anyLoading && data.products.length > 0, why: anyLoading ? t("studio.loadingPieces") : t("studio.needPiece"), sub: "" };
     if (step === 3) return { label: submitLabel, ok: !loading && !anyLoading, why: "", sub: "" };
     return null;
   }, [step, data, anyLoading, loading, submitLabel, mode, single, t]);
@@ -607,7 +619,7 @@ export function PostForm({
               onChange={(e) => setData((d) => ({ ...d, title: e.target.value }))}
               placeholder={t("studio.titlePlaceholder")}
               autoComplete="off"
-              className="font-display w-full bg-transparent py-1 text-2xl font-bold outline-none placeholder:text-foreground/30"
+              className="w-full bg-transparent py-2 text-[22px] font-bold leading-normal outline-none placeholder:text-foreground/30"
             />
             {data.title.length > 100 && <p className="text-right text-xs tabular-nums text-foreground/60">{data.title.length}/120</p>}
           </div>

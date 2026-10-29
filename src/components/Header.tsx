@@ -210,8 +210,11 @@ export function Header() {
       const y = window.scrollY;
       const dy = y - lastY;
       if (Math.abs(dy) < 6) return;
-      const focused = headerRef.current?.contains(document.activeElement);
-      setHidden(dy > 0 && y > 160 && !focused);
+      // Seul un champ de recherche en cours de saisie garde la barre affichée
+      // (après le menu, le téléphone remet le « focus » sur le bouton menu : ça ne doit pas bloquer)
+      const el = document.activeElement;
+      const typing = !!el && headerRef.current?.contains(el) && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+      setHidden(dy > 0 && y > 160 && !typing);
       lastY = y;
     };
     window.addEventListener("scroll", onScroll, { passive: true });

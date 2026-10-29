@@ -6,6 +6,7 @@ export type Lang = "fr" | "en";
 // avec sa version fr ET en, puis utilise t("ma.cle") dans tes composants.
 const dict = {
   safety: {
+    offTopic: { fr: "Cette photo ne montre pas de tenue : on dirait {what}. Choisis une photo où on voit ta tenue ou une pièce.", en: "This photo doesn't show an outfit: it looks like {what}. Pick a photo showing your outfit or a piece." },
     explicit: { fr: "Cette photo ne respecte pas les règles de WantedFashion (nudité ou contenu choquant).", en: "This photo breaks WantedFashion's rules (nudity or shocking content)." },
   },
   link: {
@@ -113,7 +114,7 @@ const dict = {
     bannerUpdated: { fr: "Bannière mise à jour !", en: "Banner updated!" },
   },
   footer: {
-    partnershipCta: { fr: "Envie d'un partenariat ? Contacte-nous :", en: "Want to partner with us? Contact us:" },
+    partnershipCta: { fr: "Contact :", en: "Contact:" },
     suggestBrandCta: { fr: "Une marque à nous suggérer ?", en: "A brand to suggest to us?" },
     privacy: { fr: "Confidentialité", en: "Privacy" },
     terms: { fr: "Conditions d'utilisation", en: "Terms of use" },
@@ -137,7 +138,7 @@ const dict = {
     wantMoreLooks: { fr: "Envie de shopper plus de looks ?", en: "Want to shop more looks?" },
     seeFeed: { fr: "Voir le feed", en: "See the feed" },
     seeProfile: { fr: "Voir le profil", en: "See profile" },
-    partnershipCta: { fr: "Envie d'un partenariat ? Contacte-nous :", en: "Want to partner with us? Contact us:" },
+    partnershipCta: { fr: "Contact :", en: "Contact:" },
     affiliateNotice: { fr: "Liens affiliés : WantedFashion et le créateur peuvent percevoir une commission si tu achètes via ces liens, sans surcoût pour toi.", en: "Affiliate links: WantedFashion and the creator may earn a commission if you buy through these links, at no extra cost to you." },
     report: { fr: "Signaler ce contenu", en: "Report this content" },
     reportSubject: { fr: "Signalement du post", en: "Report of post" },
@@ -594,6 +595,7 @@ const dict = {
     linkInvalid: { fr: "Ce lien ne marche pas, vérifie-le", en: "This link doesn't work, check it" },
     nameRequired: { fr: "Il manque le nom de la pièce", en: "The piece's name is missing" },
     loadingPieces: { fr: "Lecture des pièces en cours…", en: "Reading pieces…" },
+    needPiece: { fr: "Ajoute au moins une pièce pour publier ton look", en: "Add at least one piece to post your look" },
     needTitle: { fr: "Donne un nom à ton look", en: "Give your look a name" },
     styleTitle: { fr: "Quel style ?", en: "Which style?" },
     styleHint: { fr: "Jusqu'à 5. Ça aide les bonnes personnes à tomber sur ton look.", en: "Up to 5. It helps the right people find your look." },

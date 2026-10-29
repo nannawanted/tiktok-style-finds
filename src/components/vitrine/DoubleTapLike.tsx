@@ -12,7 +12,20 @@ import { useCollectionPicker } from "./CollectionPicker";
  * sur la photo = un cœur qui apparaît en grand. Double-taper une tenue déjà
  * likée ne la retire pas (comme sur Instagram).
  */
-export function DoubleTapLike({ postId, children, className = "" }: { postId: string; children: React.ReactNode; className?: string }) {
+const DOUBLE_TAP_MS = 260;
+
+export function DoubleTapLike({
+  postId,
+  children,
+  className = "",
+  onSingleTap,
+}: {
+  postId: string;
+  children: React.ReactNode;
+  className?: string;
+  /** Un seul toucher (ex. ouvrir la vidéo d'origine). Deux touchers rapides = like, sans ouvrir. */
+  onSingleTap?: () => void;
+}) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -20,6 +33,7 @@ export function DoubleTapLike({ postId, children, className = "" }: { postId: st
   const toggle = useToggleSave();
   const picker = useCollectionPicker();
   const last = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
 
   function like(x: number, y: number) {
@@ -43,22 +57,18 @@ export function DoubleTapLike({ postId, children, className = "" }: { postId: st
 
   return (
     <div
-      className={`relative select-none ${className}`}
-      onDoubleClick={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        like(e.clientX - r.left, e.clientY - r.top);
-      }}
-      onTouchEnd={(e) => {
+      className={`relative touch-manipulation select-none ${onSingleTap ? "cursor-pointer" : ""} ${className}`}
+      onClick={(e) => {
         const now = Date.now();
-        if (now - last.current < 300) {
-          e.preventDefault(); // évite le zoom au double-toucher sur iPhone
-          const touch = e.changedTouches[0];
-          const r = e.currentTarget.getBoundingClientRect();
-          like(touch.clientX - r.left, touch.clientY - r.top);
+        const r = e.currentTarget.getBoundingClientRect();
+        if (now - last.current < DOUBLE_TAP_MS) {
+          clearTimeout(timer.current);
           last.current = 0;
-        } else {
-          last.current = now;
+          like(e.clientX - r.left, e.clientY - r.top);
+          return;
         }
+        last.current = now;
+        if (onSingleTap) timer.current = setTimeout(onSingleTap, DOUBLE_TAP_MS);
       }}
     >
       {children}

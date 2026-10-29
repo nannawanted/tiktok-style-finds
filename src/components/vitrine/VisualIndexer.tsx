@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { indexPostImage, indexVisualConcepts, VISUAL_MODEL } from "@/lib/visual-embedding";
-import { VISUAL_CONCEPTS } from "@/lib/visual-concepts";
+import { SUBJECT_CONCEPTS, VISUAL_CONCEPTS } from "@/lib/visual-concepts";
 
 type Missing = { id: string; cover_image: string | null };
 
@@ -46,7 +46,7 @@ export function VisualIndexer() {
     queryFn: async () => {
       const { data } = await supabase.rpc("visual_concept_list" as never, { p_model: VISUAL_MODEL } as never);
       const have = new Map(((data ?? []) as { key: string; prompt: string }[]).map((r) => [r.key, r.prompt]));
-      return VISUAL_CONCEPTS.filter((c) => have.get(c.key) !== c.prompt);
+      return [...VISUAL_CONCEPTS, ...SUBJECT_CONCEPTS].filter((c) => have.get(c.key) !== c.prompt);
     },
   });
 

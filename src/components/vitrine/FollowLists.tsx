@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -113,7 +113,15 @@ export function ProfileStats({ creatorId, outfitCount }: { creatorId: string; ou
   const q = search.trim().toLowerCase().replace(/^@/, "");
   const all = list.data ?? [];
   const commonCount = all.filter((p) => myFollowing?.has(p.id)).length;
-  const rank = (p: CreatorCard) => (myFollowing?.has(p.id) && myFollowers?.has(p.id) ? 0 : myFollowing?.has(p.id) ? 1 : 2);
+  // Ordre calculé une seule fois à l'ouverture : suivre quelqu'un ne le fait pas remonter (comme Instagram)
+  const rankSnap = useRef<{ data: CreatorCard[] | undefined; ranks: Map<string, number> }>({ data: undefined, ranks: new Map() });
+  if (list.data && rankSnap.current.data !== list.data && myFollowing) {
+    rankSnap.current = {
+      data: list.data,
+      ranks: new Map(list.data.map((p) => [p.id, myFollowing.has(p.id) && myFollowers?.has(p.id) ? 0 : myFollowing.has(p.id) ? 1 : 2])),
+    };
+  }
+  const rank = (p: CreatorCard) => rankSnap.current.ranks.get(p.id) ?? 2;
   const visible = all
     .filter((p) => !q || p.username.includes(q))
     .filter((p) => !onlyCommon || !!q || myFollowing?.has(p.id))

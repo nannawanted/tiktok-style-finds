@@ -149,13 +149,22 @@ function Dashboard() {
     <main className="mx-auto max-w-5xl px-4 pb-8 pt-4 md:pt-8">
       {/* EN-TÊTE : profil + raccourcis */}
       <header className="flex items-center gap-3">
-        <span className="shrink-0 rounded-full p-[2px] ring-2 ring-primary">
-          <Avatar src={me?.profile_image ?? null} name={myUsername ?? "?"} className="h-12 w-12" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display truncate text-2xl font-bold leading-none sm:text-3xl">{t("dashboard.myPosts")}</h1>
-          {myUsername && <p className="mt-1 truncate text-sm text-foreground/60">@{myUsername}</p>}
-        </div>
+        {/* Comme Instagram : toucher sa photo ou son nom ouvre sa page publique */}
+        {myUsername ? (
+          <Link to="/@{$username}" params={{ username: myUsername }} className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="shrink-0 rounded-full p-[2px] ring-2 ring-primary">
+              <Avatar src={me?.profile_image ?? null} name={myUsername} className="h-12 w-12" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <h1 className="font-display truncate text-2xl font-bold leading-none sm:text-3xl">{t("dashboard.myPosts")}</h1>
+              <span className="mt-1 block truncate text-sm text-foreground/60">@{myUsername}</span>
+            </span>
+          </Link>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display truncate text-2xl font-bold leading-none sm:text-3xl">{t("dashboard.myPosts")}</h1>
+          </div>
+        )}
         {isAdminUser && (
           <Link to="/dashboard/moderation" aria-label={t("moderation.title")} className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
             <ShieldAlert className="h-5 w-5" aria-hidden="true" />

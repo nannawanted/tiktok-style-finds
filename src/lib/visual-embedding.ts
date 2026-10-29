@@ -178,3 +178,23 @@ export async function indexVisualConcepts(
   }
   return { done, failed };
 }
+
+/**
+ * La photo a-t-elle un lien avec la mode ? Renvoie la raison si elle est nettement
+ * hors sujet (« de la nourriture »…), sinon null. Si l'IA n'est pas disponible,
+ * la photo passe (les signalements prennent le relais).
+ */
+export async function offTopicReason(imageUrl: string): Promise<string | null> {
+  try {
+    const embedding = await computeImageEmbedding(imageUrl);
+    const { data, error } = await supabase.rpc("photo_subject_check" as never, { p_model: VISUAL_MODEL, p_embedding: embedding } as never);
+    if (error) throw error;
+    const row = ((data ?? []) as { top_key: string; fashion_prob: number }[])[0];
+    if (!row || row.fashion_prob >= 0.3 || !row.top_key?.startsWith("subj_n_")) return null;
+    const { SUBJECT_CONCEPTS } = await import("./visual-concepts");
+    return SUBJECT_CONCEPTS.find((c) => c.key === row.top_key)?.label || null;
+  } catch (e) {
+    console.warn("[visual] vérification du sujet impossible", e);
+    return null;
+  }
+}

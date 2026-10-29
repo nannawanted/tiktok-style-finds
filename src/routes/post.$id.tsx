@@ -17,6 +17,12 @@ import { DoubleTapLike } from "@/components/vitrine/DoubleTapLike";
 import { InfiniteOutfitFeed } from "@/components/vitrine/InfiniteOutfitFeed";
 import { AddToCollectionButton } from "@/components/vitrine/AddToCollectionButton";
 
+function openVideo(url: string) {
+  const w = window.open(url, "_blank");
+  if (w) w.opener = null;
+  else window.location.href = url; // nouvel onglet bloqué : on ouvre dans la même page
+}
+
 export const Route = createFileRoute("/post/$id")({
   loader: async ({ params }) => {
     const data = await fetchOutfit(params.id);
@@ -130,22 +136,26 @@ function OutfitPage() {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
         <div className="fade-up md:sticky md:top-24 md:self-start">
-          <DoubleTapLike postId={id} className="overflow-hidden rounded-[28px] bg-secondary shadow-xl">
+          <DoubleTapLike
+            postId={id}
+            className="overflow-hidden rounded-[28px] bg-secondary shadow-xl"
+            // Un toucher n'importe où sur la photo = vidéo d'origine ; deux touchers = like
+            onSingleTap={post.tiktok_url ? () => openVideo(post.tiktok_url!) : undefined}
+          >
             {post.cover_image ? (
               <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer" draggable={false} className="max-h-[78vh] w-full object-cover" />
             ) : (
               <div className="aspect-[9/14] w-full" />
             )}
             {post.tiktok_url ? (
-              // Toute la photo mène à la vidéo d'origine
               <a
                 href={post.tiktok_url}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                aria-label={videoPlatform(post.tiktok_url) === "tiktok" ? t("outfit.watchOnTiktok") : videoPlatform(post.tiktok_url) === "instagram" ? t("outfit.watchOnInstagram") : t("outfit.watchOn")}
-                className="group absolute inset-0 z-10"
+                onClick={(e) => e.stopPropagation()}
+                className="group absolute bottom-4 left-4 z-10"
               >
-                <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface">
+                <span className="inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 transition-transform group-hover:scale-110">
                     <VideoSourceIcon url={post.tiktok_url} className="h-4 w-4 text-foreground" />
                   </span>
