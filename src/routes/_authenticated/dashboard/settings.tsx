@@ -369,7 +369,6 @@ function Settings() {
                   <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     disabled={deleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={handleDeleteAccount}
                   >
                     {deleting ? t("settings.deletingAccount") : t("settings.deleteAccountConfirm")}

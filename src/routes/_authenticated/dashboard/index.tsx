@@ -307,12 +307,11 @@ function Dashboard() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("dashboard.deletePostTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("dashboard.deletePostDesc")}</AlertDialogDescription>
+            <AlertDialogDescription className="sr-only">{t("dashboard.deletePostTitle")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (toDelete) del.mutate(toDelete);
                 setToDelete(null);

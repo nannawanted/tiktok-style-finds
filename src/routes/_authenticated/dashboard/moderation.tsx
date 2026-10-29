@@ -186,7 +186,6 @@ function Moderation() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (toBlock) void setBlocked(toBlock.creator_id, true);
                 setToBlock(null);
@@ -207,7 +206,6 @@ function Moderation() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (toRemove) void act(toRemove.post_id, "remove");
                 setToRemove(null);
