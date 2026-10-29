@@ -3,7 +3,7 @@ import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-rout
 import { Camera, Instagram, Music2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { isExplicitImage } from "@/lib/nsfw-check";
+import { isExplicitImageWithin } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { fetchCreatorProfile } from "@/lib/public-data";
@@ -120,7 +120,7 @@ function ProfileContent() {
       return;
     }
     setUploading(true);
-    if (await isExplicitImage(file)) {
+    if (await isExplicitImageWithin(file)) {
       setUploading(false);
       toast.error(t("safety.explicit"));
       return;

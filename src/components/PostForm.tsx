@@ -67,6 +67,12 @@ function matchBrandForUrl(url: string, brands: PartnerBrand[]): PartnerBrand | n
   return brands.find((b) => extractHostname(b.website_url) === hostname) ?? null;
 }
 
+const CHECK_TIMEOUT_MS = 10_000;
+/** Résultat de la promesse, ou undefined si elle met trop de temps. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | undefined> {
+  return Promise.race([p, new Promise<undefined>((r) => setTimeout(() => r(undefined), ms))]);
+}
+
 const newKey = () => Math.random().toString(36).slice(2, 10);
 const withKeys = (d: PostFormData): PostFormData => ({ ...d, tags: cleanTags(d.tags), visual_tags: d.visual_tags ?? [], visual_tags_rejected: d.visual_tags_rejected ?? [], products: d.products.map((p) => ({ ...p, _k: p._k ?? newKey() })) });
 const hasContent = (d: PostFormData) => !!(d.title.trim() || d.cover_image || d.tiktok_url || d.products.length);
@@ -208,27 +214,44 @@ export function PostForm({
     setCoverLoading(true);
     setCoverNotice(null);
     try {
-      if (await isExplicitImage(file)) {
+      // Vérifications par l'IA (nudité, photo de mode) : 10 s maximum. Si l'IA n'est pas
+      // encore prête (1re fois, réseau lent, vieux téléphone), la photo passe tout de suite
+      // et la vérification se termine en arrière-plan : la photo est retirée si elle ne va pas.
+      const explicitCheck = isExplicitImage(file);
+      const explicit = await withTimeout(explicitCheck, CHECK_TIMEOUT_MS);
+      if (explicit === true) {
         toast.error(t("safety.explicit"));
         return;
       }
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
       const path = `${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true });
+      const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
       if (upErr) {
+        console.warn("[cover] envoi refusé", upErr);
         setCoverNotice(t("postForm.uploadPhotoFailed"));
         toast.error(t("postForm.uploadPhotoFailed"));
         return;
       }
-      const { data: urlData } = supabase.storage.from("covers").getPublicUrl(path);
-      // La photo doit avoir un lien avec la mode (une tenue, une pièce, des chaussures…)
-      const offTopic = await offTopicReason(urlData.publicUrl);
+      const url = supabase.storage.from("covers").getPublicUrl(path).data.publicUrl;
+      const topicCheck = offTopicReason(url);
+      const offTopic = await withTimeout(topicCheck, CHECK_TIMEOUT_MS);
       if (offTopic) {
         toast.error(t("safety.offTopic").replace("{what}", offTopic), { duration: 7000 });
         return;
       }
-      setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
+      setData((d) => ({ ...d, cover_image: url }));
       if (step === 0) go(1);
+      // Vérifications pas encore finies : on retire la photo si elles la refusent
+      const removeCover = (msg: string) => {
+        setData((d) => (d.cover_image === url ? { ...d, cover_image: "" } : d));
+        toast.error(msg, { duration: 7000 });
+      };
+      if (explicit === undefined) void explicitCheck.then((bad) => bad && removeCover(t("safety.explicit")));
+      if (offTopic === undefined) void topicCheck.then((why) => why && removeCover(t("safety.offTopic").replace("{what}", why)));
+    } catch (e) {
+      console.warn("[cover] envoi impossible", e);
+      setCoverNotice(t("postForm.uploadPhotoFailed"));
+      toast.error(t("postForm.uploadPhotoFailed"));
     } finally {
       setCoverLoading(false);
     }

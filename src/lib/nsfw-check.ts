@@ -52,3 +52,8 @@ export async function isExplicitImage(file: Blob): Promise<boolean> {
     return false;
   }
 }
+
+/** Même vérification, mais sans jamais faire attendre plus de `ms` (sinon la photo passe). */
+export function isExplicitImageWithin(file: Blob, ms = 10_000): Promise<boolean> {
+  return Promise.race([isExplicitImage(file), new Promise<boolean>((r) => setTimeout(() => r(false), ms))]);
+}
