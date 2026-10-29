@@ -208,8 +208,11 @@ export function FollowSuggestions({ creatorId, styles }: { creatorId: string; st
   const { data: myFollowersForSuggest } = useMyFollowerIds();
   const exclude = [creatorId, ...(user ? [user.id] : []), ...(followed ?? [])];
   const { data } = useQuery({
-    queryKey: ["suggestions", creatorId, user?.id, exclude.length],
+    // Liste figée jusqu'au rafraîchissement : suivre quelqu'un ne le fait pas disparaître (comme Instagram)
+    queryKey: ["suggestions", creatorId, user?.id],
     enabled: !!user && !!followed,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       // D'abord les abonnements en commun, puis les styles proches
       const mutual = await fetchMutualSuggestions(user!.id, [...(followed ?? [])], 10, [...(myFollowersForSuggest ?? [])]);

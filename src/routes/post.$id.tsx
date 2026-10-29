@@ -137,16 +137,20 @@ function OutfitPage() {
               <div className="aspect-[9/14] w-full" />
             )}
             {post.tiktok_url ? (
+              // Toute la photo mène à la vidéo d'origine
               <a
                 href={post.tiktok_url}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                className="group absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface"
+                aria-label={videoPlatform(post.tiktok_url) === "tiktok" ? t("outfit.watchOnTiktok") : videoPlatform(post.tiktok_url) === "instagram" ? t("outfit.watchOnInstagram") : t("outfit.watchOn")}
+                className="group absolute inset-0 z-10"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 transition-transform group-hover:scale-110">
-                  <VideoSourceIcon url={post.tiktok_url} className="h-4 w-4 text-foreground" />
+                <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 transition-transform group-hover:scale-110">
+                    <VideoSourceIcon url={post.tiktok_url} className="h-4 w-4 text-foreground" />
+                  </span>
+                  {videoPlatform(post.tiktok_url) === "tiktok" ? t("outfit.watchOnTiktok") : videoPlatform(post.tiktok_url) === "instagram" ? t("outfit.watchOnInstagram") : t("outfit.watchOn")}
                 </span>
-                {videoPlatform(post.tiktok_url) === "tiktok" ? t("outfit.watchOnTiktok") : videoPlatform(post.tiktok_url) === "instagram" ? t("outfit.watchOnInstagram") : t("outfit.watchOn")}
               </a>
             ) : (
               <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-ink/90 py-2 pl-2 pr-4 text-sm font-bold text-surface">

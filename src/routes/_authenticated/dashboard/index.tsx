@@ -125,7 +125,8 @@ function Dashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const posts = data ?? [];
+  // Looks épinglés tout en haut de la liste (comme Instagram)
+  const posts = [...(data ?? [])].sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""));
   const totals = {
     looks: posts.length,
     views: posts.reduce((n, p) => n + (p.views ?? 0), 0),
@@ -145,7 +146,7 @@ function Dashboard() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 pb-16 pt-4 md:pt-8">
+    <main className="mx-auto max-w-5xl px-4 pb-8 pt-4 md:pt-8">
       {/* EN-TÊTE : profil + raccourcis */}
       <header className="flex items-center gap-3">
         <span className="shrink-0 rounded-full p-[2px] ring-2 ring-primary">

@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { Camera, Instagram, Music2, Pin, Plus } from "lucide-react";
+import { Camera, Instagram, Music2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { isExplicitImage } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { fetchCreatorProfile } from "@/lib/public-data";
@@ -104,12 +105,13 @@ function ProfileContent() {
   const activeFilter = filter && outfitStyles.includes(filter) ? filter : null;
   const filtered = activeFilter ? outfits.filter((o) => o.styles.includes(activeFilter)) : outfits;
   // Récents : looks épinglés d'abord (comme Insta), puis ordre de publication. Populaires : les plus likés.
+  // Récents : comme Instagram, les looks épinglés sont simplement les premiers de la liste
   const pinned =
     sort === "recent" ? filtered.filter((o) => o.pinned_at).sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? "")) : [];
   const shown =
     sort === "popular"
       ? filtered.map((o, i) => ({ o, i })).sort((a, b) => b.o.likes - a.o.likes || a.i - b.i).map(({ o }) => o)
-      : filtered.filter((o) => !pinned.includes(o));
+      : [...pinned, ...filtered.filter((o) => !pinned.includes(o))];
 
   async function upload(kind: "avatars" | "banners", file: File) {
     if (!isOwner) return;
@@ -118,6 +120,11 @@ function ProfileContent() {
       return;
     }
     setUploading(true);
+    if (await isExplicitImage(file)) {
+      setUploading(false);
+      toast.error(t("safety.explicit"));
+      return;
+    }
     const ext = file.type.split("/")[1].replace("jpeg", "jpg");
     const path = `${creator.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from(kind).upload(path, file, { upsert: true, contentType: file.type });
@@ -269,23 +276,9 @@ function ProfileContent() {
             ))}
           </div>
         )}
-        {pinned.length > 0 && (
-          <ul className="mb-5 grid grid-cols-3 gap-2">
-            {pinned.map((o) => (
-              <li key={o.id}>
-                <Link to="/post/$id" params={{ id: o.id }} className="relative block aspect-[3/4] overflow-hidden rounded-2xl bg-card">
-                  {o.cover_image && <img src={o.cover_image} alt={o.title} referrerPolicy="no-referrer" className="h-full w-full object-cover" />}
-                  <span className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink/85 text-surface" aria-label={t("profile.pinned")}>
-                    <Pin className="h-3.5 w-3.5" aria-hidden="true" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
         {shown.length ? (
-          <OutfitGrid outfits={shown} showCreator={false} />
-        ) : pinned.length ? null : isOwner ? (
+          <OutfitGrid outfits={shown} showCreator={false} showPinned={sort === "recent"} />
+        ) : isOwner ? (
           <EmptyBox text={t("profile.emptyOwner")} action={{ to: "/dashboard/post/new", label: t("profile.publish") }} />
         ) : (
           <EmptyBox text={t("profile.empty")} />

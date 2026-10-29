@@ -5,6 +5,9 @@ export type Lang = "fr" | "en";
 // Dictionnaire centralisé. Ajoute une clé ici pour chaque nouveau texte,
 // avec sa version fr ET en, puis utilise t("ma.cle") dans tes composants.
 const dict = {
+  safety: {
+    explicit: { fr: "Cette photo ne respecte pas les règles de WantedFashion (nudité ou contenu choquant).", en: "This photo breaks WantedFashion's rules (nudity or shocking content)." },
+  },
   link: {
     not_https: { fr: "Ce lien n'est pas sécurisé (il doit commencer par https://).", en: "This link isn't secure (it must start with https://)." },
     bad_host: { fr: "Ce lien n'est pas valide.", en: "This link isn't valid." },

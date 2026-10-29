@@ -73,7 +73,7 @@ function BrandStats() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-16 pt-4 md:pt-8">
+    <main className="mx-auto max-w-3xl px-4 pb-8 pt-4 md:pt-8">
       <div className="flex items-center gap-3">
         <Link to="/dashboard" aria-label={t("studio.back")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface">
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />

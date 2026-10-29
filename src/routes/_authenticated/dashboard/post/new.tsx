@@ -131,7 +131,7 @@ function PublishedScreen({ published, onAnother }: { published: Published; onAno
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col items-center gap-5 px-4 pb-16 pt-8 text-center">
+    <main className="mx-auto flex max-w-md flex-col items-center gap-5 px-4 pb-8 pt-8 text-center">
       <div className="relative w-full max-w-[250px] -rotate-3 overflow-hidden rounded-[28px] bg-card shadow-[0_20px_40px_-24px_rgba(40,20,10,.75)]">
         {published.cover ? (
           <img src={published.cover} alt={published.title} referrerPolicy="no-referrer" className="block w-full" />

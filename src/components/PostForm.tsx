@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, Sparkles, X,
+  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, Pencil, Plus, RefreshCw, X,
 } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 import { StylePicker } from "@/components/vitrine/StyleChips";
 import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
-import { MAX_STYLES, type StyleKey } from "@/lib/styles";
+import { MAX_STYLES, styleLabelKey, type StyleKey } from "@/lib/styles";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchProductMetadata, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata";
 import { checkLinkShape, type LinkProblem } from "@/lib/link-safety";
 import { supabase } from "@/integrations/supabase/client";
+import { isExplicitImage, preloadNsfwCheck } from "@/lib/nsfw-check";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
 import { suggestVisualTags } from "@/lib/visual-embedding";
@@ -51,7 +52,6 @@ export type PostFormData = {
 
 const URL_DEBOUNCE_MS = 600;
 const EMPTY: PostFormData = { title: "", tiktok_url: "", cover_image: "", styles: [], tags: [], visual_tags: [], visual_tags_rejected: [], products: [] };
-const SUGGESTIONS: TKey[] = ["studio.sugg1", "studio.sugg2", "studio.sugg3", "studio.sugg4", "studio.sugg5"];
 
 function extractHostname(url: string): string {
   try {
@@ -120,7 +120,7 @@ export function PostForm({
   const [pieceUrl, setPieceUrl] = useState("");
   const [tagInput, setTagInput] = useState("");
   // Ce que l'IA voit sur la photo (calculé dès que la photo est choisie)
-  const [ai, setAi] = useState<{ status: "idle" | "loading" | "done" | "error"; keys: string[] }>({ status: "idle", keys: [] });
+  const [, setAi] = useState<{ status: "idle" | "loading" | "done" | "error"; keys: string[] }>({ status: "idle", keys: [] });
   const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -193,16 +193,9 @@ export function PostForm({
     };
   }, [data.cover_image]);
 
-  function toggleVisualTag(key: string) {
-    setData((d) => {
-      const on = d.visual_tags.includes(key);
-      return {
-        ...d,
-        visual_tags: on ? d.visual_tags.filter((k) => k !== key) : [...d.visual_tags, key].slice(0, 20),
-        visual_tags_rejected: on ? [...new Set([...d.visual_tags_rejected, key])].slice(0, 20) : d.visual_tags_rejected.filter((k) => k !== key),
-      };
-    });
-  }
+  // L'IA anti-nudité se télécharge pendant que le créateur colle son lien
+  useEffect(() => preloadNsfwCheck(), []);
+
 
   function go(n: number) {
     setStep(n);
@@ -215,6 +208,10 @@ export function PostForm({
     setCoverLoading(true);
     setCoverNotice(null);
     try {
+      if (await isExplicitImage(file)) {
+        toast.error(t("safety.explicit"));
+        return;
+      }
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true });
@@ -374,15 +371,26 @@ export function PostForm({
     });
     setTagInput("");
   }
+  // Styles proposés d'après ce que l'IA voit sur la photo
+  const suggestedStyles = useMemo(() => {
+    const map: Record<string, StyleKey> = {
+      streetwear: "streetwear", y2k: "y2k", vintage: "vintage", minimal: "minimal", preppy: "preppy", boho: "boheme",
+      gorpcore: "gorpcore", sporty: "sport", elegant: "chic", luxury: "old-money", romantic: "coquette", edgy: "grunge", cozy: "casual",
+    };
+    return [...new Set(data.visual_tags.map((k) => map[k]).filter((x): x is StyleKey => !!x))];
+  }, [data.visual_tags]);
+
   const tagSuggestions = useMemo(() => {
+    // Marques des pièces d'abord, puis ce que l'IA voit sur la photo (pièces, couleurs, matières…), puis les styles choisis
     const words = [
       ...data.products.map((p) => p.brand),
-      ...data.title.split(/\s+/).filter((w) => w.length > 3),
+      ...data.visual_tags.map((k) => conceptLabel(k)),
+      ...data.styles.map((st) => t(styleLabelKey(st))),
     ]
       .map(normalizeTag)
       .filter((w) => w.length > 1 && !data.tags.includes(w));
-    return [...new Set(words)].slice(0, 6);
-  }, [data.products, data.title, data.tags]);
+    return [...new Set(words)].slice(0, 8);
+  }, [data.products, data.visual_tags, data.styles, data.tags, t]);
 
   // ——— Validation & envoi ———
   const anyLoading = data.products.some((p) => productLoading[p._k ?? ""]);
@@ -452,7 +460,7 @@ export function PostForm({
     );
 
   return (
-    <div className="pb-36">
+    <div className="pb-28">
       {/* En-tête : retour, titre, brouillon, progression */}
       <div className="mb-5">
         <div className="flex items-center gap-3">
@@ -603,15 +611,6 @@ export function PostForm({
             />
             {data.title.length > 100 && <p className="text-right text-xs tabular-nums text-foreground/60">{data.title.length}/120</p>}
           </div>
-          {!data.title && (
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTIONS.map((k) => (
-                <button key={k} type="button" onClick={() => setData((d) => ({ ...d, title: t(k) }))} className="rounded-full border-[1.5px] border-border px-3 py-1.5 text-[13px] font-semibold">
-                  {t(k)}
-                </button>
-              ))}
-            </div>
-          )}
 
         </section>
       )}
@@ -754,43 +753,7 @@ export function PostForm({
       {(single || step === 3) && (
         <section className={`fade-up flex flex-col gap-5 ${single ? "mt-12 border-t border-border/70 pt-8" : ""}`}>
           <h2 className="font-display text-2xl font-bold">{t("studio.styleTitle")}</h2>
-          <StylePicker value={data.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setData((d) => ({ ...d, styles }))} />
-
-          {data.cover_image && (
-            <div>
-              <h2 className="font-display flex items-center gap-2 text-2xl font-bold">
-                <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" /> {t("studio.aiTitle")}
-              </h2>
-              {ai.status === "loading" ? (
-                <p className="mt-3 flex items-center gap-2 rounded-2xl bg-surface px-4 py-3 text-sm font-semibold">
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" /> {t("studio.aiLoading")}
-                </p>
-              ) : ai.status === "error" && !data.visual_tags.length ? (
-                <p className="mt-3 rounded-2xl bg-surface px-4 py-3 text-sm text-foreground/65">{t("studio.aiError")}</p>
-              ) : (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[...new Set([...ai.keys, ...data.visual_tags])].map((key) => {
-                    const on = data.visual_tags.includes(key);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => toggleVisualTag(key)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-all active:scale-95 ${on ? "bg-ink text-surface" : "border-[1.5px] border-dashed border-border text-foreground/45 line-through"}`}
-                      >
-                        {on ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <X className="h-3.5 w-3.5" aria-hidden="true" />}
-                        {conceptLabel(key)}
-                      </button>
-                    );
-                  })}
-                  {ai.status === "done" && ai.keys.length === 0 && !data.visual_tags.length && (
-                    <p className="text-sm text-foreground/60">{t("studio.aiNothing")}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <StylePicker row suggested={suggestedStyles} value={data.styles} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(styles) => setData((d) => ({ ...d, styles }))} />
 
           <div>
             <h2 className="font-display text-2xl font-bold">{t("studio.tagsTitle")}</h2>

@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 const DOUBLE_TAP_MS = 230;
 import { useQuickLike } from "./DoubleTapLike";
-import { Heart, Camera } from "lucide-react";
+import { Heart, Camera, Pin } from "lucide-react";
 import { VideoSourceIcon } from "./VideoSourceIcon";
 import { useTranslation } from "@/lib/i18n";
 import type { OutfitCard as OutfitCardData } from "@/lib/public-data";
@@ -32,7 +32,7 @@ export function Avatar({ src, name, className = "h-6 w-6" }: { src: string | nul
   );
 }
 
-export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: OutfitCardData; index?: number; showCreator?: boolean }) {
+export function OutfitCard({ outfit, index = 0, showCreator = true, showPinned = false }: { outfit: OutfitCardData; index?: number; showCreator?: boolean; showPinned?: boolean }) {
   const { t } = useTranslation();
   const h = hash(outfit.id);
   const pieces = `${outfit.pieceCount} ${outfit.pieceCount > 1 ? t("card.pieces") : t("card.piece")}`;
@@ -85,6 +85,11 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
               {pieces}
             </span>
           )}
+          {showPinned && outfit.pinned_at && (
+            <span className="absolute bottom-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink/85 text-surface shadow-sm" aria-label={t("profile.pinned")}>
+              <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
+          )}
           <span className="absolute right-2 top-2">
             <SaveButton postId={outfit.id} count={outfit.likes} />
           </span>
@@ -127,11 +132,41 @@ export function OutfitCard({ outfit, index = 0, showCreator = true }: { outfit: 
   );
 }
 
-export function OutfitGrid({ outfits, showCreator = true }: { outfits: OutfitCardData[]; showCreator?: boolean }) {
+/** Nombre de colonnes selon la largeur de l'écran (2 sur téléphone, 3 sur tablette, 4 sur ordinateur). */
+function useColumnCount() {
+  const [n, setN] = useState(2);
+  useEffect(() => {
+    const md = window.matchMedia("(min-width: 768px)");
+    const lg = window.matchMedia("(min-width: 1100px)");
+    const update = () => setN(lg.matches ? 4 : md.matches ? 3 : 2);
+    update();
+    md.addEventListener("change", update);
+    lg.addEventListener("change", update);
+    return () => {
+      md.removeEventListener("change", update);
+      lg.removeEventListener("change", update);
+    };
+  }, []);
+  return n;
+}
+
+/**
+ * Grille façon Pinterest : les looks se lisent ligne par ligne (le 1er en haut à
+ * gauche, le 2e en haut à droite…), donc les premiers de la liste (épinglés,
+ * plus récents) sont vraiment tout en haut.
+ */
+export function OutfitGrid({ outfits, showCreator = true, showPinned = false }: { outfits: OutfitCardData[]; showCreator?: boolean; showPinned?: boolean }) {
+  const n = useColumnCount();
+  const columns: { o: OutfitCardData; i: number }[][] = Array.from({ length: n }, () => []);
+  outfits.forEach((o, i) => columns[i % n].push({ o, i }));
   return (
-    <div className="masonry">
-      {outfits.map((o, i) => (
-        <OutfitCard key={o.id} outfit={o} index={i} showCreator={showCreator} />
+    <div className="flex items-start gap-4 md:gap-5">
+      {columns.map((col, c) => (
+        <div key={c} className="min-w-0 flex-1">
+          {col.map(({ o, i }) => (
+            <OutfitCard key={o.id} outfit={o} index={i} showCreator={showCreator} showPinned={showPinned} />
+          ))}
+        </div>
       ))}
     </div>
   );

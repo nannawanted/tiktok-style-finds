@@ -1,14 +1,17 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
 import { Logo } from "./Logo";
 
 // Affiché en bas de TOUTES les pages du site (branché dans __root.tsx).
 export function Footer() {
   const { t } = useTranslation();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  // Pages « appli » (comme Instagram) : pas de pied de page, pas d'espace vide en bas
+  if (/^\/(dashboard|notifications|enregistres)(\/|$)/.test(path)) return null;
   const link = "text-foreground/70 hover:text-primary hover:underline";
 
   return (
-    <footer className="mt-16 border-t border-border/60">
+    <footer className="mt-10 border-t border-border/60">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 md:flex-row md:items-start md:justify-between md:px-6">
         <div className="max-w-sm">
           <Logo className="h-12" />

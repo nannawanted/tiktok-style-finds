@@ -1,3 +1,4 @@
+import { useMemo, useRef } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { STYLE_KEYS, styleLabelKey, type StyleKey } from "@/lib/styles";
 
@@ -36,16 +37,31 @@ export function StylePicker({
   onChange,
   max = 5,
   onMax,
+  row = false,
+  suggested = [],
 }: {
   value: StyleKey[];
   onChange: (v: StyleKey[]) => void;
   max?: number;
   onMax?: () => void;
+  /** Une seule rangée qui défile (comme les filtres Pinterest) au lieu d'un gros bloc */
+  row?: boolean;
+  /** Styles proposés d'après la photo : affichés juste après ceux déjà choisis */
+  suggested?: StyleKey[];
 }) {
   const { t } = useTranslation();
+  // Ordre figé à l'ouverture (et quand l'IA propose des styles) : les puces ne sautent pas quand on touche
+  const initial = useRef(value);
+  const sugKey = suggested.join(",");
+  const order = useMemo(() => {
+    if (!row) return STYLE_KEYS;
+    const first = [...initial.current, ...suggested.filter((s) => !initial.current.includes(s))];
+    return [...first, ...STYLE_KEYS.filter((s) => !first.includes(s))];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row, sugKey]);
   return (
-    <div className="flex flex-wrap gap-2">
-      {STYLE_KEYS.map((s) => {
+    <div className={row ? "no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1" : "flex flex-wrap gap-2"}>
+      {order.map((s) => {
         const active = value.includes(s);
         return (
           <button
@@ -57,7 +73,7 @@ export function StylePicker({
               else if (value.length >= max) onMax?.();
               else onChange([...value, s]);
             }}
-            className={`rounded-full px-3.5 py-2 text-sm font-semibold transition-colors ${
+            className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors ${
               active ? "bg-ink text-surface" : "border border-border bg-surface text-foreground hover:border-foreground/40"
             }`}
           >

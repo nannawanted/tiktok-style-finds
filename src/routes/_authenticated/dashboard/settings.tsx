@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isExplicitImage } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { deleteAccount } from "@/lib/delete-account";
@@ -107,6 +108,7 @@ function Settings() {
   async function uploadAvatar(file: File) {
     if (!user) return;
     setUploading(true);
+    if (await isExplicitImage(file)) { toast.error(t("safety.explicit")); setUploading(false); return; }
     const ext = file.name.split(".").pop();
     const path = `${user.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
@@ -120,6 +122,7 @@ function Settings() {
   async function uploadBanner(file: File) {
     if (!user) return;
     setUploading(true);
+    if (await isExplicitImage(file)) { toast.error(t("safety.explicit")); setUploading(false); return; }
     const ext = file.name.split(".").pop();
     const path = `${user.id}.${ext}`;
     const { error: upErr } = await supabase.storage.from("banners").upload(path, file, { upsert: true });
@@ -184,7 +187,7 @@ function Settings() {
   const hint = "mt-1 text-[13px] leading-snug text-foreground/60";
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-36 pt-4 md:pt-8">
+    <main className={`mx-auto max-w-2xl px-4 pt-4 md:pt-8 ${dirty ? "pb-36" : "pb-8"}`}>
       <div className="mb-5 flex items-center gap-3">
         <Link to="/dashboard" aria-label={t("studio.back")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />

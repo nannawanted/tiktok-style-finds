@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth-context";
@@ -288,14 +289,19 @@ export function useCreatorSuggestions(fallback: CreatorCard[]) {
   const { user } = useAuth();
   const { data: followed } = useFollowedIds();
   const { data: myFollowers } = useMyFollowerIds();
-  const followedList = [...(followed ?? [])];
+  // Comme Instagram : quand on suit quelqu'un depuis les suggestions, il reste affiché
+  // (le bouton passe à « Suivi ») et ne disparaît qu'au prochain rafraîchissement de la page.
+  const frozenExclude = useRef<Set<string> | null>(null);
+  if (user && followed && !frozenExclude.current) frozenExclude.current = new Set([user.id, ...followed]);
   const { data: mutual } = useQuery({
-    queryKey: ["mutual-suggestions", user?.id, followedList.length, myFollowers?.size ?? 0],
+    queryKey: ["mutual-suggestions", user?.id],
     enabled: !!user && !!followed && !!myFollowers,
-    queryFn: () => fetchMutualSuggestions(user!.id, followedList, 12, [...(myFollowers ?? [])]),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    queryFn: () => fetchMutualSuggestions(user!.id, [...(followed ?? [])], 12, [...(myFollowers ?? [])]),
   });
   if (!user) return { creators: fallback as SuggestedCreator[], personal: false };
-  const exclude = new Set([user.id, ...followedList]);
+  const exclude = frozenExclude.current ?? new Set([user.id, ...(followed ?? [])]);
   const list: SuggestedCreator[] = [...(mutual ?? [])];
   for (const c of fallback) if (!exclude.has(c.id) && !list.some((m) => m.id === c.id)) list.push(c);
   return { creators: list.slice(0, 12), personal: (mutual ?? []).length > 0 };
