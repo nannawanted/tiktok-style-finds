@@ -18,6 +18,8 @@ export type OutfitCard = {
   styles: StyleKey[];
   pieceCount: number;
   likes: number;
+  /** Nombre de vues (ouvertures de la page du look, protégées contre les fausses vues) */
+  views?: number;
   /** Épinglé en haut du profil du créateur (date) */
   pinned_at?: string | null;
   /** Miniature légère pour le fil, forme de la photo et couleur dominante (affichée pendant le chargement) */
@@ -48,6 +50,7 @@ type RawOutfit = {
   tiktok_url: string | null;
   styles: string[] | null;
   products: { id: string }[] | null;
+  views?: number | null;
   pinned_at?: string | null;
   cover_thumb?: string | null;
   cover_w?: number | null;
@@ -115,6 +118,7 @@ async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
     styles: cleanStyles(r.styles),
     pieceCount: r.products?.length ?? 0,
     likes: likes.get(r.id) ?? 0,
+    views: Number(r.views ?? 0),
     pinned_at: r.pinned_at ?? null,
     cover_thumb: r.cover_thumb ?? null,
     cover_ratio: r.cover_w && r.cover_h ? r.cover_w / r.cover_h : null,
@@ -268,6 +272,7 @@ export type OutfitDetail = {
     styles: StyleKey[];
     tags: string[];
     created_at: string | null;
+    views: number;
   };
   products: {
     id: string;
@@ -284,7 +289,7 @@ export async function fetchOutfit(id: string): Promise<OutfitDetail | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const { data: post, error } = await supabase
     .from("posts")
-    .select("id, title, cover_image, tiktok_url, creator_id, creator_username, styles, tags, created_at")
+    .select("id, title, cover_image, tiktok_url, creator_id, creator_username, styles, tags, created_at, views")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -303,7 +308,7 @@ export async function fetchOutfit(id: string): Promise<OutfitDetail | null> {
   ]);
   if (e2) throw e2;
   return {
-    post: { ...post, styles: cleanStyles(post.styles), tags: cleanTags(post.tags) },
+    post: { ...post, views: Number(post.views ?? 0), styles: cleanStyles(post.styles), tags: cleanTags(post.tags) },
     products: products ?? [],
     creator: creator ? toCreatorCard(creator) : null,
   };

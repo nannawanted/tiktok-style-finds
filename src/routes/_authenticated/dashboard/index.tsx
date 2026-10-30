@@ -78,6 +78,16 @@ function Dashboard() {
     },
   });
 
+  // Personnes différentes qui ont vu au moins un de mes looks
+  const { data: reach } = useQuery({
+    queryKey: ["my-reach", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("my_reach" as never);
+      return Number(data ?? 0);
+    },
+  });
+
   const { data: me } = useQuery({
     queryKey: ["my-profile-mini", user?.id],
     enabled: !!user,
@@ -200,6 +210,9 @@ function Dashboard() {
             <dt className="mt-0.5 flex items-center justify-center gap-1 text-[11px] font-semibold text-foreground/60">
               <Icon className="h-3 w-3" aria-hidden="true" /> {label}
             </dt>
+            {k === "views" && reach !== undefined && reach > 0 && (
+              <dd className="mt-0.5 text-[10px] text-foreground/50">{fmt(reach)} {t("views.people")}</dd>
+            )}
           </div>
         ))}
       </dl>

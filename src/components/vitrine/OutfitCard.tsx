@@ -3,7 +3,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 
 const DOUBLE_TAP_MS = 230;
 import { useQuickLike } from "./DoubleTapLike";
-import { Heart, Camera, Pin } from "lucide-react";
+import { Heart, Camera, Eye, Pin } from "lucide-react";
+import { compactCount } from "@/lib/views";
 import { VideoSourceIcon } from "./VideoSourceIcon";
 import { useTranslation } from "@/lib/i18n";
 import type { OutfitCard as OutfitCardData } from "@/lib/public-data";
@@ -118,8 +119,13 @@ export function OutfitCard({ outfit, index = 0, showCreator = true, showPinned =
               {pieces}
             </span>
           )}
+          {!showCreator && !!outfit.views && (
+            <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/70 px-2 py-1 text-[11px] font-semibold text-surface backdrop-blur-sm">
+              <Eye className="h-3 w-3" aria-hidden="true" /> {compactCount(outfit.views)}
+            </span>
+          )}
           {showPinned && outfit.pinned_at && (
-            <span className="absolute bottom-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink/85 text-surface shadow-sm" aria-label={t("profile.pinned")}>
+            <span className="absolute left-2.5 top-11 flex h-7 w-7 items-center justify-center rounded-full bg-ink/85 text-surface shadow-sm" aria-label={t("profile.pinned")}>
               <Pin className="h-3.5 w-3.5" aria-hidden="true" />
             </span>
           )}

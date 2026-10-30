@@ -67,6 +67,11 @@ const dict = {
     title: { fr: "Créateurs populaires", en: "Popular creators" },
     seeAll: { fr: "Voir tous", en: "See all" },
   },
+  views: {
+    singular: { fr: "vue", en: "view" },
+    plural: { fr: "vues", en: "views" },
+    people: { fr: "personnes", en: "people" },
+  },
   feed: {
     newLooks: { fr: "Nouveaux looks", en: "New looks" },
     refreshing: { fr: "Actualisation…", en: "Refreshing…" },

@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, Camera, Info } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Camera, Info, Eye } from "lucide-react";
 import { ReportButton } from "@/components/vitrine/ReportButton";
 import { VideoSourceIcon, videoPlatform } from "@/components/vitrine/VideoSourceIcon";
+import { compactCount, deviceId } from "@/lib/views";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
@@ -99,23 +100,9 @@ function OutfitPage() {
   const { id } = Route.useParams();
   const { post, products, creator } = Route.useLoaderData();
 
-  // Compteur de vues (une seule fois par navigateur et par tenue)
+  // Vue comptée par le serveur, avec ses protections (voir src/lib/views.ts)
   useEffect(() => {
-    const key = `wf_viewed:${id}`;
-    try {
-      if (localStorage.getItem(key)) return;
-    } catch {
-      return;
-    }
-    supabase.rpc("increment_post_views", { p_id: id }).then(({ error }) => {
-      if (!error) {
-        try {
-          localStorage.setItem(key, "1");
-        } catch {
-          /* navigation privée : on ignore */
-        }
-      }
-    });
+    void supabase.rpc("record_post_view" as never, { p_post: id, p_device: deviceId() } as never);
   }, [id]);
 
 
@@ -181,7 +168,14 @@ function OutfitPage() {
               <span className="rounded-full p-[2px] ring-2 ring-primary">
                 <Avatar src={creator?.profile_image ?? null} name={post.creator_username} className="h-10 w-10" />
               </span>
-              <span className="truncate font-bold hover:text-primary">@{post.creator_username}</span>
+              <span className="min-w-0">
+                <span className="block truncate font-bold hover:text-primary">@{post.creator_username}</span>
+                {post.views > 0 && (
+                  <span className="flex items-center gap-1 text-[13px] text-foreground/60">
+                    <Eye className="h-3.5 w-3.5" aria-hidden="true" /> {compactCount(post.views)} {post.views > 1 ? t("views.plural") : t("views.singular")}
+                  </span>
+                )}
+              </span>
             </Link>
             {creator && <FollowButton creatorId={creator.id} tone="brand" />}
           </div>
