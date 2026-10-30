@@ -36,7 +36,7 @@ export function Avatar({ src, name, className = "h-6 w-6" }: { src: string | nul
  * Photo qui apparaît en fondu une fois chargée (comme Instagram / Pinterest).
  * En attendant : un fond qui « respire » doucement à la place de la photo.
  */
-function FadeInImage({ src, alt, eager }: { src: string; alt: string; eager: boolean }) {
+function FadeInImage({ src, alt, eager, ratio, color }: { src: string; alt: string; eager: boolean; ratio?: number | null; color?: string | null }) {
   const ref = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -44,9 +44,17 @@ function FadeInImage({ src, alt, eager }: { src: string; alt: string; eager: boo
   useEffect(() => {
     if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
   }, []);
+  // Forme connue : la place est réservée (le fil ne bouge pas) et la couleur de la tenue s'affiche en attendant
+  const box = ratio ? { aspectRatio: String(Math.min(Math.max(ratio, 0.4), 1.6)) } : undefined;
   return (
     <>
-      {!loaded && <span aria-hidden="true" className={`absolute inset-0 bg-card ${failed ? "" : "animate-pulse"}`} />}
+      {!loaded && (
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 ${color ? "" : "bg-card"} ${failed ? "" : "animate-pulse"}`}
+          style={color ? { background: color } : undefined}
+        />
+      )}
       <img
         ref={ref}
         src={src}
@@ -56,7 +64,8 @@ function FadeInImage({ src, alt, eager }: { src: string; alt: string; eager: boo
         referrerPolicy="no-referrer"
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
-        className={`block min-h-[180px] w-full object-cover transition-[opacity,transform] duration-500 ease-out group-hover:scale-[1.04] ${loaded ? "opacity-100" : "opacity-0"}`}
+        style={box}
+        className={`block w-full object-cover transition-[opacity,transform] duration-500 ease-out group-hover:scale-[1.04] ${ratio ? "" : "min-h-[180px]"} ${loaded ? "opacity-100" : "opacity-0"}`}
       />
     </>
   );
@@ -101,7 +110,7 @@ export function OutfitCard({ outfit, index = 0, showCreator = true, showPinned =
           style={outfit.cover_image ? undefined : { background: TONES[h % TONES.length] }}
         >
           {outfit.cover_image && (
-            <FadeInImage src={outfit.cover_image} alt={outfit.title} eager={index < 4} />
+            <FadeInImage src={outfit.cover_thumb || outfit.cover_image} alt={outfit.title} eager={index < 4} ratio={outfit.cover_ratio} color={outfit.cover_color} />
           )}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           {outfit.pieceCount > 0 && (

@@ -51,6 +51,7 @@ function NewPost() {
       tags: data.tags,
       visual_tags: data.visual_tags,
       visual_tags_rejected: data.visual_tags_rejected,
+      ...(data.cover_meta ? { cover_thumb: data.cover_meta.thumb, cover_w: data.cover_meta.w, cover_h: data.cover_meta.h, cover_color: data.cover_meta.color } : {}),
       topic_check: data.topic_check ?? null,
     } as never).select("id").single();
 

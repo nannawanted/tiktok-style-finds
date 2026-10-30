@@ -60,6 +60,12 @@ function EditPost() {
       tags: form.tags,
       visual_tags: form.visual_tags,
       visual_tags_rejected: form.visual_tags_rejected,
+      // Nouvelle photo : nouvelle miniature (ou aucune si elle n'a pas pu être faite) ; même photo : inchangé
+      ...(form.cover_meta
+        ? { cover_thumb: form.cover_meta.thumb, cover_w: form.cover_meta.w, cover_h: form.cover_meta.h, cover_color: form.cover_meta.color }
+        : form.cover_image !== data?.cover_image
+          ? { cover_thumb: null, cover_w: null, cover_h: null, cover_color: null }
+          : {}),
       // Nouvelle photo : résultat de la vérification ; même photo : on ne touche à rien
       ...(form.topic_check ? { topic_check: form.topic_check } : {}),
     } as never).eq("id", id);

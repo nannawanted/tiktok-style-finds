@@ -184,6 +184,11 @@ export type Database = {
           visual_tags: string[]
           visual_tags_rejected: string[]
           pinned_at: string | null
+          cover_color: string | null
+          cover_h: number | null
+          cover_thumb: string | null
+          cover_w: number | null
+          topic_check: string | null
           tiktok_url: string | null
           title: string
           views: number
@@ -199,6 +204,11 @@ export type Database = {
           visual_tags?: string[]
           visual_tags_rejected?: string[]
           pinned_at?: string | null
+          cover_color?: string | null
+          cover_h?: number | null
+          cover_thumb?: string | null
+          cover_w?: number | null
+          topic_check?: string | null
           tiktok_url?: string | null
           title: string
           views?: number
@@ -214,6 +224,11 @@ export type Database = {
           visual_tags?: string[]
           visual_tags_rejected?: string[]
           pinned_at?: string | null
+          cover_color?: string | null
+          cover_h?: number | null
+          cover_thumb?: string | null
+          cover_w?: number | null
+          topic_check?: string | null
           tiktok_url?: string | null
           title?: string
           views?: number

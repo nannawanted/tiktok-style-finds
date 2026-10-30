@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { indexPostImage, indexVisualConcepts, VISUAL_MODEL } from "@/lib/visual-embedding";
 import { SUBJECT_CONCEPTS, VISUAL_CONCEPTS } from "@/lib/visual-concepts";
+import { backfillCoverMeta } from "@/lib/cover-meta";
 
 type Missing = { id: string; cover_image: string | null };
 
@@ -66,6 +67,7 @@ export function VisualIndexer() {
 
   async function runAll() {
     if (missing?.length) await run(missing);
+    if (missingThumbs?.length) await runThumbs(missingThumbs);
     if (isAdmin && missingConcepts?.length) {
       let failed = 0;
       setProgress({ done: 0, total: missingConcepts.length, failed: 0 });
@@ -76,17 +78,47 @@ export function VisualIndexer() {
     }
   }
 
+  // Looks sans miniature légère / couleur (publiés avant cette fonction) : admin = tous, créateur = les siens
+  const { data: missingThumbs } = useQuery({
+    queryKey: ["missing-thumbs", user?.id, isAdmin],
+    enabled: !!user && isAdmin !== undefined,
+    queryFn: async () => {
+      let q = supabase.from("posts").select("id, cover_image").is("cover_thumb" as never, null).not("cover_image", "is", null).limit(300);
+      if (!isAdmin) q = q.eq("creator_id", user!.id);
+      const { data } = await q;
+      return (data ?? []) as Missing[];
+    },
+  });
+
+  async function runThumbs(list: Missing[]) {
+    let done = 0;
+    let failed = 0;
+    setProgress({ done, total: list.length, failed });
+    for (const p of list) {
+      const ok = p.cover_image ? await backfillCoverMeta(p.id, p.cover_image) : false;
+      done += 1;
+      if (!ok) failed += 1;
+      setProgress({ done, total: list.length, failed });
+    }
+    qc.invalidateQueries({ queryKey: ["missing-thumbs"] });
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  }
+
   // Créateur (non admin) : rattrapage automatique et invisible de ses tenues
   useEffect(() => {
-    if (isAdmin !== false || !missing?.length || autoStarted.current) return;
+    if (isAdmin !== false || autoStarted.current || missing === undefined || missingThumbs === undefined) return;
+    if (!missing.length && !missingThumbs.length) return;
     autoStarted.current = true;
-    void run(missing);
+    void (async () => {
+      if (missing.length) await run(missing);
+      if (missingThumbs.length) await runThumbs(missingThumbs);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, missing]);
+  }, [isAdmin, missing, missingThumbs]);
 
   if (!isAdmin) return null;
   const running = progress && progress.done < progress.total;
-  const count = (missing?.length ?? 0) + (missingConcepts?.length ?? 0);
+  const count = (missing?.length ?? 0) + (missingConcepts?.length ?? 0) + (missingThumbs?.length ?? 0);
   if (!count && !progress) return null;
 
   return (

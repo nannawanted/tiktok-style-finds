@@ -20,6 +20,10 @@ export type OutfitCard = {
   likes: number;
   /** Épinglé en haut du profil du créateur (date) */
   pinned_at?: string | null;
+  /** Miniature légère pour le fil, forme de la photo et couleur dominante (affichée pendant le chargement) */
+  cover_thumb?: string | null;
+  cover_ratio?: number | null;
+  cover_color?: string | null;
 };
 
 export type CreatorCard = {
@@ -33,7 +37,7 @@ export type CreatorCard = {
   instagram_url: string | null;
 };
 
-const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, tiktok_url, styles, views, created_at, pinned_at, products(id)";
+const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, tiktok_url, styles, views, created_at, pinned_at, cover_thumb, cover_w, cover_h, cover_color, products(id)";
 
 type RawOutfit = {
   id: string;
@@ -45,6 +49,10 @@ type RawOutfit = {
   styles: string[] | null;
   products: { id: string }[] | null;
   pinned_at?: string | null;
+  cover_thumb?: string | null;
+  cover_w?: number | null;
+  cover_h?: number | null;
+  cover_color?: string | null;
 };
 
 /** Nettoie une recherche tapée par un visiteur (caractères spéciaux de l'API retirés). */
@@ -108,6 +116,9 @@ async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
     pieceCount: r.products?.length ?? 0,
     likes: likes.get(r.id) ?? 0,
     pinned_at: r.pinned_at ?? null,
+    cover_thumb: r.cover_thumb ?? null,
+    cover_ratio: r.cover_w && r.cover_h ? r.cover_w / r.cover_h : null,
+    cover_color: r.cover_color ?? null,
   }));
 }
 

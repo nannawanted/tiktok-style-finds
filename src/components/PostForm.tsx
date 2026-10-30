@@ -13,6 +13,7 @@ import { fetchProductMetadata, isHttpUrl, isTikTokUrl } from "@/lib/url-metadata
 import { checkLinkShape, type LinkProblem } from "@/lib/link-safety";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUploadedImage } from "@/lib/nsfw-check";
+import { makeCoverMeta, type CoverMeta } from "@/lib/cover-meta";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { MAX_TAGS, cleanTags, normalizeTag, parseTags } from "@/lib/tags";
 import { checkPhotoTopic, preloadVision, suggestVisualTags, type TopicResult } from "@/lib/visual-embedding";
@@ -48,6 +49,8 @@ export type PostFormData = {
   visual_tags: string[];
   visual_tags_rejected: string[];
   products: ProductDraft[];
+  /** Miniature, taille et couleur dominante de la photo (pour un fil rapide et stable). */
+  cover_meta?: CoverMeta;
   /** « ok » = l'IA a confirmé que c'est une photo de mode ; « unchecked » = pas pu vérifier (l'admin la verra). */
   topic_check?: "ok" | "unchecked";
 };
@@ -255,9 +258,12 @@ export function PostForm({
       // On attend un court instant le verdict de l'IA mode avant d'afficher l'étape suivante :
       // une photo hors sujet est refusée tout de suite, sans aller-retour entre les pages.
       const p = startTopicCheck(url);
+      // En même temps : miniature légère pour le fil, taille et couleur dominante de la photo
+      const metaP = makeCoverMeta(file);
       const quick = await Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), 4000))]);
       if (quick?.status === "off") return; // message déjà affiché, on reste au choix de la photo
-      setData((d) => ({ ...d, cover_image: url }));
+      const cover_meta = (await metaP) ?? undefined;
+      setData((d) => ({ ...d, cover_image: url, cover_meta }));
       if (step === 0) go(1);
     } catch (e) {
       console.warn("[cover] envoi impossible", e);

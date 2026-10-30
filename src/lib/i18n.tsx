@@ -68,6 +68,8 @@ const dict = {
     seeAll: { fr: "Voir tous", en: "See all" },
   },
   feed: {
+    newLooks: { fr: "Nouveaux looks", en: "New looks" },
+    refreshing: { fr: "Actualisation…", en: "Refreshing…" },
     title: { fr: "Les derniers outfits", en: "Latest outfits" },
     subtitle: { fr: "Shop les looks de tes créateurs préférés.", en: "Shop the looks from your favorite creators." },
     empty: { fr: "Aucun post pour le moment.", en: "No posts yet." },
