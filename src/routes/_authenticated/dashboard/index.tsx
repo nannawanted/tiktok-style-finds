@@ -56,7 +56,7 @@ function Dashboard() {
     queryKey: ["my-posts-clicks", postIds.join(",")],
     enabled: postIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("clicks").select("post_id").in("post_id", postIds);
+      const { data, error } = await supabase.from("clicks").select("post_id").in("post_id", postIds).eq("counted" as never, true as never);
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {

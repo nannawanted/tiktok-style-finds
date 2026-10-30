@@ -57,6 +57,8 @@ export type Database = {
         Row: {
           clicked_at: string | null
           cookie_id: string | null
+          counted: boolean
+          not_counted_reason: string | null
           creator_username: string
           id: string
           ip_address: string | null
@@ -68,6 +70,8 @@ export type Database = {
         Insert: {
           clicked_at?: string | null
           cookie_id?: string | null
+          counted?: boolean
+          not_counted_reason?: string | null
           creator_username: string
           id?: string
           ip_address?: string | null
@@ -79,6 +83,8 @@ export type Database = {
         Update: {
           clicked_at?: string | null
           cookie_id?: string | null
+          counted?: boolean
+          not_counted_reason?: string | null
           creator_username?: string
           id?: string
           ip_address?: string | null

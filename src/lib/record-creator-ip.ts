@@ -17,7 +17,8 @@ export const recordCreatorIp = createServerFn({ method: "POST" })
     if (error || !userData?.user) return { ok: false };
 
     const request = getRequest();
-    const ip = request?.headers.get("x-forwarded-for") ?? null;
+    // Même format que pour les clics (première adresse de la chaîne) pour pouvoir comparer
+    const ip = (request?.headers.get("x-forwarded-for") ?? "").split(",")[0].trim().replace(/[^0-9a-fA-F:.]/g, "") || null;
     if (!ip) return { ok: false };
 
     await supabaseAdmin.from("creators").update({ last_known_ip: ip }).eq("id", userData.user.id);
