@@ -145,7 +145,7 @@ const dict = {
     terms: { fr: "Conditions d'utilisation", en: "Terms of use" },
   },
   cookies: {
-    message: { fr: "On utilise un cookie pour savoir qu'un achat vient d'un lien affiché sur le site, afin de rémunérer les créateurs.", en: "We use a cookie to know when a purchase comes from a link shown on the site, to pay creators." },
+    message: { fr: "Avec ton accord, on utilise des cookies pour savoir qu'un achat vient d'un lien du site (pour rémunérer les créateurs) et pour mesurer les visites.", en: "With your consent, we use cookies to know when a purchase comes from a link on the site (to pay creators) and to measure visits." },
     learnMore: { fr: "En savoir plus", en: "Learn more" },
     accept: { fr: "Accepter", en: "Accept" },
     decline: { fr: "Refuser", en: "Decline" },

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { applyConsent } from "@/lib/analytics";
 
 const CONSENT_COOKIE = "wf_consent";
 
@@ -29,6 +30,7 @@ export function CookieConsent() {
 
   function respond(accepted: boolean) {
     setConsentCookie(accepted ? "true" : "false");
+    applyConsent(accepted);
     setVisible(false);
   }
 
