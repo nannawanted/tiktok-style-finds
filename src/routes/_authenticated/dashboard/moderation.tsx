@@ -179,6 +179,8 @@ function Moderation() {
 
       <BlockedSites />
 
+      <AdminLog />
+
       <AlertDialog open={!!toBlock} onOpenChange={(o) => !o && setToBlock(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -375,6 +377,48 @@ function UnverifiedPhotos({ onRemove }: { onRemove: (postId: string) => Promise<
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </section>
+  );
+}
+
+/** Journal des actions admin (enregistré automatiquement par le serveur). */
+function AdminLog() {
+  const { t } = useTranslation();
+  const { data } = useQuery({
+    queryKey: ["admin-log"],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase.rpc("admin_action_log" as never, { p_limit: 30 } as never);
+      if (error) throw error;
+      return (rows ?? []) as { created_at: string; action: string; target: string | null; details: Record<string, string> | null }[];
+    },
+  });
+  const label = (a: string): string => {
+    const k = `adminLog.${a}` as TKey;
+    const v = t(k);
+    return v === k ? a : v;
+  };
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-2xl font-bold">{t("adminLog.title")}</h2>
+      {!data || data.length === 0 ? (
+        <p className="mt-3 text-sm text-foreground/55">{t("adminLog.empty")}</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border/60 rounded-3xl bg-surface px-4">
+          {data.map((r, i) => (
+            <li key={i} className="flex items-baseline gap-3 py-3 text-sm">
+              <span className="w-24 shrink-0 text-xs tabular-nums text-foreground/55">
+                {new Date(r.created_at).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="font-semibold">{label(r.action)}</span>{" "}
+                <span className="text-foreground/65">
+                  {r.details?.username ? `@${r.details.username}` : r.details?.title ? `« ${r.details.title} »${r.details.creator ? ` (@${r.details.creator})` : ""}` : r.target ?? ""}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

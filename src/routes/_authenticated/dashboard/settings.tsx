@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUploadedImage } from "@/lib/nsfw-check";
+import { TwoFactorSettings } from "@/components/TwoFactor";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { deleteAccount } from "@/lib/delete-account";
@@ -323,6 +324,14 @@ function Settings() {
           <h2 className={h2}>{t("engage.interestsEdit")}</h2>
           <div className="mt-3">
             <StylePicker value={form.interests} max={MAX_STYLES} onMax={() => toast(t("creatorSettings.maxStyles"))} onChange={(interests) => setForm({ ...form, interests })} />
+          </div>
+        </section>
+
+        {/* SÉCURITÉ */}
+        <section className={section}>
+          <h2 className={h2}>{t("mfa.section")}</h2>
+          <div className="mt-3">
+            <TwoFactorSettings />
           </div>
         </section>
 
