@@ -20,3 +20,35 @@ export function deviceId(): string {
 export function compactCount(n: number, locale = "fr"): string {
   return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(n);
 }
+
+// Page d'où vient le visiteur (pour « D'où viennent les vues »), sans rien enregistrer d'autre.
+let previousHref: string | null = null;
+let currentHref: string | null = null;
+
+/** Appelé à chaque changement de page. */
+export function rememberPage(href: string) {
+  if (href === currentHref) return;
+  previousHref = currentHref;
+  currentHref = href;
+}
+
+/** feed | search | profile | external | other */
+export function viewSource(): "feed" | "search" | "profile" | "external" | "other" {
+  // La page d'avant = la dernière page mémorisée qui n'est pas la page actuelle
+  const here = window.location.pathname + window.location.search;
+  const before = currentHref && currentHref !== here ? currentHref : previousHref;
+  if (!before) {
+    // Arrivée directe sur le look : lien partagé, lien dans une bio TikTok/Insta…
+    try {
+      if (document.referrer && new URL(document.referrer).host !== window.location.host) return "external";
+    } catch {
+      /* ignore */
+    }
+    return "external";
+  }
+  const u = new URL(before, "https://x");
+  if (u.pathname.startsWith("/@")) return "profile";
+  if (u.pathname === "/explorer" && u.searchParams.get("q")) return "search";
+  if (u.pathname === "/" || u.pathname === "/explorer" || u.pathname === "/enregistres") return "feed";
+  return "other";
+}

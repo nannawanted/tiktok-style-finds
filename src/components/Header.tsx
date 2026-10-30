@@ -251,6 +251,7 @@ export function Header() {
   return (
     <header
       ref={headerRef}
+      data-no-print
       className={`sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-md transition-transform duration-300 ${hidden && !open ? "-translate-y-full" : ""}`}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 md:gap-5 md:px-6">

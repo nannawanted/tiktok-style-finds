@@ -11,7 +11,7 @@ export function Footer() {
   const link = "text-foreground/70 hover:text-primary hover:underline";
 
   return (
-    <footer className="mt-10 border-t border-border/60">
+    <footer data-no-print className="mt-10 border-t border-border/60">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 md:flex-row md:items-start md:justify-between md:px-6">
         <div className="max-w-sm">
           <Logo className="h-12" />

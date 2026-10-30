@@ -3,7 +3,7 @@ import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-rout
 import { ArrowLeft, ArrowUpRight, Camera, Info, Eye } from "lucide-react";
 import { ReportButton } from "@/components/vitrine/ReportButton";
 import { VideoSourceIcon, videoPlatform } from "@/components/vitrine/VideoSourceIcon";
-import { compactCount, deviceId } from "@/lib/views";
+import { compactCount, deviceId, viewSource } from "@/lib/views";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
@@ -102,7 +102,7 @@ function OutfitPage() {
 
   // Vue comptée par le serveur, avec ses protections (voir src/lib/views.ts)
   useEffect(() => {
-    void supabase.rpc("record_post_view" as never, { p_post: id, p_device: deviceId() } as never);
+    void supabase.rpc("record_post_view" as never, { p_post: id, p_device: deviceId(), p_source: viewSource() } as never);
   }, [id]);
 
 

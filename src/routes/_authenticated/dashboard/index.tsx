@@ -185,7 +185,7 @@ function Dashboard() {
             )}
           </Link>
         )}
-        <Link to="/dashboard/stats-marques" aria-label={t("brandStats.title")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
+        <Link to="/dashboard/stats" aria-label={t("stats.title")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
           <BarChart3 className="h-5 w-5" aria-hidden="true" />
         </Link>
         <Link to="/dashboard/settings" aria-label={t("dashboard.settings")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95">
@@ -296,6 +296,11 @@ function Dashboard() {
                       <DropdownMenuItem asChild className="rounded-xl py-2.5">
                         <Link to="/post/$id" params={{ id: p.id }}>
                           <ExternalLink className="h-4 w-4" aria-hidden="true" /> {t("dashboard.preview")}
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl py-2.5">
+                        <Link to="/dashboard/stats/look/$id" params={{ id: p.id }}>
+                          <BarChart3 className="h-4 w-4" aria-hidden="true" /> {t("stats.title")}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="rounded-xl py-2.5" onSelect={() => togglePin(p.id, !p.pinned_at)}>

@@ -1,162 +1,154 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowLeft, ArrowUpRight, Copy, MousePointerClick, Shirt, Users } from "lucide-react";
-import { toast } from "sonner";
+import { FileText, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TKey } from "@/lib/i18n";
+import { useIsAdmin } from "@/lib/social";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Empty, fmt, PeriodTabs, StatsHeader, trend, type Period } from "@/components/stats/StatsUI";
 
 export const Route = createFileRoute("/_authenticated/dashboard/stats-marques")({
-  head: () => ({ meta: [{ title: "Stats marques — Wanted Fashion" }, { name: "robots", content: "noindex" }] }),
-  component: BrandStats,
+  head: () => ({ meta: [{ title: "Marques — Wanted Fashion" }, { name: "robots", content: "noindex" }] }),
+  component: BrandsAdmin,
 });
 
 type Row = { brand: string; domain: string | null; clicks: number; visitors: number; looks: number; creators: number; prev_clicks: number };
+type Filter = "all" | "prospect" | "partner";
 
-const PERIODS = [7, 30, 90] as const;
+const host = (url: string | null | undefined) => {
+  try {
+    return url ? new URL(url).hostname.replace(/^www\./, "").toLowerCase() : "";
+  } catch {
+    return "";
+  }
+};
 
-/**
- * Admin : combien de clics WantedFashion envoie à chaque marque. Sert à
- * démarcher les marques (« on vous a envoyé X visiteurs ce mois-ci »).
- */
-function BrandStats() {
+/** Admin : ce que WantedFashion envoie à chaque marque — l'outil pour négocier les partenariats. */
+function BrandsAdmin() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const [days, setDays] = useState<(typeof PERIODS)[number]>(30);
-  const [scopeChoice, setScopeChoice] = useState<"mine" | "all" | null>(null);
+  const { data: isAdmin, isLoading: checking } = useIsAdmin();
+  const [days, setDays] = useState<Period>(30);
+  const [filter, setFilter] = useState<Filter>("all");
 
-  const { data: isAdmin } = useQuery({
-    queryKey: ["is-admin", user?.id],
-    enabled: !!user,
+  const { data: rows, isLoading } = useQuery({
+    queryKey: ["brand-click-stats", days],
+    enabled: !!isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from("creators").select("is_admin").eq("id", user!.id).maybeSingle();
-      return !!(data as { is_admin?: boolean } | null)?.is_admin;
-    },
-  });
-
-  // Créateur : les clics de SES looks. Admin : peut aussi voir tout le site.
-  const scope: "mine" | "all" = scopeChoice ?? (isAdmin ? "all" : "mine");
-  const { data, isLoading } = useQuery({
-    queryKey: ["brand-click-stats", days, scope],
-    enabled: isAdmin !== undefined,
-    queryFn: async () => {
-      const fn = scope === "all" ? "brand_click_stats" : "my_brand_click_stats";
-      const { data: rows, error } = await supabase.rpc(fn as never, { p_days: days } as never);
+      const { data, error } = await supabase.rpc("brand_click_stats" as never, { p_days: days } as never);
       if (error) throw error;
-      return ((rows ?? []) as Row[]).map((r) => ({ ...r, clicks: Number(r.clicks), visitors: Number(r.visitors), looks: Number(r.looks), creators: Number(r.creators), prev_clicks: Number(r.prev_clicks) }));
+      return ((data ?? []) as Row[]).map((r) => ({ ...r, clicks: Number(r.clicks), visitors: Number(r.visitors), looks: Number(r.looks), creators: Number(r.creators), prev_clicks: Number(r.prev_clicks) }));
+    },
+  });
+  // Marques déjà partenaires (enregistrées dans la page Marques partenaires)
+  const { data: partners } = useQuery({
+    queryKey: ["partner-domains"],
+    enabled: !!isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase.from("brands_public").select("website_url");
+      return new Set((data ?? []).map((b) => host(b.website_url)).filter(Boolean));
     },
   });
 
-  const rows = (data ?? []).filter((r) => r.clicks > 0);
-  const total = rows.reduce((n, r) => n + r.clicks, 0);
-  const max = Math.max(1, ...rows.map((r) => r.clicks));
-
-  function pitch(r: Row) {
-    return t(scope === "all" ? "brandStats.pitch" : "brandStats.pitchMine")
-      .replace("{days}", String(days))
-      .replace("{clicks}", String(r.clicks))
-      .replace("{visitors}", String(r.visitors))
-      .replace("{brand}", r.brand)
-      .replace("{looks}", String(r.looks))
-      .replace("{creators}", String(r.creators));
+  if (!checking && !isAdmin) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 pt-6">
+        <Empty text={t("stats.forbidden")} />
+      </main>
+    );
   }
 
-  async function copy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(t("brandStats.copied"));
-    } catch {
-      toast(text);
-    }
-  }
+  const list = (rows ?? []).filter((r) => r.clicks > 0);
+  const isPartner = (r: Row) => !!r.domain && !!partners?.has(r.domain.toLowerCase().replace(/^www\./, ""));
+  const shown = list.filter((r) => (filter === "all" ? true : filter === "partner" ? isPartner(r) : !isPartner(r)));
+  const total = list.reduce((n, r) => n + r.clicks, 0);
+  const totalPrev = list.reduce((n, r) => n + r.prev_clicks, 0);
+  const change = trend(total, totalPrev);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-8 pt-4 md:pt-8">
-      <div className="flex items-center gap-3">
-        <Link to="/dashboard" aria-label={t("studio.back")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface">
-          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-        </Link>
-        <h1 className="font-display text-3xl font-bold">{t("brandStats.title")}</h1>
-      </div>
-      <p className="mt-2 text-sm leading-relaxed text-foreground/65">{scope === "all" ? t("brandStats.intro") : t("brandStats.introMine")}</p>
-      {isAdmin && (
-        <div className="mt-4 flex gap-1 rounded-full bg-surface p-1" role="tablist">
-          {(["all", "mine"] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="tab"
-              aria-selected={scope === k}
-              onClick={() => setScopeChoice(k)}
-              className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold ${scope === k ? "bg-ink text-surface" : "text-foreground/70"}`}
-            >
-              {k === "all" ? t("brandStats.scopeAll") : t("brandStats.scopeMine")}
-            </button>
-          ))}
-        </div>
-      )}
+    <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 pb-10 pt-4 md:pt-8">
+      <StatsHeader title={t("brandsAdmin.title")} back="/dashboard/stats" right={<span className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground">Admin</span>} />
+      <PeriodTabs value={days} onChange={setDays} />
 
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full bg-surface p-1" role="tablist">
-          {PERIODS.map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="tab"
-              aria-selected={days === d}
-              onClick={() => setDays(d)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${days === d ? "bg-ink text-surface" : "text-foreground/70"}`}
-            >
-              {d} {t("brandStats.days")}
-            </button>
-          ))}
-        </div>
-        <p className="text-right text-sm">
-          <span className="block text-2xl font-bold tabular-nums">{total}</span>
-          <span className="text-foreground/60">{t("brandStats.totalClicks")}</span>
-        </p>
+      <div className="flex flex-col gap-1.5 rounded-3xl bg-ink p-[18px] text-surface">
+        <span className="text-[13px] text-surface/75">{t("brandsAdmin.sent").replace("{n}", String(days))}</span>
+        <span className="font-display text-[40px] font-bold leading-none tabular-nums">
+          {fmt(total)} {t("brandsAdmin.visitors")}
+        </span>
+        <span className="text-sm text-surface/85">
+          {t("brandsAdmin.toBrands").replace("{n}", String(list.length))}
+          {change !== null && ` · ${change >= 0 ? "↑" : "↓"} ${Math.abs(change)} %`}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 rounded-2xl bg-surface px-3 py-2.5">
+        <ShieldCheck className="h-[18px] w-[18px] shrink-0 text-emerald-700" aria-hidden="true" />
+        <span className="text-[13px] leading-snug">{t("brandsAdmin.reliable")}</span>
+      </div>
+
+      <div className="flex gap-1.5">
+        {(["all", "prospect", "partner"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            aria-pressed={filter === k}
+            onClick={() => setFilter(k)}
+            className={`h-10 flex-1 rounded-full text-[13px] font-semibold ${filter === k ? "bg-ink text-surface" : "bg-surface"}`}
+          >
+            {t(`brandsAdmin.f_${k}` as TKey)}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (
-        <div className="mt-5 space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-3xl" />)}</div>
-      ) : rows.length === 0 ? (
-        <p className="mt-6 rounded-3xl border-[1.5px] border-dashed border-border p-8 text-center text-sm text-foreground/65">{t("brandStats.empty")}</p>
+        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-[22px]" />)
+      ) : shown.length === 0 ? (
+        <Empty text={t("brandStats.empty")} />
       ) : (
-        <ol className="mt-5 space-y-2.5">
-          {rows.map((r, i) => {
-            const trend = r.prev_clicks ? Math.round(((r.clicks - r.prev_clicks) / r.prev_clicks) * 100) : null;
-            return (
-              <li key={r.brand} className="rounded-3xl bg-surface p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 w-6 shrink-0 text-center font-display text-lg font-bold text-foreground/40 tabular-nums">{i + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[16px] font-bold capitalize">{r.brand}</p>
-                    {r.domain && <p className="truncate text-xs text-foreground/55">{r.domain}</p>}
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-card">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${(r.clicks / max) * 100}%` }} />
-                    </div>
-                    <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-foreground/70">
-                      <span className="inline-flex items-center gap-1"><MousePointerClick className="h-3.5 w-3.5" aria-hidden="true" /> <b className="text-foreground">{r.clicks}</b> {t("brandStats.clicks")}</span>
-                      <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden="true" /> {r.visitors} {t("brandStats.visitors")}</span>
-                      <span className="inline-flex items-center gap-1"><Shirt className="h-3.5 w-3.5" aria-hidden="true" /> {r.looks} {t("brandStats.looks")}{scope === "all" && ` · ${r.creators} ${t("brandStats.creators")}`}</span>
-                      {trend !== null && (
-                        <span className={`inline-flex items-center gap-0.5 font-semibold ${trend >= 0 ? "text-emerald-700" : "text-destructive"}`}>
-                          {trend >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDownRight className="h-3.5 w-3.5" aria-hidden="true" />}
-                          {trend >= 0 ? "+" : ""}{trend} %
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <button type="button" onClick={() => copy(pitch(r))} aria-label={t("brandStats.copyPitch")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background">
-                    <Copy className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        shown.map((r) => {
+          const ch = trend(r.clicks, r.prev_clicks);
+          const partner = isPartner(r);
+          return (
+            <div key={r.brand} className="flex flex-col gap-3 rounded-[22px] bg-surface p-3.5">
+              <div className="flex items-center gap-3">
+                <span className="font-display flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-ink text-xl font-bold capitalize text-surface">{r.brand[0]}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-bold capitalize">{r.brand}</span>
+                  <span className="block truncate text-xs text-foreground/60">
+                    {r.looks} {t("brandStats.looks")} · {r.creators} {t("brandStats.creators")}
+                    {r.domain ? ` · ${r.domain}` : ""}
+                  </span>
+                </span>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${partner ? "bg-emerald-700 text-white" : "bg-background text-foreground/70"}`}>
+                  {partner ? t("brandsAdmin.partner") : t("brandsAdmin.prospect")}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 text-center">
+                <span className="flex flex-col">
+                  <b className="text-lg tabular-nums">{fmt(r.clicks)}</b>
+                  <span className="text-[11px] text-foreground/60">{t("brandStats.clicks")}</span>
+                </span>
+                <span className="flex flex-col">
+                  <b className="text-lg tabular-nums">{fmt(r.visitors)}</b>
+                  <span className="text-[11px] text-foreground/60">{t("stats.people")}</span>
+                </span>
+                <span className="flex flex-col">
+                  <b className={`text-lg ${ch === null ? "text-foreground/45" : ch >= 0 ? "text-emerald-700" : "text-destructive"}`}>
+                    {ch === null ? "—" : `${ch >= 0 ? "↑" : "↓"} ${Math.abs(ch)} %`}
+                  </b>
+                  <span className="text-[11px] text-foreground/60">{t("brandsAdmin.vsBefore")}</span>
+                </span>
+              </div>
+              <Link
+                to="/dashboard/rapport-marque"
+                search={{ brand: r.brand, days }}
+                className="flex h-11 items-center justify-center gap-2 rounded-full bg-ink text-sm font-bold text-surface"
+              >
+                <FileText className="h-4 w-4" aria-hidden="true" /> {t("brandsAdmin.createReport").replace("{brand}", r.brand)}
+              </Link>
+            </div>
+          );
+        })
       )}
     </main>
   );

@@ -26,15 +26,20 @@ import { Route as ApiConversionRouteImport } from './routes/api.conversion'
 import { Route as CreatorUsernameRouteImport } from './routes/creator.$username'
 import { Route as GoProductIdRouteImport } from './routes/go.$productId'
 import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as RapportTokenRouteImport } from './routes/rapport.$token'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardBrandsRouteImport } from './routes/_authenticated/dashboard/brands'
 import { Route as AuthenticatedDashboardEarningsRouteImport } from './routes/_authenticated/dashboard/earnings'
 import { Route as AuthenticatedDashboardModerationRouteImport } from './routes/_authenticated/dashboard/moderation'
+import { Route as AuthenticatedDashboardRapportMarqueRouteImport } from './routes/_authenticated/dashboard/rapport-marque'
 import { Route as AuthenticatedDashboardSalesRouteImport } from './routes/_authenticated/dashboard/sales'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardStatsMarquesRouteImport } from './routes/_authenticated/dashboard/stats-marques'
 import { Route as AuthenticatedDashboardPostNewRouteImport } from './routes/_authenticated/dashboard/post/new'
+import { Route as AuthenticatedDashboardStatsIndexRouteImport } from './routes/_authenticated/dashboard/stats/index'
+import { Route as AuthenticatedDashboardStatsAudienceRouteImport } from './routes/_authenticated/dashboard/stats/audience'
 import { Route as AuthenticatedDashboardPostIdEditRouteImport } from './routes/_authenticated/dashboard/post/$id.edit'
+import { Route as AuthenticatedDashboardStatsLookIdRouteImport } from './routes/_authenticated/dashboard/stats/look.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -123,6 +128,11 @@ const PostIdRoute = PostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RapportTokenRoute = RapportTokenRouteImport.update({
+  id: '/rapport/$token',
+  path: '/rapport/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/dashboard/',
@@ -145,6 +155,12 @@ const AuthenticatedDashboardModerationRoute =
   AuthenticatedDashboardModerationRouteImport.update({
     id: '/dashboard/moderation',
     path: '/dashboard/moderation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardRapportMarqueRoute =
+  AuthenticatedDashboardRapportMarqueRouteImport.update({
+    id: '/dashboard/rapport-marque',
+    path: '/dashboard/rapport-marque',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardSalesRoute =
@@ -171,10 +187,28 @@ const AuthenticatedDashboardPostNewRoute =
     path: '/dashboard/post/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDashboardStatsIndexRoute =
+  AuthenticatedDashboardStatsIndexRouteImport.update({
+    id: '/dashboard/stats/',
+    path: '/dashboard/stats/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardStatsAudienceRoute =
+  AuthenticatedDashboardStatsAudienceRouteImport.update({
+    id: '/dashboard/stats/audience',
+    path: '/dashboard/stats/audience',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardPostIdEditRoute =
   AuthenticatedDashboardPostIdEditRouteImport.update({
     id: '/dashboard/post/$id/edit',
     path: '/dashboard/post/$id/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardStatsLookIdRoute =
+  AuthenticatedDashboardStatsLookIdRouteImport.update({
+    id: '/dashboard/stats/look/$id',
+    path: '/dashboard/stats/look/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -195,15 +229,20 @@ export interface FileRoutesByFullPath {
   '/creator/$username': typeof CreatorUsernameRoute
   '/go/$productId': typeof GoProductIdRoute
   '/post/$id': typeof PostIdRoute
+  '/rapport/$token': typeof RapportTokenRoute
   '/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
   '/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
   '/dashboard/moderation': typeof AuthenticatedDashboardModerationRoute
+  '/dashboard/rapport-marque': typeof AuthenticatedDashboardRapportMarqueRoute
   '/dashboard/sales': typeof AuthenticatedDashboardSalesRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/stats-marques': typeof AuthenticatedDashboardStatsMarquesRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
+  '/dashboard/stats/audience': typeof AuthenticatedDashboardStatsAudienceRoute
+  '/dashboard/stats/': typeof AuthenticatedDashboardStatsIndexRoute
   '/dashboard/post/$id/edit': typeof AuthenticatedDashboardPostIdEditRoute
+  '/dashboard/stats/look/$id': typeof AuthenticatedDashboardStatsLookIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -222,15 +261,20 @@ export interface FileRoutesByTo {
   '/creator/$username': typeof CreatorUsernameRoute
   '/go/$productId': typeof GoProductIdRoute
   '/post/$id': typeof PostIdRoute
+  '/rapport/$token': typeof RapportTokenRoute
   '/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
   '/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
   '/dashboard/moderation': typeof AuthenticatedDashboardModerationRoute
+  '/dashboard/rapport-marque': typeof AuthenticatedDashboardRapportMarqueRoute
   '/dashboard/sales': typeof AuthenticatedDashboardSalesRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/stats-marques': typeof AuthenticatedDashboardStatsMarquesRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
+  '/dashboard/stats/audience': typeof AuthenticatedDashboardStatsAudienceRoute
+  '/dashboard/stats': typeof AuthenticatedDashboardStatsIndexRoute
   '/dashboard/post/$id/edit': typeof AuthenticatedDashboardPostIdEditRoute
+  '/dashboard/stats/look/$id': typeof AuthenticatedDashboardStatsLookIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -251,15 +295,20 @@ export interface FileRoutesById {
   '/creator/$username': typeof CreatorUsernameRoute
   '/go/$productId': typeof GoProductIdRoute
   '/post/$id': typeof PostIdRoute
+  '/rapport/$token': typeof RapportTokenRoute
   '/_authenticated/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
   '/_authenticated/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
   '/_authenticated/dashboard/moderation': typeof AuthenticatedDashboardModerationRoute
+  '/_authenticated/dashboard/rapport-marque': typeof AuthenticatedDashboardRapportMarqueRoute
   '/_authenticated/dashboard/sales': typeof AuthenticatedDashboardSalesRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/stats-marques': typeof AuthenticatedDashboardStatsMarquesRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/post/new': typeof AuthenticatedDashboardPostNewRoute
+  '/_authenticated/dashboard/stats/audience': typeof AuthenticatedDashboardStatsAudienceRoute
+  '/_authenticated/dashboard/stats/': typeof AuthenticatedDashboardStatsIndexRoute
   '/_authenticated/dashboard/post/$id/edit': typeof AuthenticatedDashboardPostIdEditRoute
+  '/_authenticated/dashboard/stats/look/$id': typeof AuthenticatedDashboardStatsLookIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -280,15 +329,20 @@ export interface FileRouteTypes {
     | '/creator/$username'
     | '/go/$productId'
     | '/post/$id'
+    | '/rapport/$token'
     | '/dashboard/brands'
     | '/dashboard/earnings'
     | '/dashboard/moderation'
+    | '/dashboard/rapport-marque'
     | '/dashboard/sales'
     | '/dashboard/settings'
     | '/dashboard/stats-marques'
     | '/dashboard/'
     | '/dashboard/post/new'
+    | '/dashboard/stats/audience'
+    | '/dashboard/stats/'
     | '/dashboard/post/$id/edit'
+    | '/dashboard/stats/look/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -307,15 +361,20 @@ export interface FileRouteTypes {
     | '/creator/$username'
     | '/go/$productId'
     | '/post/$id'
+    | '/rapport/$token'
     | '/dashboard/brands'
     | '/dashboard/earnings'
     | '/dashboard/moderation'
+    | '/dashboard/rapport-marque'
     | '/dashboard/sales'
     | '/dashboard/settings'
     | '/dashboard/stats-marques'
     | '/dashboard'
     | '/dashboard/post/new'
+    | '/dashboard/stats/audience'
+    | '/dashboard/stats'
     | '/dashboard/post/$id/edit'
+    | '/dashboard/stats/look/$id'
   id:
     | '__root__'
     | '/'
@@ -335,15 +394,20 @@ export interface FileRouteTypes {
     | '/creator/$username'
     | '/go/$productId'
     | '/post/$id'
+    | '/rapport/$token'
     | '/_authenticated/dashboard/brands'
     | '/_authenticated/dashboard/earnings'
     | '/_authenticated/dashboard/moderation'
+    | '/_authenticated/dashboard/rapport-marque'
     | '/_authenticated/dashboard/sales'
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/stats-marques'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/post/new'
+    | '/_authenticated/dashboard/stats/audience'
+    | '/_authenticated/dashboard/stats/'
     | '/_authenticated/dashboard/post/$id/edit'
+    | '/_authenticated/dashboard/stats/look/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -362,6 +426,7 @@ export interface RootRouteChildren {
   CreatorUsernameRoute: typeof CreatorUsernameRoute
   GoProductIdRoute: typeof GoProductIdRoute
   PostIdRoute: typeof PostIdRoute
+  RapportTokenRoute: typeof RapportTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -485,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rapport/$token': {
+      id: '/rapport/$token'
+      path: '/rapport/$token'
+      fullPath: '/rapport/$token'
+      preLoaderRoute: typeof RapportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/dashboard/': {
       id: '/_authenticated/dashboard/'
       path: '/dashboard'
@@ -511,6 +583,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard/moderation'
       fullPath: '/dashboard/moderation'
       preLoaderRoute: typeof AuthenticatedDashboardModerationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/rapport-marque': {
+      id: '/_authenticated/dashboard/rapport-marque'
+      path: '/dashboard/rapport-marque'
+      fullPath: '/dashboard/rapport-marque'
+      preLoaderRoute: typeof AuthenticatedDashboardRapportMarqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard/sales': {
@@ -541,11 +620,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardPostNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard/stats/': {
+      id: '/_authenticated/dashboard/stats/'
+      path: '/dashboard/stats'
+      fullPath: '/dashboard/stats/'
+      preLoaderRoute: typeof AuthenticatedDashboardStatsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/stats/audience': {
+      id: '/_authenticated/dashboard/stats/audience'
+      path: '/dashboard/stats/audience'
+      fullPath: '/dashboard/stats/audience'
+      preLoaderRoute: typeof AuthenticatedDashboardStatsAudienceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard/post/$id/edit': {
       id: '/_authenticated/dashboard/post/$id/edit'
       path: '/dashboard/post/$id/edit'
       fullPath: '/dashboard/post/$id/edit'
       preLoaderRoute: typeof AuthenticatedDashboardPostIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/stats/look/$id': {
+      id: '/_authenticated/dashboard/stats/look/$id'
+      path: '/dashboard/stats/look/$id'
+      fullPath: '/dashboard/stats/look/$id'
+      preLoaderRoute: typeof AuthenticatedDashboardStatsLookIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -557,12 +657,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardBrandsRoute: typeof AuthenticatedDashboardBrandsRoute
   AuthenticatedDashboardEarningsRoute: typeof AuthenticatedDashboardEarningsRoute
   AuthenticatedDashboardModerationRoute: typeof AuthenticatedDashboardModerationRoute
+  AuthenticatedDashboardRapportMarqueRoute: typeof AuthenticatedDashboardRapportMarqueRoute
   AuthenticatedDashboardSalesRoute: typeof AuthenticatedDashboardSalesRoute
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardStatsMarquesRoute: typeof AuthenticatedDashboardStatsMarquesRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardPostNewRoute: typeof AuthenticatedDashboardPostNewRoute
+  AuthenticatedDashboardStatsAudienceRoute: typeof AuthenticatedDashboardStatsAudienceRoute
+  AuthenticatedDashboardStatsIndexRoute: typeof AuthenticatedDashboardStatsIndexRoute
   AuthenticatedDashboardPostIdEditRoute: typeof AuthenticatedDashboardPostIdEditRoute
+  AuthenticatedDashboardStatsLookIdRoute: typeof AuthenticatedDashboardStatsLookIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -571,13 +675,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardBrandsRoute: AuthenticatedDashboardBrandsRoute,
   AuthenticatedDashboardEarningsRoute: AuthenticatedDashboardEarningsRoute,
   AuthenticatedDashboardModerationRoute: AuthenticatedDashboardModerationRoute,
+  AuthenticatedDashboardRapportMarqueRoute:
+    AuthenticatedDashboardRapportMarqueRoute,
   AuthenticatedDashboardSalesRoute: AuthenticatedDashboardSalesRoute,
   AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
   AuthenticatedDashboardStatsMarquesRoute:
     AuthenticatedDashboardStatsMarquesRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedDashboardPostNewRoute: AuthenticatedDashboardPostNewRoute,
+  AuthenticatedDashboardStatsAudienceRoute:
+    AuthenticatedDashboardStatsAudienceRoute,
+  AuthenticatedDashboardStatsIndexRoute: AuthenticatedDashboardStatsIndexRoute,
   AuthenticatedDashboardPostIdEditRoute: AuthenticatedDashboardPostIdEditRoute,
+  AuthenticatedDashboardStatsLookIdRoute:
+    AuthenticatedDashboardStatsLookIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -599,6 +710,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorUsernameRoute: CreatorUsernameRoute,
   GoProductIdRoute: GoProductIdRoute,
   PostIdRoute: PostIdRoute,
+  RapportTokenRoute: RapportTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -37,7 +37,7 @@ export function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card p-4 shadow-lg">
+    <div data-no-print className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card p-4 shadow-lg">
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {t("cookies.message")}{" "}
