@@ -120,6 +120,17 @@ function SignupPage() {
           <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
             {loading ? t("auth.creating") : t("auth.createAccount")}
           </Button>
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
+            {t("auth.legalBefore")}{" "}
+            <Link to="/conditions" target="_blank" className="font-semibold underline">
+              {t("auth.legalTerms")}
+            </Link>{" "}
+            {t("auth.legalAnd")}{" "}
+            <Link to="/confidentialite" target="_blank" className="font-semibold underline">
+              {t("auth.legalPrivacy")}
+            </Link>
+            .
+          </p>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           {t("auth.alreadyAccount")}{" "}

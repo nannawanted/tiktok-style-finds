@@ -308,24 +308,42 @@ function findJsonLdPrice(node: unknown): string {
  * Les grands sites qui bloquent les robots (Zara, H&M…) ne répondent pas :
  * le créateur saisit alors le prix à la main.
  */
+/** Adresse publique en https (pas d'IP, pas de réseau interne). */
+function isPublicHttpsUrl(u: URL): boolean {
+  return u.protocol === "https:" && u.hostname.includes(".") && !/^[\d.]+$|^\[|localhost|\.local$|\.internal$/i.test(u.hostname);
+}
+
+/**
+ * Suit les redirections une par une en revérifiant chaque adresse :
+ * une page publique ne peut pas nous renvoyer vers une adresse interne.
+ */
+async function safeFetch(url: string, init: RequestInit): Promise<Response | null> {
+  let u = new URL(url);
+  for (let i = 0; i < 5; i++) {
+    if (!isPublicHttpsUrl(u)) return null;
+    const res = await fetch(u, { ...init, redirect: "manual" });
+    const loc = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
+    if (!loc) return res;
+    u = new URL(loc, u);
+  }
+  return null;
+}
+
 async function fetchPriceFromPage(targetUrl: string): Promise<string> {
-  // Sécurité : uniquement des sites publics en https (pas d'adresse IP, pas de réseau interne)
   try {
-    const u = new URL(targetUrl);
-    if (u.protocol !== "https:" || !u.hostname.includes(".") || /^[\d.]+$|^\[|localhost|\.local$|\.internal$/i.test(u.hostname)) return "";
+    if (!isPublicHttpsUrl(new URL(targetUrl))) return "";
   } catch {
     return "";
   }
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(targetUrl, {
+    const res = await safeFetch(targetUrl, {
       headers: { "User-Agent": BROWSER_USER_AGENT, Accept: "text/html,application/xhtml+xml", "Accept-Language": "fr-BE,fr;q=0.9,en;q=0.8" },
-      redirect: "follow",
       signal: controller.signal,
     });
     clearTimeout(timer);
-    if (!res.ok || !(res.headers.get("content-type") ?? "").includes("text/html")) return "";
+    if (!res || !res.ok || !(res.headers.get("content-type") ?? "").includes("text/html")) return "";
     const html = (await res.text()).slice(0, 1_500_000);
 
     const meta = (prop: string) =>
@@ -375,8 +393,9 @@ export type CheckedProduct = ProductMetadata & { verdict: "ok" | "unverified" | 
  * - page illisible → « unverified » (le créateur remplit à la main, les signalements restent le filet de sécurité).
  */
 export const fetchProductMetadata = createServerFn({ method: "POST" })
-  .inputValidator((data: { url: string }) => {
+  .inputValidator((data: { url: string; accessToken: string }) => {
     parseHttpUrl(data.url);
+    if (typeof data.accessToken !== "string" || !data.accessToken) throw new Error("not_authenticated");
     return data;
   })
   .handler(async ({ data }): Promise<CheckedProduct> => {
@@ -384,6 +403,12 @@ export const fetchProductMetadata = createServerFn({ method: "POST" })
     const shape = checkLinkShape(data.url);
     if (shape) return { ...empty, verdict: shape };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Réservé aux comptes connectés, 30 liens par heure : personne ne peut se servir
+    // de notre serveur pour visiter des pages en masse.
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
+    if (userError || !userData?.user) throw new Error("not_authenticated");
+    const { data: allowed } = await supabaseAdmin.rpc("take_link_lookup" as never, { p_user: userData.user.id } as never);
+    if (allowed === false) return { ...empty, verdict: isKnownFashionShop(data.url) ? "ok" : "unverified" };
     const { data: blocked } = await supabaseAdmin.rpc("is_domain_blocked" as never, { p_url: data.url } as never);
     if (blocked) return { ...empty, verdict: "blocked" };
     let meta: ProductMetadata | null = null;

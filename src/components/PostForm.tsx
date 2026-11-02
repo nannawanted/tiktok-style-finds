@@ -324,7 +324,8 @@ export function PostForm({
       let gotName = false;
       let gotPrice = false;
       try {
-        const meta = await fetchProductMetadata({ data: { url } });
+        const { data: sess } = await supabase.auth.getSession();
+        const meta = await fetchProductMetadata({ data: { url, accessToken: sess.session?.access_token ?? "" } });
         if (meta.verdict !== "ok" && meta.verdict !== "unverified") {
           setLinkIssue((s) => ({ ...s, [key]: meta.verdict as LinkProblem }));
           if (announce) {
