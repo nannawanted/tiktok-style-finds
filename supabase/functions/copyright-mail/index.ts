@@ -97,9 +97,9 @@ Deno.serve(async (req) => {
             key,
             [data.user.email],
             `Ton look « ${r.post_title ?? ""} » a été retiré (droits d'auteur)`,
-            `Bonjour,\n\nTon look « ${r.post_title ?? ""} » a été retiré de WantedFashion.\n\n` +
-              `Pourquoi : un ayant droit nous a signalé que ce look utilise son œuvre sans autorisation (« ${r.work_description} »). ` +
-              `Ce signalement a été vérifié par une personne, sans outil automatique. Base : nos conditions d'utilisation (section « Droits d'auteur ») et le droit d'auteur.` +
+            `Bonjour,\n\nTon look « ${r.post_title ?? ""} » a été supprimé définitivement, sur tout le site WantedFashion.\n\n` +
+              `Pourquoi : à la suite d'un signalement (réf. ${r.ref}), nous avons estimé que ce look utilise une œuvre protégée par le droit d'auteur sans l'autorisation de son auteur : « ${r.work_description} ». ` +
+              `Cette décision a été prise par une personne, pas par un outil automatique. Base : le droit d'auteur et nos conditions d'utilisation (section « Droits d'auteur »).` +
               note +
               `\n\nAvertissements actifs sur ton compte : ${strikes ?? 1}/3. Un avertissement dure 90 jours. À 3 avertissements, le compte est suspendu.\n\n${REDRESS}\n\nWantedFashion`,
           );

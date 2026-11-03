@@ -344,7 +344,7 @@ export type CopyrightItem = {
   post_cover: string | null;
   creator_id: string | null;
   creator_username: string | null;
-  relation: "owner" | "agent";
+  relation: "owner" | "agent" | "other";
   work_description: string;
   original_url: string | null;
   explanation: string;
@@ -391,8 +391,8 @@ export const REPORT_ALERT_THRESHOLD = 3;
 
 export type ModerationNotice = {
   id: string;
-  kind: "post_removed" | "account_blocked" | "account_unblocked" | "copyright_removed";
-  data: { title?: string; reasons?: string[]; strikes?: number; ref?: string; note?: string; reason?: string } | null;
+  kind: "post_removed" | "account_blocked" | "account_unblocked" | "copyright_removed" | "terms_updated";
+  data: { title?: string; reasons?: string[]; strikes?: number; ref?: string; note?: string; reason?: string; work?: string; date?: string } | null;
   created_at: string;
   read_at: string | null;
 };

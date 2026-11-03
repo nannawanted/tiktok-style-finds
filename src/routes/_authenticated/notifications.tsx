@@ -76,20 +76,26 @@ function NotificationsPage() {
       {notices && notices.length > 0 && (
         <ul className="mb-5 space-y-2">
           {notices.slice(0, 5).map((n) => (
-            <li key={n.id} className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : "bg-destructive/10"}`}>
-              <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" ? "text-emerald-700" : "text-destructive"}`} aria-hidden="true" />
+            <li key={n.id} className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : n.kind === "terms_updated" ? "bg-surface" : "bg-destructive/10"}`}>
+              <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" ? "text-emerald-700" : n.kind === "terms_updated" ? "text-foreground/70" : "text-destructive"}`} aria-hidden="true" />
               <div className="min-w-0 text-sm leading-relaxed">
+                {/* Chaque avis contient les éléments de l'art. 17 §3 du DSA : mesure et portée, faits, base, décision humaine, recours */}
                 {n.kind === "copyright_removed" ? (
                   <>
                     <p className="font-semibold">{t("copyright.noticeRemoved").replace("{title}", n.data?.title ?? "")}</p>
+                    <p className="text-foreground/70">
+                      {t("copyright.noticeWhy").replace("{ref}", n.data?.ref ?? "").replace("{work}", (n.data as { work?: string } | null)?.work ?? "")}
+                    </p>
                     {n.data?.note && <p className="text-foreground/70">« {n.data.note} »</p>}
+                    <p className="text-foreground/70">{t("copyright.noticeBasis")}</p>
                     <p className="text-foreground/70">{t("copyright.noticeStrikes").replace("{n}", String(n.data?.strikes ?? 1))}</p>
-                    <p className="text-foreground/70">{t("copyright.noticeContest")}</p>
+                    <Redress />
                   </>
                 ) : n.kind === "account_blocked" && n.data?.reason === "copyright" ? (
                   <>
                     <p className="font-semibold">{t("copyright.noticeBlocked")}</p>
-                    <p className="text-foreground/70">{t("copyright.noticeContest")}</p>
+                    <p className="text-foreground/70">{t("copyright.noticeBlockedBasis")}</p>
+                    <Redress />
                   </>
                 ) : n.kind === "post_removed" ? (
                   <>
@@ -99,9 +105,29 @@ function NotificationsPage() {
                         {t("moderation.noticeReasons")} {n.data.reasons.map((r) => (REASONS[r] ? t(REASONS[r]) : r)).join(", ")}
                       </p>
                     )}
+                    <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
+                    <Redress />
+                  </>
+                ) : n.kind === "account_blocked" ? (
+                  <>
+                    <p className="font-semibold">{t("moderation.noticeBlocked")}</p>
+                    <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
+                    <Redress />
+                  </>
+                ) : n.kind === "terms_updated" ? (
+                  <>
+                    <p className="font-semibold">{t("moderation.termsUpdated").replace("{date}", n.data?.date ?? "")}</p>
+                    <p className="flex flex-wrap gap-x-4">
+                      <Link to="/conditions" className="font-semibold text-primary underline">
+                        {t("moderation.termsRead")}
+                      </Link>
+                      <Link to="/confidentialite" className="font-semibold text-primary underline">
+                        {t("moderation.privacyRead")}
+                      </Link>
+                    </p>
                   </>
                 ) : (
-                  <p className="font-semibold">{n.kind === "account_blocked" ? t("moderation.noticeBlocked") : t("moderation.noticeUnblocked")}</p>
+                  <p className="font-semibold">{t("moderation.noticeUnblocked")}</p>
                 )}
                 <p className="mt-0.5 text-xs text-foreground/50">{new Date(n.created_at).toLocaleDateString("fr-BE")}</p>
               </div>
@@ -223,5 +249,16 @@ function NotificationsPage() {
         </ul>
       )}
     </main>
+  );
+}
+
+/** Décision humaine + voies de recours (art. 17 §3 c et f du règlement (UE) 2022/2065). */
+function Redress() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <p className="mt-1 text-foreground/70">{t("moderation.redressHuman")}</p>
+      <p className="text-foreground/70">{t("moderation.redress")}</p>
+    </>
   );
 }

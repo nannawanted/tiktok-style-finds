@@ -10,7 +10,7 @@ function TermsPage() {
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-foreground">
       <h1 className="mb-2 text-2xl font-black">Conditions d'utilisation</h1>
       <p className="mb-8 text-xs text-muted-foreground">
-        Dernière mise à jour : {new Date().toLocaleDateString("fr-FR")}. Ce document n'a pas été rédigé ou relu par un
+        Dernière mise à jour : 3 novembre 2026. Ce document n'a pas été rédigé ou relu par un
         juriste — il décrit de bonne foi le fonctionnement du site, mais ne constitue pas un avis juridique.
       </p>
 
@@ -86,6 +86,41 @@ function TermsPage() {
         annulées.
       </p>
 
+      <h2 id="moderation" className="mb-2 mt-6 scroll-mt-24 font-bold">Modération des contenus</h2>
+      <p className="mb-2">Pour faire respecter ces règles, Wanted Fashion utilise :</p>
+      <ul className="mb-4 list-disc space-y-1 pl-5">
+        <li>
+          <strong>Des vérifications automatiques à l'envoi</strong> : chaque photo envoyée (look, photo de profil,
+          bannière) est analysée par un outil automatique (Sightengine) qui refuse la nudité et les contenus sexuels ;
+          la photo d'un look est aussi analysée par un outil d'intelligence artificielle qui vérifie qu'elle montre une
+          tenue ou un vêtement ; chaque lien produit est vérifié automatiquement (format du lien, site bloqué, page
+          qui parle bien d'un vêtement ou d'un accessoire). Un contenu refusé n'est pas publié et un message en indique
+          la raison.
+        </li>
+        <li>
+          <strong>Des vérifications humaines</strong> : si la vérification automatique de la photo d'un look n'a pas pu
+          se faire, le look est publié puis sa photo est vérifiée par une personne de l'équipe. Toute décision de supprimer un look publié ou de
+          suspendre un compte est prise par une personne, jamais par un outil automatique.
+        </li>
+        <li>
+          <strong>Les signalements</strong> : un utilisateur connecté peut signaler un look (lien cassé, arnaque,
+          contenu choquant, photo volée). Toute personne, même sans compte, peut signaler une violation de droits
+          d'auteur (voir « Droits d'auteur »). Chaque signalement est examiné par une personne, de façon objective et
+          proportionnée.
+        </li>
+        <li>
+          <strong>Les mesures possibles</strong> : refus d'un contenu à l'envoi, suppression d'un look, blocage d'un
+          site dans les liens produits, suspension d'un compte en cas de manquement grave ou répété. La personne
+          concernée reçoit un message qui explique la mesure, sa raison, sa base et comment la contester.
+        </li>
+        <li>
+          <strong>Contester une décision</strong> : écrivez à{" "}
+          <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a> en expliquant
+          pourquoi la décision vous semble injuste. Une personne de l'équipe réexamine le dossier et vous répond. Vous
+          pouvez aussi vous adresser à un organisme de règlement extrajudiciaire des litiges certifié, ou aux tribunaux.
+        </li>
+      </ul>
+
       <h2 className="mb-2 mt-6 font-bold">Suppression de compte</h2>
       <p className="mb-4">
         Vous pouvez supprimer votre compte à tout moment depuis les paramètres du dashboard. Cette action est
@@ -98,10 +133,17 @@ function TermsPage() {
         ses liens, selon les modalités techniques convenues (pixel ou intégration serveur-à-serveur).
       </p>
 
-      <h2 className="mb-2 mt-6 font-bold">Contact</h2>
+      <h2 id="contact" className="mb-2 mt-6 scroll-mt-24 font-bold">Point de contact</h2>
       <p className="mb-4">
-        Pour toute question sur ces conditions, écrivez à{" "}
-        <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a>.
+        Pour toute question sur ces conditions, la modération ou vos droits, et pour les autorités des États membres,
+        la Commission européenne et le Comité européen des services numériques : écrivez à{" "}
+        <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a>. Une personne
+        vous répond, en français ou en anglais.
+      </p>
+
+      <h2 className="mb-2 mt-6 font-bold">Modification de ces conditions</h2>
+      <p className="mb-4">
+        En cas de changement important de ces conditions, les utilisateurs inscrits en sont informés sur le site.
       </p>
     </main>
   );

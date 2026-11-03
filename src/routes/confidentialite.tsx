@@ -10,7 +10,7 @@ function PrivacyPage() {
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-foreground">
       <h1 className="mb-2 text-2xl font-black">Politique de confidentialité</h1>
       <p className="mb-8 text-xs text-muted-foreground">
-        Dernière mise à jour : {new Date().toLocaleDateString("fr-FR")}. Ce document n'a pas été rédigé ou relu par un
+        Dernière mise à jour : 3 novembre 2026. Ce document n'a pas été rédigé ou relu par un
         juriste — il décrit de bonne foi ce que le site fait réellement, mais ne constitue pas un avis juridique.
       </p>
 
@@ -31,7 +31,7 @@ function PrivacyPage() {
         <li><strong>Statistiques de fréquentation</strong> : pages visitées, provenance (ex. : TikTok, Google), type d'appareil, mesurées avec PostHog (hébergé dans l'Union européenne). Sans votre accord au bandeau, aucun cookie n'est déposé pour cela ; avec votre accord, PostHog peut reconnaître une visite de retour. Aucun enregistrement d'écran, aucun nom ni e-mail n'est transmis.</li>
         <li><strong>Vues des looks</strong> : quand une page de look est ouverte, nous comptons une vue. Pour éviter les fausses vues, nous utilisons un identifiant anonyme enregistré dans votre navigateur et une empreinte chiffrée de l'adresse IP (jamais l'adresse en clair), effacée après 48 heures.</li>
         <li><strong>Photos des looks</strong> : une « empreinte » numérique de chaque photo publiée est calculée pour proposer des looks qui se ressemblent et pour la recherche par l'image.</li>
-        <li><strong>Demandes « droits d'auteur »</strong> : si vous signalez une violation de vos droits, nous enregistrons votre nom, votre e-mail, votre signature, le contenu de la demande et une empreinte chiffrée de votre adresse IP (contre les abus). Ces informations servent à traiter la demande, à vous répondre et peuvent être transmises au créateur concerné pour qu'il puisse se défendre. Elles sont conservées le temps de traiter la demande et les éventuels recours.</li>
+        <li><strong>Demandes « droits d'auteur »</strong> : si vous signalez une violation de vos droits, nous enregistrons votre nom, votre e-mail, votre signature, le contenu de la demande et une empreinte chiffrée de votre adresse IP (contre les abus). Ces informations servent à traiter la demande et à vous répondre. Le créateur concerné est informé de la raison du retrait ; votre nom et votre e-mail ne lui sont communiqués que si c'est strictement nécessaire. Elles sont conservées le temps de traiter la demande et les éventuels recours.</li>
         <li><strong>Ventes et commissions</strong> : si vous êtes créateur, les ventes générées par vos liens et les montants qui vous sont dus.</li>
       </ul>
 

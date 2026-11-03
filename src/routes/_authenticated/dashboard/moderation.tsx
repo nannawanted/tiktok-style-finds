@@ -277,7 +277,7 @@ function CopyrightQueue() {
                     {it.creator_strikes > 0 && <span className="ml-1.5 font-semibold text-primary">· {it.creator_strikes} {t("copyright.strikes")}</span>}
                   </p>
                   <p className="mt-1 text-foreground/70">
-                    {t("copyright.by")} {it.full_name} ({it.relation === "owner" ? t("copyright.asOwner") : t("copyright.asAgent")}) · {it.email}
+                    {t("copyright.by")} {it.full_name} ({it.relation === "owner" ? t("copyright.asOwner") : it.relation === "agent" ? t("copyright.asAgent") : t("copyright.asOther")}) · {it.email}
                   </p>
                 </div>
               </div>

@@ -26,7 +26,7 @@ function CopyrightPage() {
   const { post } = Route.useSearch();
   const [f, setF] = useState({
     postUrl: post ? absoluteUrl(`/post/${post}`) : "",
-    relation: "owner" as "owner" | "agent",
+    relation: "owner" as "owner" | "agent" | "other",
     work: "",
     original: "",
     explanation: "",
@@ -118,15 +118,15 @@ function CopyrightPage() {
         <Step n={2} title={t("copyright.stepWork")}>
           <fieldset>
             <legend className="mb-2 text-sm font-semibold">{t("copyright.relation")}</legend>
-            <div className="grid grid-cols-2 gap-2" role="radiogroup">
-              {(["owner", "agent"] as const).map((r) => (
+            <div className="flex flex-col gap-2" role="radiogroup">
+              {(["owner", "agent", "other"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   role="radio"
                   aria-checked={f.relation === r}
                   onClick={() => set("relation", r)}
-                  className={`rounded-2xl border-[1.5px] px-3 py-3 text-sm font-semibold transition-colors ${f.relation === r ? "border-ink bg-background" : "border-border"}`}
+                  className={`rounded-2xl border-[1.5px] px-4 py-3 text-left text-sm font-semibold transition-colors ${f.relation === r ? "border-ink bg-background" : "border-border"}`}
                 >
                   {t(`copyright.${r}` as TKey)}
                 </button>
@@ -155,7 +155,7 @@ function CopyrightPage() {
 
         <Step n={4} title={t("copyright.stepSign")}>
           <Check checked={f.goodFaith} onChange={(v) => set("goodFaith", v)} label={t("copyright.goodFaith")} />
-          <Check checked={f.accurate} onChange={(v) => set("accurate", v)} label={t("copyright.accurate")} />
+          <Check checked={f.accurate} onChange={(v) => set("accurate", v)} label={f.relation === "other" ? t("copyright.accurateOther") : t("copyright.accurate")} />
           <Field label={t("copyright.signature")} id="cr-sign">
             <input id="cr-sign" required maxLength={120} value={f.signature} onChange={(e) => set("signature", e.target.value)} className={`${input} font-display italic`} />
           </Field>
