@@ -116,7 +116,10 @@ function NotificationsPage() {
                   </>
                 ) : n.kind === "terms_updated" ? (
                   <>
-                    <p className="font-semibold">{t("moderation.termsUpdated").replace("{date}", n.data?.date ?? "")}</p>
+                    <p className="font-semibold">{t("moderation.termsUpdated").replace(
+                        "{date}",
+                        n.data?.date ? new Date(`${n.data.date}T12:00:00`).toLocaleDateString(lang === "en" ? "en-GB" : "fr-BE", { day: "numeric", month: "long", year: "numeric" }) : "",
+                      )}</p>
                     <p className="flex flex-wrap gap-x-4">
                       <Link to="/conditions" className="font-semibold text-primary underline">
                         {t("moderation.termsRead")}
