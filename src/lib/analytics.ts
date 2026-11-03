@@ -1,3 +1,4 @@
+import { readConsent } from "@/lib/consent";
 // Statistiques du SITE (visiteurs, pages vues, provenance, appareils) avec PostHog,
 // hébergé en Europe. Ne s'active que si la clé VITE_POSTHOG_KEY est configurée sur Vercel.
 //
@@ -22,7 +23,7 @@ type PostHog = {
 let client: Promise<PostHog | null> | null = null;
 
 function hasConsent() {
-  return typeof document !== "undefined" && document.cookie.split("; ").includes("wf_consent=true");
+  return readConsent()?.stats === true;
 }
 
 function load(): Promise<PostHog | null> {
@@ -37,6 +38,7 @@ function load(): Promise<PostHog | null> {
         capture_pageview: false, // pages comptées à chaque changement de page (site à une seule page)
         capture_pageleave: true,
         disable_session_recording: true,
+        cookie_expiration: 365, // 12 mois : sous le plafond de 13 mois annoncé dans le bandeau
         person_profiles: "identified_only",
         respect_dnt: true,
       });
@@ -61,6 +63,7 @@ export function track(event: string, props?: Record<string, string | number | bo
 
 /** Le visiteur vient de répondre au bandeau cookies. */
 export function applyConsent(accepted: boolean) {
+  // accepted = accord pour les statistiques
   void load().then((ph) => ph?.set_config({ persistence: accepted ? "localStorage+cookie" : "memory" }));
   if (!accepted) clearAnalyticsStorage();
 }

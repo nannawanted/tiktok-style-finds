@@ -19,6 +19,9 @@ export const deleteAccount = createServerFn({ method: "POST" })
     // Supprime la ligne creator : cascade automatiquement sur posts → products
     // → clicks/sales (contraintes déjà en place en base).
     await supabaseAdmin.from("creators").delete().eq("id", userId);
+    // Traces de vues laissées sur les looks des autres (RGPD : droit à l'effacement)
+    await supabaseAdmin.from("post_viewers" as never).delete().eq("viewer_key", `u:${userId}`);
+    await supabaseAdmin.from("post_view_log" as never).delete().eq("viewer_key", `u:${userId}`);
     await supabaseAdmin.auth.admin.deleteUser(userId);
 
     return { ok: true };

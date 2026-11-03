@@ -1,3 +1,4 @@
+import { readConsent } from "@/lib/consent";
 // Vues des looks. Le comptage et les protections anti-fausses vues se font sur le serveur
 // (fonction record_post_view) : 1 vue max toutes les 30 min par personne et par look,
 // plafonds par heure, robots ignorés, le créateur ne compte pas ses propres vues.
@@ -9,7 +10,10 @@
  * non prolongée à chaque visite (recommandation CNIL).
  */
 const DEVICE_TTL_MS = 395 * 24 * 60 * 60 * 1000; // ≈ 13 mois
-export function deviceId(): string {
+export function deviceId(): string | null {
+  // Belgique : un identifiant de statistiques gardé dans le navigateur demande l'accord du visiteur.
+  // Sans accord, rien n'est gardé : le serveur reconnaît la personne par une empreinte d'IP gardée 48 h.
+  if (readConsent()?.stats !== true) return null;
   try {
     const [stored, created] = (localStorage.getItem("wf_device") ?? "").split("|");
     let id = stored;
