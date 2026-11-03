@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/conditions")({
   head: () => ({ meta: [{ title: "Conditions d'utilisation — Wanted Fashion" }] }),
@@ -33,6 +33,39 @@ function TermsPage() {
         autorisez Wanted Fashion à l'afficher publiquement sur le site. Vous vous engagez à ne publier que des liens
         produits réels et à ne pas tenter de fausser le système de suivi ou de commission.
       </p>
+
+      <h2 id="droits-auteur" className="mb-2 mt-6 scroll-mt-24 font-bold">Droits d'auteur</h2>
+      <ul className="mb-4 list-disc space-y-1 pl-5">
+        <li>
+          En publiant un look, vous garantissez que vous êtes l'auteur des photos et textes publiés, ou que vous avez
+          l'autorisation de leur auteur. Vous restez responsable de ce que vous publiez.
+        </li>
+        <li>
+          Les images des produits s'affichent depuis le site de la marque concernée, avec un lien vers sa page produit.
+          Une marque peut demander leur retrait à tout moment.
+        </li>
+        <li>
+          Toute personne (avec ou sans compte) peut signaler un contenu qui viole ses droits d'auteur via le{" "}
+          <Link to="/droits-auteur" className="text-brand underline">formulaire de signalement</Link>. La demande doit
+          indiquer le lien exact du look, l'œuvre concernée, les raisons, le nom et l'e-mail de la personne, et une
+          déclaration de bonne foi. Une fausse déclaration peut engager la responsabilité de son auteur.
+        </li>
+        <li>
+          Chaque demande est examinée par une personne. Nous confirmons la réception par e-mail, puis informons la
+          personne qui signale de notre décision. Si un look est retiré, son créateur reçoit un message qui explique
+          pourquoi.
+        </li>
+        <li>
+          Chaque look retiré pour droits d'auteur donne un avertissement au créateur, valable 90 jours. Avec 3
+          avertissements actifs, le compte est suspendu.
+        </li>
+        <li>
+          En cas de désaccord avec une décision, écrivez à{" "}
+          <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a> en expliquant
+          pourquoi : nous réexaminerons le dossier. Vous pouvez aussi vous adresser à un organisme de règlement
+          extrajudiciaire des litiges certifié ou aux tribunaux.
+        </li>
+      </ul>
 
       <h2 className="mb-2 mt-6 font-bold">Commissions et paiements</h2>
       <ul className="mb-4 list-disc space-y-1 pl-5">

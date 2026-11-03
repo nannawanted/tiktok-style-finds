@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation, type TKey } from "@/lib/i18n";
-import { REPORT_ALERT_THRESHOLD, useImageQuota, useIsAdmin, useModerationQueue, useUnverifiedPosts, type ModerationItem } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, useCopyrightQueue, useImageQuota, type CopyrightItem, useIsAdmin, useModerationQueue, useUnverifiedPosts, type ModerationItem } from "@/lib/social";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -96,6 +96,8 @@ function Moderation() {
         </Link>
         <h1 className="font-display text-3xl font-bold">{t("moderation.title")}</h1>
       </div>
+
+      <CopyrightQueue />
 
       {isLoading ? (
         <p className="mt-6 text-sm text-foreground/60">…</p>
@@ -221,6 +223,134 @@ function Moderation() {
         </AlertDialogContent>
       </AlertDialog>
     </main>
+  );
+}
+
+/**
+ * Demandes de retrait pour droits d'auteur (formulaire public /droits-auteur).
+ * Décision humaine (art. 16 §6 DSA) ; retrait = avertissement de 90 jours, 3 = compte suspendu (modèle YouTube) ;
+ * le créateur reçoit un avis motivé (art. 17 DSA) et la personne qui signale la décision (art. 16 §5).
+ */
+function CopyrightQueue() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const { data } = useCopyrightQueue();
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [toRemove, setToRemove] = useState<CopyrightItem | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function decide(it: CopyrightItem, action: "remove" | "keep") {
+    setBusy(it.id);
+    const { data: res, error } = await supabase.rpc("resolve_copyright_report" as never, { p_report: it.id, p_action: action, p_note: notes[it.id] ?? null } as never);
+    setBusy(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const r = res as unknown as { blocked?: boolean } | null;
+    toast.success(action === "keep" ? t("copyright.kept") : r?.blocked ? t("copyright.removedBlocked") : t("copyright.removed"));
+    void supabase.functions.invoke("copyright-mail", { body: { kind: "decision", id: it.id } }).catch(() => undefined);
+    qc.invalidateQueries({ queryKey: ["copyright-queue"] });
+    qc.invalidateQueries({ queryKey: ["feed"] });
+    qc.invalidateQueries({ queryKey: ["admin-log"] });
+    qc.invalidateQueries({ queryKey: ["blocked-users"] });
+  }
+
+  return (
+    <section id="droits-auteur" className="mt-6 scroll-mt-24">
+      <h2 className="font-display text-2xl font-bold">{t("copyright.queueTitle")}</h2>
+      {!data || data.length === 0 ? (
+        <p className="mt-3 text-sm text-foreground/55">{t("copyright.queueEmpty")}</p>
+      ) : (
+        <ul className="mt-3 space-y-3">
+          {data.map((it) => (
+            <li key={it.id} className="rounded-3xl bg-primary/10 p-4 ring-2 ring-primary/40">
+              <div className="flex gap-3">
+                <div className="h-24 w-[72px] shrink-0 overflow-hidden rounded-2xl bg-card">
+                  {it.post_cover && <img src={it.post_cover} alt="" className="h-full w-full object-cover" />}
+                </div>
+                <div className="min-w-0 flex-1 text-[13px] leading-snug">
+                  <p className="font-bold text-primary">Réf. {it.ref} · {new Date(it.created_at).toLocaleDateString("fr-BE")}</p>
+                  <p className="truncate text-[15px] font-bold">{it.post_title}</p>
+                  <p className="truncate text-foreground/60">
+                    @{it.creator_username}
+                    {it.creator_strikes > 0 && <span className="ml-1.5 font-semibold text-primary">· {it.creator_strikes} {t("copyright.strikes")}</span>}
+                  </p>
+                  <p className="mt-1 text-foreground/70">
+                    {t("copyright.by")} {it.full_name} ({it.relation === "owner" ? t("copyright.asOwner") : t("copyright.asAgent")}) · {it.email}
+                  </p>
+                </div>
+              </div>
+              <dl className="mt-3 space-y-2 rounded-2xl bg-background p-3 text-[13px] leading-snug">
+                <div>
+                  <dt className="font-semibold">{t("copyright.work")}</dt>
+                  <dd className="text-foreground/80">{it.work_description}</dd>
+                </div>
+                {it.original_url && (
+                  <div>
+                    <dt className="font-semibold">{t("copyright.original")}</dt>
+                    <dd>
+                      <a href={it.original_url} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-primary underline">
+                        {it.original_url}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="font-semibold">{t("copyright.explanation")}</dt>
+                  <dd className="text-foreground/80">{it.explanation}</dd>
+                </div>
+              </dl>
+              <label className="mt-3 block text-[13px] font-semibold" htmlFor={`cr-note-${it.id}`}>
+                {t("copyright.note")}
+              </label>
+              <textarea
+                id={`cr-note-${it.id}`}
+                rows={2}
+                maxLength={1000}
+                value={notes[it.id] ?? ""}
+                onChange={(e) => setNotes((n) => ({ ...n, [it.id]: e.target.value }))}
+                className="mt-1 w-full rounded-2xl border-[1.5px] border-border bg-background px-3 py-2 text-[14px] outline-none focus:border-foreground/50"
+              />
+              <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
+                <button type="button" disabled={busy === it.id} onClick={() => decide(it, "keep")} className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-surface text-sm font-semibold disabled:opacity-50">
+                  <Check className="h-4 w-4" aria-hidden="true" /> {t("copyright.keep")}
+                </button>
+                <button type="button" disabled={busy === it.id} onClick={() => setToRemove(it)} className="flex h-11 items-center justify-center gap-1.5 rounded-full bg-destructive text-sm font-semibold text-destructive-foreground disabled:opacity-50">
+                  <Trash2 className="h-4 w-4" aria-hidden="true" /> {t("copyright.remove")}
+                </button>
+                {it.post_id ? (
+                  <Link to="/post/$id" params={{ id: it.post_id }} aria-label={t("dashboard.preview")} className="flex h-11 w-11 items-center justify-center rounded-full bg-surface">
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && setToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("copyright.removeTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("copyright.removeDesc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toRemove) void decide(toRemove, "remove");
+                setToRemove(null);
+              }}
+            >
+              {t("copyright.remove")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }
 

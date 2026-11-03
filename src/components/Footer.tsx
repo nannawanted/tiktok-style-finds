@@ -38,6 +38,9 @@ export function Footer() {
           <Link to="/conditions" className={link}>
             {t("footer.terms")}
           </Link>
+          <Link to="/droits-auteur" className={link}>
+            {t("copyright.footerLink")}
+          </Link>
           <a href="mailto:nannawanted@gmail.com" className={link}>
             Contact
           </a>

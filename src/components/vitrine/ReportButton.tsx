@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Flag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -76,6 +76,11 @@ export function ReportButton({ postId, className = "" }: { postId: string; class
               </button>
             ))}
           </div>
+          {reason === "stolen_photo" && (
+            <Link to="/droits-auteur" search={{ post: postId }} onClick={() => setOpen(false)} className="rounded-2xl bg-background px-4 py-3 text-[13px] font-semibold text-primary underline underline-offset-4">
+              {t("copyright.reportHint")} →
+            </Link>
+          )}
           <label className="mt-1 block text-sm font-semibold" htmlFor={`report-details-${postId}`}>
             {t("report.details")}
           </label>

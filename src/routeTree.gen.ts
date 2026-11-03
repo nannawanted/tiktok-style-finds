@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as ConditionsRouteImport } from './routes/conditions'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as CreateursRouteImport } from './routes/createurs'
+import { Route as DroitsAuteurRouteImport } from './routes/droits-auteur'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -69,6 +70,11 @@ const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
 const CreateursRoute = CreateursRouteImport.update({
   id: '/createurs',
   path: '/createurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroitsAuteurRoute = DroitsAuteurRouteImport.update({
+  id: '/droits-auteur',
+  path: '/droits-auteur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplorerRoute = ExplorerRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/createurs': typeof CreateursRoute
+  '/droits-auteur': typeof DroitsAuteurRoute
   '/explorer': typeof ExplorerRoute
   '/login': typeof LoginRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/createurs': typeof CreateursRoute
+  '/droits-auteur': typeof DroitsAuteurRoute
   '/explorer': typeof ExplorerRoute
   '/login': typeof LoginRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/createurs': typeof CreateursRoute
+  '/droits-auteur': typeof DroitsAuteurRoute
   '/explorer': typeof ExplorerRoute
   '/login': typeof LoginRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | '/conditions'
     | '/confidentialite'
     | '/createurs'
+    | '/droits-auteur'
     | '/explorer'
     | '/login'
     | '/robots.txt'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/conditions'
     | '/confidentialite'
     | '/createurs'
+    | '/droits-auteur'
     | '/explorer'
     | '/login'
     | '/robots.txt'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/conditions'
     | '/confidentialite'
     | '/createurs'
+    | '/droits-auteur'
     | '/explorer'
     | '/login'
     | '/robots.txt'
@@ -417,6 +429,7 @@ export interface RootRouteChildren {
   ConditionsRoute: typeof ConditionsRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   CreateursRoute: typeof CreateursRoute
+  DroitsAuteurRoute: typeof DroitsAuteurRoute
   ExplorerRoute: typeof ExplorerRoute
   LoginRoute: typeof LoginRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/createurs'
       fullPath: '/createurs'
       preLoaderRoute: typeof CreateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/droits-auteur': {
+      id: '/droits-auteur'
+      path: '/droits-auteur'
+      fullPath: '/droits-auteur'
+      preLoaderRoute: typeof DroitsAuteurRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explorer': {
@@ -701,6 +721,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConditionsRoute: ConditionsRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
   CreateursRoute: CreateursRoute,
+  DroitsAuteurRoute: DroitsAuteurRoute,
   ExplorerRoute: ExplorerRoute,
   LoginRoute: LoginRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,

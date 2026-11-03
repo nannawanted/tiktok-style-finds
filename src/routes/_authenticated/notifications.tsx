@@ -11,7 +11,7 @@ const REASONS: Record<string, TKey> = {
   shocking: "report.shocking",
   stolen_photo: "report.stolen",
 };
-import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useCopyrightQueue, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
@@ -68,6 +68,7 @@ function NotificationsPage() {
 
   const { data: alerts } = useModerationQueue(REPORT_ALERT_THRESHOLD);
   const { data: quota } = useImageQuota();
+  const { data: copyright } = useCopyrightQueue();
   return (
     <main className="mx-auto max-w-2xl px-4 pt-6 md:pt-10">
       <h1 className="font-display fade-up mb-6 text-4xl font-bold">{t("engage.notifications")}</h1>
@@ -78,7 +79,19 @@ function NotificationsPage() {
             <li key={n.id} className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : "bg-destructive/10"}`}>
               <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" ? "text-emerald-700" : "text-destructive"}`} aria-hidden="true" />
               <div className="min-w-0 text-sm leading-relaxed">
-                {n.kind === "post_removed" ? (
+                {n.kind === "copyright_removed" ? (
+                  <>
+                    <p className="font-semibold">{t("copyright.noticeRemoved").replace("{title}", n.data?.title ?? "")}</p>
+                    {n.data?.note && <p className="text-foreground/70">« {n.data.note} »</p>}
+                    <p className="text-foreground/70">{t("copyright.noticeStrikes").replace("{n}", String(n.data?.strikes ?? 1))}</p>
+                    <p className="text-foreground/70">{t("copyright.noticeContest")}</p>
+                  </>
+                ) : n.kind === "account_blocked" && n.data?.reason === "copyright" ? (
+                  <>
+                    <p className="font-semibold">{t("copyright.noticeBlocked")}</p>
+                    <p className="text-foreground/70">{t("copyright.noticeContest")}</p>
+                  </>
+                ) : n.kind === "post_removed" ? (
                   <>
                     <p className="font-semibold">{t("moderation.noticeRemoved").replace("{title}", n.data?.title ?? "")}</p>
                     {!!n.data?.reasons?.length && (
@@ -104,6 +117,18 @@ function NotificationsPage() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block font-bold">{alerts.length} {t("moderation.alert")}</span>
+            <span className="block text-sm text-foreground/65">{t("moderation.alertCta")} →</span>
+          </span>
+        </Link>
+      )}
+      {/* Admin : demandes de retrait pour droits d'auteur */}
+      {copyright && copyright.length > 0 && (
+        <Link to="/dashboard/moderation" hash="droits-auteur" className="mb-5 flex items-center gap-3 rounded-3xl bg-primary/10 p-4 ring-2 ring-primary/40">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{copyright.length} {t("copyright.alert")}</span>
             <span className="block text-sm text-foreground/65">{t("moderation.alertCta")} →</span>
           </span>
         </Link>

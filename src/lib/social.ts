@@ -336,6 +336,40 @@ export type ModerationItem = {
 };
 
 /** Tenues signalées (admin). min = 3 pour les alertes, 1 pour tout voir. */
+export type CopyrightItem = {
+  id: string;
+  ref: string;
+  post_id: string | null;
+  post_title: string | null;
+  post_cover: string | null;
+  creator_id: string | null;
+  creator_username: string | null;
+  relation: "owner" | "agent";
+  work_description: string;
+  original_url: string | null;
+  explanation: string;
+  full_name: string;
+  email: string;
+  signature: string;
+  created_at: string;
+  creator_strikes: number;
+};
+
+/** Admin : demandes de retrait pour droits d'auteur en attente. */
+export function useCopyrightQueue() {
+  const { data: isAdmin } = useIsAdmin();
+  return useQuery({
+    queryKey: ["copyright-queue"],
+    enabled: !!isAdmin,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("copyright_queue" as never);
+      if (error) throw error;
+      return (data ?? []) as CopyrightItem[];
+    },
+  });
+}
+
 export function useModerationQueue(min = 1) {
   const { data: isAdmin } = useIsAdmin();
   return useQuery({
@@ -357,8 +391,8 @@ export const REPORT_ALERT_THRESHOLD = 3;
 
 export type ModerationNotice = {
   id: string;
-  kind: "post_removed" | "account_blocked" | "account_unblocked";
-  data: { title?: string; reasons?: string[] } | null;
+  kind: "post_removed" | "account_blocked" | "account_unblocked" | "copyright_removed";
+  data: { title?: string; reasons?: string[]; strikes?: number; ref?: string; note?: string; reason?: string } | null;
   created_at: string;
   read_at: string | null;
 };

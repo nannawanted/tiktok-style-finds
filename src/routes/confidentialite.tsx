@@ -31,6 +31,7 @@ function PrivacyPage() {
         <li><strong>Statistiques de fréquentation</strong> : pages visitées, provenance (ex. : TikTok, Google), type d'appareil, mesurées avec PostHog (hébergé dans l'Union européenne). Sans votre accord au bandeau, aucun cookie n'est déposé pour cela ; avec votre accord, PostHog peut reconnaître une visite de retour. Aucun enregistrement d'écran, aucun nom ni e-mail n'est transmis.</li>
         <li><strong>Vues des looks</strong> : quand une page de look est ouverte, nous comptons une vue. Pour éviter les fausses vues, nous utilisons un identifiant anonyme enregistré dans votre navigateur et une empreinte chiffrée de l'adresse IP (jamais l'adresse en clair), effacée après 48 heures.</li>
         <li><strong>Photos des looks</strong> : une « empreinte » numérique de chaque photo publiée est calculée pour proposer des looks qui se ressemblent et pour la recherche par l'image.</li>
+        <li><strong>Demandes « droits d'auteur »</strong> : si vous signalez une violation de vos droits, nous enregistrons votre nom, votre e-mail, votre signature, le contenu de la demande et une empreinte chiffrée de votre adresse IP (contre les abus). Ces informations servent à traiter la demande, à vous répondre et peuvent être transmises au créateur concerné pour qu'il puisse se défendre. Elles sont conservées le temps de traiter la demande et les éventuels recours.</li>
         <li><strong>Ventes et commissions</strong> : si vous êtes créateur, les ventes générées par vos liens et les montants qui vous sont dus.</li>
       </ul>
 
@@ -52,7 +53,7 @@ function PrivacyPage() {
       <h2 className="mb-2 mt-6 font-bold">Avec qui vos données sont partagées</h2>
       <ul className="mb-4 list-disc space-y-1 pl-5">
         <li><strong>Marques partenaires</strong> : lorsqu'un achat est réalisé via un lien du site, la marque connaît le fait qu'une vente a eu lieu via Wanted Fashion (aucune donnée personnelle vous concernant ne lui est transmise au-delà de ce qu'elle collecte déjà pour votre commande).</li>
-        <li><strong>Hébergeurs et outils techniques</strong> : Supabase (base de données), Vercel (hébergement du site), PostHog (statistiques de fréquentation, UE) et Sightengine (vérification automatique des photos publiées), qui traitent les données pour notre compte.</li>
+        <li><strong>Hébergeurs et outils techniques</strong> : Supabase (base de données), Vercel (hébergement du site), PostHog (statistiques de fréquentation, UE), Sightengine (vérification automatique des photos publiées) et Resend (envoi des e-mails de modération), qui traitent les données pour notre compte.</li>
         <li>Nous ne vendons aucune donnée à des tiers.</li>
       </ul>
 
