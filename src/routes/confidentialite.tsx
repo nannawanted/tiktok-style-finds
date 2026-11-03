@@ -42,13 +42,33 @@ function PrivacyPage() {
         <li>Détecter les tentatives de fraude (fausses ventes, clics anormaux) — voir la section Sécurité ci-dessous.</li>
       </ul>
 
-      <h2 className="mb-2 mt-6 font-bold">Cookies</h2>
-      <p className="mb-2">Le site utilise deux cookies :</p>
+      <h2 id="cookies" className="mb-2 mt-6 scroll-mt-24 font-bold">Cookies et stockage dans le navigateur</h2>
+      <p className="mb-2">
+        <strong>Sans votre accord</strong>, seuls des éléments indispensables au fonctionnement du site, ou exemptés de
+        consentement, sont enregistrés :
+      </p>
       <ul className="mb-4 list-disc space-y-1 pl-5">
-        <li><code>wf_consent</code> : mémorise votre choix sur ce bandeau. Toujours posé, indispensable au fonctionnement du bandeau lui-même.</li>
-        <li><code>wf_aff</code> : posé uniquement si vous avez accepté, quand vous cliquez sur un produit. Il permet d'attribuer une vente au bon créateur si vous achetez ensuite chez la marque. Il expire après 30 jours.</li>
+        <li><code>wf_consent</code> (cookie, 1 an) : mémorise votre choix sur le bandeau cookies.</li>
+        <li>Session de connexion (stockage du navigateur, Supabase) : vous garde connecté si vous avez un compte.</li>
+        <li><code>wf-lang</code> (stockage du navigateur) : la langue choisie (français ou anglais).</li>
+        <li>Brouillon de look et préférences d'affichage (stockage du navigateur) : pour ne pas perdre ce que vous étiez en train de faire.</li>
+        <li>
+          <code>wf_device</code> (stockage du navigateur, 13 mois maximum, non prolongé à chaque visite) : un identifiant
+          anonyme qui sert uniquement à compter les vues de nos looks sans compter deux fois la même personne. Il n'est
+          utilisé que pour nos propres statistiques, jamais partagé ni utilisé sur d'autres sites : c'est une mesure
+          d'audience exemptée de consentement selon les règles de la CNIL.
+        </li>
       </ul>
-      <p className="mb-4">Vous pouvez refuser <code>wf_aff</code> via le bandeau ; le site reste utilisable normalement.</p>
+      <p className="mb-2"><strong>Uniquement si vous acceptez</strong> sur le bandeau :</p>
+      <ul className="mb-4 list-disc space-y-1 pl-5">
+        <li><code>wf_aff</code> (cookie, 30 jours) : posé quand vous cliquez sur un produit, pour attribuer une vente au bon créateur si vous achetez ensuite chez la marque.</li>
+        <li>PostHog (cookies et stockage commençant par <code>ph_</code>, hébergé dans l'Union européenne) : permet de reconnaître une visite de retour dans nos statistiques de fréquentation. Sans accord, PostHog ne garde rien dans votre navigateur.</li>
+      </ul>
+      <p className="mb-4">
+        Refuser est aussi simple qu'accepter, et le site reste utilisable normalement. Vous pouvez changer d'avis à tout
+        moment avec le lien « Gérer les cookies » en bas de chaque page (ou dans le menu) : si vous retirez votre accord,
+        les cookies <code>wf_aff</code> et PostHog sont effacés.
+      </p>
 
       <h2 className="mb-2 mt-6 font-bold">Avec qui vos données sont partagées</h2>
       <ul className="mb-4 list-disc space-y-1 pl-5">

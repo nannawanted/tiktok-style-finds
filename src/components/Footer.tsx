@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
 import { Logo } from "./Logo";
+import { openCookieSettings } from "./CookieConsent";
 
 // Affiché en bas de TOUTES les pages du site (branché dans __root.tsx).
 export function Footer() {
@@ -41,6 +42,9 @@ export function Footer() {
           <Link to="/droits-auteur" className={link}>
             {t("copyright.footerLink")}
           </Link>
+          <button type="button" onClick={openCookieSettings} className={link}>
+            {t("cookies.manage")}
+          </button>
           <a href="mailto:nannawanted@gmail.com" className={link}>
             Contact
           </a>

@@ -62,4 +62,19 @@ export function track(event: string, props?: Record<string, string | number | bo
 /** Le visiteur vient de répondre au bandeau cookies. */
 export function applyConsent(accepted: boolean) {
   void load().then((ph) => ph?.set_config({ persistence: accepted ? "localStorage+cookie" : "memory" }));
+  if (!accepted) clearAnalyticsStorage();
+}
+
+/** Retrait du consentement : on efface ce que PostHog avait gardé dans le navigateur. */
+function clearAnalyticsStorage() {
+  if (typeof document === "undefined") return;
+  for (const c of document.cookie.split("; ")) {
+    const name = c.split("=")[0];
+    if (name.startsWith("ph_")) document.cookie = `${name}=; max-age=0; path=/`;
+  }
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("ph_") || k.startsWith("__ph")) localStorage.removeItem(k);
+  } catch {
+    /* stockage indisponible */
+  }
 }

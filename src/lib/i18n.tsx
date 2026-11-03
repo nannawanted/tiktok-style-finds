@@ -337,6 +337,7 @@ const dict = {
     learnMore: { fr: "En savoir plus", en: "Learn more" },
     accept: { fr: "Accepter", en: "Accept" },
     decline: { fr: "Refuser", en: "Decline" },
+    manage: { fr: "Gérer les cookies", en: "Manage cookies" },
   },
   postPage: {
     notFound: { fr: "Post introuvable.", en: "Post not found." },

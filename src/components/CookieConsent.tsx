@@ -17,19 +17,29 @@ function setConsentCookie(value: "true" | "false") {
   document.cookie = `${CONSENT_COOKIE}=${value}; max-age=${maxAge}; path=/; SameSite=Lax`;
 }
 
-// Bandeau de consentement pour le cookie de suivi d'affiliation (wf_aff),
-// qui n'est posé (voir src/lib/affiliate-redirect.ts) que si ce consentement
-// vaut "true". Le choix est lu côté serveur via ce même cookie wf_consent.
+/** Rouvre le bandeau (lien « Gérer les cookies » du pied de page et du menu). */
+export function openCookieSettings() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("wf:cookies"));
+}
+
+// Bandeau de consentement (règles CNIL) : refuser aussi simple qu'accepter (deux boutons identiques),
+// rien n'est déposé avant le choix, et le choix peut être changé à tout moment depuis toutes les pages.
+// wf_aff (voir src/lib/affiliate-redirect.ts) et PostHog ne gardent rien sans consentement « true ».
 export function CookieConsent() {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (readCookie(CONSENT_COOKIE) === null) setVisible(true);
+    const open = () => setVisible(true);
+    window.addEventListener("wf:cookies", open);
+    return () => window.removeEventListener("wf:cookies", open);
   }, []);
 
   function respond(accepted: boolean) {
     setConsentCookie(accepted ? "true" : "false");
+    // Retrait : on efface aussi le cookie de suivi déjà posé
+    if (!accepted) document.cookie = "wf_aff=; max-age=0; path=/; secure; samesite=none";
     applyConsent(accepted);
     setVisible(false);
   }
@@ -46,10 +56,10 @@ export function CookieConsent() {
           </Link>
         </p>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => respond(false)}>
+          <Button size="sm" className="min-w-24 bg-ink text-surface hover:bg-ink/90" onClick={() => respond(false)}>
             {t("cookies.decline")}
           </Button>
-          <Button size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90" onClick={() => respond(true)}>
+          <Button size="sm" className="min-w-24 bg-ink text-surface hover:bg-ink/90" onClick={() => respond(true)}>
             {t("cookies.accept")}
           </Button>
         </div>

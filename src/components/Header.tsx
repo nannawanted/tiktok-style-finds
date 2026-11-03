@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { openCookieSettings } from "@/components/CookieConsent";
 import { useQuery } from "@tanstack/react-query";
 import { cleanQuery, fetchCreators, logSearchClick, searchOutfits } from "@/lib/public-data";
 import { searchCompletions } from "@/lib/visual-concepts";
@@ -359,6 +360,16 @@ export function Header() {
                   </Link>
                 </>
               )}
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  openCookieSettings();
+                }}
+                className="mt-2 text-sm text-foreground/60 underline underline-offset-4"
+              >
+                {t("cookies.manage")}
+              </button>
             </div>
           </SheetContent>
         </Sheet>

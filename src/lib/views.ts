@@ -2,13 +2,21 @@
 // (fonction record_post_view) : 1 vue max toutes les 30 min par personne et par look,
 // plafonds par heure, robots ignorés, le créateur ne compte pas ses propres vues.
 
-/** Identifiant anonyme de ce navigateur (aucune donnée personnelle). */
+/**
+ * Identifiant anonyme de ce navigateur, utilisé seulement pour compter les vues de nos looks.
+ * Mesure d'audience exemptée de consentement selon la CNIL : usage limité à nos propres statistiques,
+ * données anonymes, jamais partagé ni suivi sur d'autres sites ; durée de vie de 13 mois maximum,
+ * non prolongée à chaque visite (recommandation CNIL).
+ */
+const DEVICE_TTL_MS = 395 * 24 * 60 * 60 * 1000; // ≈ 13 mois
 export function deviceId(): string {
   try {
-    let id = localStorage.getItem("wf_device");
-    if (!id || !/^[A-Za-z0-9-]{16,64}$/.test(id)) {
+    const [stored, created] = (localStorage.getItem("wf_device") ?? "").split("|");
+    let id = stored;
+    const born = Number(created);
+    if (!id || !/^[A-Za-z0-9-]{16,64}$/.test(id) || !Number.isFinite(born) || Date.now() - born > DEVICE_TTL_MS) {
       id = crypto.randomUUID();
-      localStorage.setItem("wf_device", id);
+      localStorage.setItem("wf_device", `${id}|${Date.now()}`);
     }
     return id;
   } catch {
