@@ -10,7 +10,7 @@ function TermsPage() {
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-foreground">
       <h1 className="mb-2 text-2xl font-black">Conditions d'utilisation</h1>
       <p className="mb-8 text-xs text-muted-foreground">
-        Dernière mise à jour : 3 novembre 2026. Ce document n'a pas été rédigé ou relu par un
+        Dernière mise à jour : 4 novembre 2026. Ce document n'a pas été rédigé ou relu par un
         juriste — il décrit de bonne foi le fonctionnement du site, mais ne constitue pas un avis juridique.
       </p>
 
@@ -24,14 +24,26 @@ function TermsPage() {
       <h2 className="mb-2 mt-6 font-bold">Créer un compte</h2>
       <p className="mb-4">
         Vous devez fournir une adresse email valide et être en mesure de représenter légalement les informations que
-        vous publiez. Vous êtes responsable de la confidentialité de votre mot de passe.
+        vous publiez.
+      </p>
+
+      <h2 className="mb-2 mt-6 font-bold">Sécurité de votre compte</h2>
+      <p className="mb-4">
+        Gardez votre mot de passe secret et ne le réutilisez pas ailleurs. Vous pouvez activer la double vérification
+        dans Paramètres → Sécurité. Si vous pensez que quelqu'un utilise votre compte sans votre accord, changez votre
+        mot de passe et prévenez-nous à{" "}
+        <a href="mailto:nannawanted@gmail.com" className="text-brand underline">nannawanted@gmail.com</a>.
       </p>
 
       <h2 className="mb-2 mt-6 font-bold">Contenu publié par les créateurs</h2>
       <p className="mb-4">
         Vous restez propriétaire du contenu que vous publiez (photos, vidéos, descriptions). En le publiant, vous
-        autorisez Wanted Fashion à l'afficher publiquement sur le site. Vous vous engagez à ne publier que des liens
-        produits réels et à ne pas tenter de fausser le système de suivi ou de commission.
+        accordez à Wanted Fashion une autorisation gratuite, non exclusive et valable dans le monde entier pour
+        l'héberger, le reproduire (par exemple en créer des miniatures), l'afficher publiquement sur le site et dans
+        les aperçus de partage, et l'analyser avec des outils automatiques (vérification des contenus, suggestions de
+        looks qui se ressemblent). Cette autorisation sert uniquement à faire fonctionner le site ; elle prend fin
+        quand vous supprimez le contenu ou votre compte. Vous vous engagez à ne publier que des liens produits réels
+        et à ne pas tenter de fausser le système de suivi ou de commission.
       </p>
 
       <h2 id="droits-auteur" className="mb-2 mt-6 scroll-mt-24 font-bold">Droits d'auteur</h2>
@@ -124,8 +136,25 @@ function TermsPage() {
       <h2 className="mb-2 mt-6 font-bold">Suppression de compte</h2>
       <p className="mb-4">
         Vous pouvez supprimer votre compte à tout moment depuis les paramètres du dashboard. Cette action est
-        définitive et supprime vos posts, produits et statistiques associées.
+        définitive et supprime vos posts, produits et statistiques associées. Pensez à télécharger vos données
+        avant (Paramètres → Compte → « Télécharger mes données »).
       </p>
+
+      <h2 className="mb-2 mt-6 font-bold">Liens vers les marques</h2>
+      <p className="mb-4">
+        Wanted Fashion ne vend rien. Un achat fait après avoir cliqué sur un lien se passe directement entre vous et
+        la marque ou la boutique : c'est elle qui est responsable du produit, de son prix, de la livraison, des
+        retours et de votre droit de rétractation. Nous vérifions les liens au moment de leur publication, mais nous
+        ne contrôlons pas les sites des marques et ne garantissons pas que le produit, son prix ou sa disponibilité
+        n'ont pas changé.
+      </p>
+
+      <h2 className="mb-2 mt-6 font-bold">Responsabilité</h2>
+      <ul className="mb-4 list-disc space-y-1 pl-5">
+        <li>Nous faisons de notre mieux pour que le site fonctionne bien et en sécurité, mais il peut connaître des pannes ou des erreurs.</li>
+        <li>Chaque créateur est responsable de ce qu'il publie. Nous ne vérifions pas chaque contenu avant sa publication, mais nous agissons rapidement quand un contenu illégal nous est signalé (voir « Modération des contenus »).</li>
+        <li>Rien dans ces conditions ne limite notre responsabilité en cas de faute intentionnelle ou grave, ni les droits que vous donne la loi en tant que consommateur.</li>
+      </ul>
 
       <h2 className="mb-2 mt-6 font-bold">Marques partenaires</h2>
       <p className="mb-4">
@@ -143,7 +172,18 @@ function TermsPage() {
 
       <h2 className="mb-2 mt-6 font-bold">Modification de ces conditions</h2>
       <p className="mb-4">
-        En cas de changement important de ces conditions, les utilisateurs inscrits en sont informés sur le site.
+        Nous pouvons modifier ces conditions, par exemple quand le site évolue ou quand la loi change. En cas de
+        changement important, les utilisateurs inscrits sont prévenus par une notification sur le site avant
+        qu'il s'applique, sauf si la loi impose un changement immédiat. Si vous n'êtes pas d'accord, vous pouvez
+        supprimer votre compte à tout moment ; si vous continuez à utiliser le site, les nouvelles conditions
+        s'appliquent.
+      </p>
+
+      <h2 className="mb-2 mt-6 font-bold">Droit applicable et litiges</h2>
+      <p className="mb-4">
+        Ces conditions sont soumises au droit belge. Si vous êtes un consommateur vivant dans un autre pays de l'Union
+        européenne, vous gardez la protection des règles obligatoires de votre pays et pouvez saisir les tribunaux de
+        votre pays. En cas de problème, écrivez-nous d'abord : la plupart des difficultés se règlent à l'amiable.
       </p>
     </main>
   );

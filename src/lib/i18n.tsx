@@ -918,7 +918,7 @@ const dict = {
     imageRemoved: { fr: "Ta {what} a été supprimée par la modération : elle ne respectait pas les règles du site (nudité ou contenu choquant). Tu peux en mettre une autre.", en: "Your {what} was removed by moderation: it broke the site's rules (nudity or shocking content). You can upload another one." },
     imageAvatar: { fr: "photo de profil", en: "profile photo" },
     imageBanner: { fr: "bannière", en: "banner" },
-    termsUpdated: { fr: "Nos conditions d'utilisation et notre politique de confidentialité ont changé le {date} : modération des contenus, droits d'auteur, point de contact.", en: "Our terms of use and privacy policy changed on {date}: content moderation, copyright, point of contact." },
+    termsUpdated: { fr: "Nos conditions d'utilisation et notre politique de confidentialité ont changé le {date} : droits sur tes contenus, modération, droits d'auteur, responsabilité, droit applicable, cookies.", en: "Our terms of use and privacy policy changed on {date}: rights on your content, moderation, copyright, liability, governing law, cookies." },
     termsRead: { fr: "Lire les conditions", en: "Read the terms" },
     privacyRead: { fr: "Lire la confidentialité", en: "Read the privacy policy" },
     redressHuman: { fr: "Cette décision a été prise par une personne de l'équipe WantedFashion, pas par un outil automatique.", en: "This decision was made by a person on the WantedFashion team, not by an automated tool." },

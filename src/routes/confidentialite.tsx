@@ -37,7 +37,7 @@ function PrivacyPage() {
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-foreground">
       <h1 className="mb-2 text-2xl font-black">Politique de confidentialité</h1>
       <p className="mb-8 text-xs text-muted-foreground">
-        Dernière mise à jour : 3 novembre 2026. Ce document n'a pas été rédigé ou relu par un
+        Dernière mise à jour : 4 novembre 2026. Ce document n'a pas été rédigé ou relu par un
         juriste — il décrit de bonne foi ce que le site fait réellement, mais ne constitue pas un avis juridique.
       </p>
 
@@ -178,6 +178,13 @@ function PrivacyPage() {
         <Link to="/conditions" hash="moderation" className="text-brand underline">conditions d'utilisation</Link>.
       </p>
 
+      <h2 className="mb-2 mt-6 font-bold">Messages que vous nous envoyez</h2>
+      <p className="mb-4">
+        Quand vous nous écrivez (question, demande sur vos données, contestation), nous gardons l'échange pour vous
+        répondre et suivre votre demande, pendant 2 ans après le dernier message, ou plus longtemps si une procédure
+        est en cours.
+      </p>
+
       <h2 className="mb-2 mt-6 font-bold">Vos droits</h2>
       <ul className="mb-4 list-disc space-y-1 pl-5">
         <li><strong>Accès et portabilité</strong> : téléchargez toutes vos données à tout moment depuis Paramètres → Compte → « Télécharger mes données ».</li>
@@ -187,7 +194,17 @@ function PrivacyPage() {
         <li><strong>Retrait du consentement</strong> : à tout moment, avec « Gérer les cookies » en bas de chaque page. Cela ne remet pas en cause ce qui a été fait avant.</li>
         <li><strong>Réclamation</strong> : vous pouvez saisir l'Autorité de protection des données (Belgique, autoriteprotectiondonnees.be) ou l'autorité du pays où vous vivez (en France : la CNIL).</li>
       </ul>
-      <p className="mb-4">Pour exercer ces droits, écrivez à {mail}. Nous répondons dans un délai d'un mois.</p>
+      <p className="mb-4">
+        Pour exercer ces droits, écrivez à {mail}. Nous répondons dans un délai d'un mois. Si nous refusons une
+        demande, nous vous expliquons pourquoi et vous pouvez la contester auprès de l'autorité de protection des
+        données.
+      </p>
+
+      <h2 className="mb-2 mt-6 font-bold">Modification de cette politique</h2>
+      <p className="mb-4">
+        Si nous modifions cette politique de façon importante, les utilisateurs inscrits sont prévenus par une
+        notification sur le site, et la date en haut de cette page est mise à jour.
+      </p>
     </main>
   );
 }

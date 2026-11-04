@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { TERMS_VERSION } from "@/lib/legal";
 import { USERNAME_PATTERN, isReservedUsername } from "./username-rules";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -39,7 +40,10 @@ export const createCreatorProfile = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("creators").insert({
       id: userData.user.id,
       username,
-    });
+      // Preuve de l'acceptation des conditions à l'inscription (version + date)
+      terms_version: TERMS_VERSION,
+      terms_accepted_at: new Date().toISOString(),
+    } as never);
 
     if (error) return { ok: false, error: error.message };
     return { ok: true };
