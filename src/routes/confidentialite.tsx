@@ -90,7 +90,7 @@ function PrivacyPage() {
           data="Pages visitées, provenance (ex. : TikTok, Google), type d'appareil, mesurés avec PostHog (Union européenne). Aucun enregistrement d'écran, aucun nom ni e-mail."
           why="Comprendre comment le site est utilisé pour l'améliorer."
           basis="Consentement pour les cookies PostHog ; sans accord, intérêt légitime (mesure sans rien garder dans votre navigateur)."
-          keep="Cookies : 12 mois. Données chez PostHog : selon la durée réglée dans notre compte PostHog."
+          keep="Cookies : 12 mois. Données chez PostHog : 12 mois maximum, puis effacées."
         />
         <Row
           title="Recherches"
@@ -118,7 +118,7 @@ function PrivacyPage() {
           data="Quand une page plante : l'erreur, la page, le type de navigateur (outil Sentry)."
           why="Corriger les pannes."
           basis="Intérêt légitime : un site qui fonctionne."
-          keep="Selon la durée réglée dans notre compte Sentry."
+          keep="30 jours chez Sentry, puis effacées."
         />
       </ul>
       <p className="mb-4">
@@ -157,6 +157,7 @@ function PrivacyPage() {
         <li><strong>Sightengine</strong> (France) : vérification automatique des photos.</li>
         <li><strong>Sentry</strong> (États-Unis) : suivi des erreurs techniques.</li>
         <li><strong>Resend</strong> (États-Unis) : envoi des e-mails liés à la modération, quand cet envoi est activé.</li>
+        <li><strong>Have I Been Pwned</strong> : à l'inscription, pour refuser un mot de passe déjà volé ailleurs, seuls les 5 premiers caractères d'une empreinte chiffrée du mot de passe sont envoyés — jamais le mot de passe, ni aucune donnée sur vous.</li>
         <li><strong>Marques partenaires</strong> : lorsqu'un achat est réalisé via un lien du site, la marque sait qu'une vente vient de Wanted Fashion ; aucune donnée personnelle vous concernant ne lui est transmise au-delà de ce qu'elle collecte déjà pour votre commande.</li>
         <li><strong>Autorités</strong> : uniquement si la loi nous y oblige.</li>
       </ul>

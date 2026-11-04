@@ -98,8 +98,8 @@ function TermsPage() {
           la raison.
         </li>
         <li>
-          <strong>Des vérifications humaines</strong> : si la vérification automatique de la photo d'un look n'a pas pu
-          se faire, le look est publié puis sa photo est vérifiée par une personne de l'équipe. Toute décision de supprimer un look publié ou de
+          <strong>Des vérifications humaines</strong> : si la vérification automatique d'une photo (look, photo de profil
+          ou bannière) n'a pas pu se faire, la photo est publiée puis vérifiée par une personne de l'équipe. Toute décision de supprimer un look publié ou de
           suspendre un compte est prise par une personne, jamais par un outil automatique.
         </li>
         <li>
@@ -109,7 +109,7 @@ function TermsPage() {
           proportionnée.
         </li>
         <li>
-          <strong>Les mesures possibles</strong> : refus d'un contenu à l'envoi, suppression d'un look, blocage d'un
+          <strong>Les mesures possibles</strong> : refus d'un contenu à l'envoi, suppression d'un look, d'une photo de profil ou d'une bannière, blocage d'un
           site dans les liens produits, suspension d'un compte en cas de manquement grave ou répété. La personne
           concernée reçoit un message qui explique la mesure, sa raison, sa base et comment la contester.
         </li>

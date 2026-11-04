@@ -179,6 +179,8 @@ function Moderation() {
 
       <UnverifiedPhotos onRemove={(id) => act(id, "remove")} />
 
+      <UnverifiedProfileImages />
+
       <BlockedSites />
 
       <AdminLog />
@@ -431,6 +433,85 @@ function BlockedSites() {
 }
 
 /** Looks publiés dont la photo n'a pas pu être vérifiée (quota gratuit épuisé, panne) : à regarder à la main. */
+type ProfileImage = { check_id: number; bucket: "avatars" | "banners"; path: string; url: string; user_id: string; username: string; created_at: string };
+
+/** Photos de profil et bannières que la vérification automatique n'a pas pu analyser : vérifiées par une personne. */
+function UnverifiedProfileImages() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [toRemove, setToRemove] = useState<ProfileImage | null>(null);
+  const { data: items } = useQuery({
+    queryKey: ["unverified-profile-images"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("unverified_profile_images" as never);
+      if (error) throw error;
+      return (data ?? []) as ProfileImage[];
+    },
+  });
+
+  async function ok(it: ProfileImage) {
+    const { error } = await supabase.rpc("mark_image_reviewed" as never, { p_check: it.check_id } as never);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["unverified-profile-images"] });
+  }
+
+  async function remove(it: ProfileImage) {
+    const { data: path, error } = await supabase.rpc("remove_profile_image" as never, { p_check: it.check_id } as never);
+    if (error) return toast.error(error.message);
+    await supabase.storage.from(it.bucket).remove([path as unknown as string]);
+    toast.success(t("imageCheck.profileRemoved"));
+    qc.invalidateQueries({ queryKey: ["unverified-profile-images"] });
+    qc.invalidateQueries({ queryKey: ["admin-log"] });
+  }
+
+  if (!items || items.length === 0) return null;
+  return (
+    <section className="mt-6">
+      <h3 className="text-lg font-bold">{t("imageCheck.profileTitle")}</h3>
+      <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {items.map((it) => (
+          <li key={it.check_id} className="overflow-hidden rounded-2xl bg-surface">
+            <div className={`${it.bucket === "avatars" ? "aspect-square" : "aspect-[3/1]"} bg-card`}>
+              <img src={it.url} alt="" className="h-full w-full object-cover" />
+            </div>
+            <div className="p-2.5">
+              <p className="truncate text-[13px] font-semibold">@{it.username}</p>
+              <p className="truncate text-[11px] text-foreground/55">{it.bucket === "avatars" ? t("imageCheck.avatar") : t("imageCheck.banner")}</p>
+              <div className="mt-2 flex gap-1.5">
+                <button type="button" onClick={() => ok(it)} className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-ink text-[13px] font-semibold text-surface">
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" /> {t("imageCheck.ok")}
+                </button>
+                <button type="button" onClick={() => setToRemove(it)} aria-label={t("moderation.remove")} className="flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-destructive/40 text-destructive">
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && setToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("imageCheck.profileRemoveTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("imageCheck.profileRemoveDesc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toRemove) void remove(toRemove);
+                setToRemove(null);
+              }}
+            >
+              {t("moderation.remove")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
+  );
+}
+
 function UnverifiedPhotos({ onRemove }: { onRemove: (postId: string) => Promise<void> | void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();

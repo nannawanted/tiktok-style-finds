@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isPwnedPassword } from "@/lib/pwned";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,13 @@ function SignupPage() {
       return;
     }
     setLoading(true);
+
+    // Mot de passe déjà volé dans une fuite connue → refusé (si la vérification échoue, on ne bloque pas)
+    if ((await isPwnedPassword(password)) === true) {
+      setLoading(false);
+      toast.error(t("auth.pwnedPassword"));
+      return;
+    }
 
     // Check username uniqueness
     const { data: existing } = await supabase

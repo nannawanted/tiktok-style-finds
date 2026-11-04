@@ -114,6 +114,14 @@ function NotificationsPage() {
                     <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
                     <Redress />
                   </>
+                ) : n.kind === "image_removed" ? (
+                  <>
+                    <p className="font-semibold">
+                      {t("moderation.imageRemoved").replace("{what}", n.data?.bucket === "banners" ? t("moderation.imageBanner") : t("moderation.imageAvatar"))}
+                    </p>
+                    <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
+                    <Redress />
+                  </>
                 ) : n.kind === "terms_updated" ? (
                   <>
                     <p className="font-semibold">{t("moderation.termsUpdated").replace(
