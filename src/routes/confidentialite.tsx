@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/confidentialite")({
@@ -106,6 +107,7 @@ function PrivacyPage() {
           basis="Obligation légale (règlement européen sur les services numériques, art. 16 et 17) ; intérêt légitime pour les signalements simples."
           keep="Signalement d'un look : tant que le look existe. Demande « droits d'auteur » : le temps de la traiter et jusqu'à la fin des recours possibles."
         />
+        {AFFILIATE_ENABLED && (
         <Row
           title="Ventes et commissions (créateurs)"
           data="Les ventes générées par vos liens et les montants qui vous sont dus ; signaux de fraude (adresse IP au moment d'un clic, taux de conversion)."
@@ -113,6 +115,7 @@ function PrivacyPage() {
           basis="Exécution du contrat ; intérêt légitime pour la détection de fraude."
           keep="Tant que le compte existe, sauf obligation légale de conservation plus longue."
         />
+        )}
         <Row
           title="Erreurs techniques"
           data="Quand une page plante : l'erreur, la page, le type de navigateur (outil Sentry)."
@@ -136,16 +139,16 @@ function PrivacyPage() {
         <li><code>wf-lang</code> (stockage du navigateur) : la langue choisie (français ou anglais).</li>
         <li>Brouillon de look et préférences d'affichage (stockage du navigateur) : pour ne pas perdre ce que vous étiez en train de faire.</li>
       </ul>
-      <p className="mb-2"><strong>Uniquement si vous acceptez</strong> sur le bandeau (choix séparé pour chaque type) :</p>
+      <p className="mb-2"><strong>Uniquement si vous acceptez</strong> sur le bandeau {AFFILIATE_ENABLED ? "(choix séparé pour chaque type) :" : ":"}</p>
       <ul className="mb-4 list-disc space-y-1 pl-5">
         <li><strong>Statistiques</strong> — <code>wf_device</code> (stockage du navigateur, 13 mois maximum, non prolongé à chaque visite) : un identifiant qui sert à compter les vues de nos looks sans compter deux fois la même personne.</li>
-        <li><strong>Suivi des achats</strong> — <code>wf_aff</code> (cookie, 30 jours) : posé quand vous cliquez sur un produit, pour attribuer une vente au bon créateur si vous achetez ensuite chez la marque.</li>
+        {AFFILIATE_ENABLED && <li><strong>Suivi des achats</strong> — <code>wf_aff</code> (cookie, 30 jours) : posé quand vous cliquez sur un produit, pour attribuer une vente au bon créateur si vous achetez ensuite chez la marque.</li>}
         <li><strong>Statistiques</strong> — PostHog (cookies et stockage commençant par <code>ph_</code>, 12 mois, hébergé dans l'Union européenne) : permet de reconnaître une visite de retour dans nos statistiques de fréquentation. Sans accord, PostHog ne garde rien dans votre navigateur.</li>
       </ul>
       <p className="mb-4">
         Refuser est aussi simple qu'accepter, et le site reste utilisable normalement. Vous pouvez changer d'avis à tout
         moment avec le lien « Gérer les cookies » en bas de chaque page (ou dans le menu) : si vous retirez votre accord,
-        les éléments correspondants (<code>wf_device</code>, PostHog, <code>wf_aff</code>) sont effacés.
+        les éléments correspondants (<code>wf_device</code>, PostHog{AFFILIATE_ENABLED && <>, <code>wf_aff</code></>}) sont effacés.
       </p>
 
       <h2 className="mb-2 mt-6 font-bold">Avec qui vos données sont partagées</h2>
@@ -158,7 +161,7 @@ function PrivacyPage() {
         <li><strong>Sentry</strong> (États-Unis) : suivi des erreurs techniques.</li>
         <li><strong>Resend</strong> (États-Unis) : envoi des e-mails liés à la modération, quand cet envoi est activé.</li>
         <li><strong>Have I Been Pwned</strong> : à l'inscription, pour refuser un mot de passe déjà volé ailleurs, seuls les 5 premiers caractères d'une empreinte chiffrée du mot de passe sont envoyés — jamais le mot de passe, ni aucune donnée sur vous.</li>
-        <li><strong>Marques partenaires</strong> : lorsqu'un achat est réalisé via un lien du site, la marque sait qu'une vente vient de Wanted Fashion ; aucune donnée personnelle vous concernant ne lui est transmise au-delà de ce qu'elle collecte déjà pour votre commande.</li>
+        {AFFILIATE_ENABLED && <li><strong>Marques partenaires</strong> : lorsqu'un achat est réalisé via un lien du site, la marque sait qu'une vente vient de Wanted Fashion ; aucune donnée personnelle vous concernant ne lui est transmise au-delà de ce qu'elle collecte déjà pour votre commande.</li>}
         <li><strong>Autorités</strong> : uniquement si la loi nous y oblige.</li>
       </ul>
 

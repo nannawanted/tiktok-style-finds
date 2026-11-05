@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
 import { applyConsent } from "@/lib/analytics";
@@ -66,7 +67,9 @@ export function CookieConsent() {
         <p className="text-sm text-foreground/75">{t("cookies.intro")}</p>
         <ul className="flex flex-col gap-2">
           <Category title={t("cookies.statsTitle")} text={t("cookies.statsText")} on={choice.stats} editable={custom} onChange={(v) => setChoice((c) => ({ ...c, stats: v }))} />
-          <Category title={t("cookies.affTitle")} text={t("cookies.affText")} on={choice.aff} editable={custom} onChange={(v) => setChoice((c) => ({ ...c, aff: v }))} />
+          {AFFILIATE_ENABLED && (
+            <Category title={t("cookies.affTitle")} text={t("cookies.affText")} on={choice.aff} editable={custom} onChange={(v) => setChoice((c) => ({ ...c, aff: v }))} />
+          )}
           {custom && <Category title={t("cookies.necessaryTitle")} text={t("cookies.necessaryText")} on editable={false} locked />}
         </ul>
         <p className="text-xs text-foreground/60">
@@ -83,7 +86,7 @@ export function CookieConsent() {
             <button type="button" className={btn} onClick={() => respond(choice)}>
               {t("cookies.save")}
             </button>
-            <button type="button" className={btn} onClick={() => respond({ stats: true, aff: true })}>
+            <button type="button" className={btn} onClick={() => respond({ stats: true, aff: AFFILIATE_ENABLED })}>
               {t("cookies.accept")}
             </button>
           </div>
@@ -92,7 +95,7 @@ export function CookieConsent() {
             <button type="button" className={btn} onClick={() => respond({ stats: false, aff: false })}>
               {t("cookies.decline")}
             </button>
-            <button type="button" className={btn} onClick={() => respond({ stats: true, aff: true })}>
+            <button type="button" className={btn} onClick={() => respond({ stats: true, aff: AFFILIATE_ENABLED })}>
               {t("cookies.accept")}
             </button>
             <button type="button" className="h-11 flex-1 rounded-full border-[1.5px] border-border px-4 text-sm font-bold" onClick={() => setCustom(true)}>

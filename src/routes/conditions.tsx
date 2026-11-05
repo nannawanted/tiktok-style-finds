@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 export const Route = createFileRoute("/conditions")({
   head: () => ({ meta: [{ title: "Conditions d'utilisation — Wanted Fashion" }] }),
@@ -15,19 +16,26 @@ function TermsPage() {
       </p>
 
       <h2 className="mb-2 mt-6 font-bold">Le service</h2>
-      <p className="mb-4">
-        Wanted Fashion permet à des créateurs de publier des tenues avec des liens d'achat vers des marques
-        partenaires. Wanted Fashion touche une commission sur les ventes réalisées via ces liens, et en reverse une
-        partie au créateur concerné.
-      </p>
+      {AFFILIATE_ENABLED ? (
+        <p className="mb-4">
+          Wanted Fashion permet à des créateurs de publier des tenues avec des liens d'achat vers des marques
+          partenaires. Wanted Fashion touche une commission sur les ventes réalisées via ces liens, et en reverse une
+          partie au créateur concerné.
+        </p>
+      ) : (
+        <p className="mb-4">
+          Wanted Fashion permet à des créateurs de publier leurs tenues avec des liens vers les vêtements portés, sur
+          les sites des marques. Wanted Fashion ne touche aucune commission sur ces liens et ne verse aucun argent aux
+          créateurs. L'utilisation du site est gratuite.
+        </p>
+      )}
 
       <h2 className="mb-2 mt-6 font-bold">Créer un compte</h2>
       <p className="mb-4">
         Wanted Fashion est réservé aux personnes de <strong>18 ans et plus</strong>. À l'inscription, vous indiquez votre
         date de naissance et une adresse e-mail valide. Donner une fausse date de naissance est interdit : si un
         compte appartient à une personne de moins de 18 ans, il est suspendu. Tout le monde peut nous signaler un
-        compte qui semble appartenir à une personne mineure. Avant tout versement d'argent à un créateur, son
-        identité et son âge seront vérifiés.
+        compte qui semble appartenir à une personne mineure. {AFFILIATE_ENABLED && "Avant tout versement d'argent à un créateur, son identité et son âge sont vérifiés."}
       </p>
 
       <h2 className="mb-2 mt-6 font-bold">Sécurité de votre compte</h2>
@@ -46,7 +54,7 @@ function TermsPage() {
         les aperçus de partage, et l'analyser avec des outils automatiques (vérification des contenus, suggestions de
         looks qui se ressemblent). Cette autorisation sert uniquement à faire fonctionner le site ; elle prend fin
         quand vous supprimez le contenu ou votre compte. Vous vous engagez à ne publier que des liens produits réels
-        et à ne pas tenter de fausser le système de suivi ou de commission.
+        et à ne pas tenter de fausser les statistiques du site (vues, clics).
       </p>
 
       <h2 id="droits-auteur" className="mb-2 mt-6 scroll-mt-24 font-bold">Droits d'auteur</h2>
@@ -82,23 +90,28 @@ function TermsPage() {
         </li>
       </ul>
 
+      {AFFILIATE_ENABLED && (
+        <>
       <h2 className="mb-2 mt-6 font-bold">Commissions et paiements</h2>
       <ul className="mb-4 list-disc space-y-1 pl-5">
         <li>La part reversée au créateur est de 50 % de la commission perçue par Wanted Fashion sur chaque vente.</li>
         <li>Une vente n'est comptée comme définitive qu'après un délai de sécurité de 30 jours à compter de sa détection, le temps de vérifier qu'elle n'est pas annulée ou remboursée par la marque.</li>
         <li>Wanted Fashion peut retenir ou refuser une commission en cas de suspicion raisonnable de fraude (auto-achat, fausse déclaration de vente, activité anormale).</li>
       </ul>
+        </>
+      )}
 
       <h2 className="mb-2 mt-6 font-bold">Utilisation interdite</h2>
       <p className="mb-2">Il est interdit de :</p>
       <ul className="mb-4 list-disc space-y-1 pl-5">
-        <li>Cliquer sur ses propres liens dans le but de générer une fausse commission.</li>
-        <li>Déclarer ou tenter de déclarer de fausses ventes.</li>
+        <li>Gonfler artificiellement les vues ou les clics (robots, clics répétés sur ses propres liens).</li>
+        {AFFILIATE_ENABLED && <li>Cliquer sur ses propres liens dans le but de générer une fausse commission.</li>}
+        {AFFILIATE_ENABLED && <li>Déclarer ou tenter de déclarer de fausses ventes.</li>}
         <li>Publier du contenu illégal, trompeur, ou portant atteinte aux droits d'un tiers.</li>
       </ul>
       <p className="mb-4">
-        Tout compte impliqué dans une activité frauduleuse peut être suspendu et les commissions en attente
-        annulées.
+        Tout compte impliqué dans une activité frauduleuse peut être suspendu
+        {AFFILIATE_ENABLED ? " et les commissions en attente annulées." : "."}
       </p>
 
       <h2 id="moderation" className="mb-2 mt-6 scroll-mt-24 font-bold">Modération des contenus</h2>
@@ -159,11 +172,15 @@ function TermsPage() {
         <li>Rien dans ces conditions ne limite notre responsabilité en cas de faute intentionnelle ou grave, ni les droits que vous donne la loi en tant que consommateur.</li>
       </ul>
 
-      <h2 className="mb-2 mt-6 font-bold">Marques partenaires</h2>
-      <p className="mb-4">
-        Une marque qui rejoint le programme d'affiliation accepte de déclarer de bonne foi les ventes générées via
-        ses liens, selon les modalités techniques convenues (pixel ou intégration serveur-à-serveur).
-      </p>
+      {AFFILIATE_ENABLED && (
+        <>
+          <h2 className="mb-2 mt-6 font-bold">Marques partenaires</h2>
+          <p className="mb-4">
+            Une marque qui rejoint le programme d'affiliation accepte de déclarer de bonne foi les ventes générées via
+            ses liens, selon les modalités techniques convenues (pixel ou intégration serveur-à-serveur).
+          </p>
+        </>
+      )}
 
       <h2 id="contact" className="mb-2 mt-6 scroll-mt-24 font-bold">Point de contact</h2>
       <p className="mb-4">

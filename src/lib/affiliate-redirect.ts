@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest, getCookie, setCookie } from "@tanstack/react-start/server";
 import { CONSENT_COOKIE, parseConsent } from "@/lib/consent";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 // Toute la logique sensible (client Supabase avec clé secrète) reste dans le
 // handler de cette server function : le bundler la retire automatiquement du
@@ -109,7 +110,7 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
     // consentement requis pour l'enregistrer). Le clic reste enregistré et le
     // paramètre wf_click ajouté à l'URL dans tous les cas : la redirection
     // fonctionne normalement, seule la persistance du cookie change.
-    const hasConsent = parseConsent(getCookie(CONSENT_COOKIE))?.aff === true;
+    const hasConsent = AFFILIATE_ENABLED && parseConsent(getCookie(CONSENT_COOKIE))?.aff === true;
     if (hasConsent) {
       setCookie(COOKIE_NAME, cookieId, {
         maxAge: COOKIE_MAX_AGE_SECONDS,

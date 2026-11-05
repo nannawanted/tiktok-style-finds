@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 import { createServerOnlyFn } from "@tanstack/react-start";
 import { recordConversion } from "@/lib/record-conversion";
 
@@ -24,6 +25,14 @@ const handleConversionRequest = createServerOnlyFn(async () => {
 
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  // Affiliation en pause : aucune vente n'est enregistrée
+  if (!AFFILIATE_ENABLED) {
+    return new Response(JSON.stringify({ error: "affiliate_paused" }), {
+      status: 503,
+      headers: { "content-type": "application/json", ...corsHeaders },
+    });
   }
 
   if (request.method !== "POST") {
