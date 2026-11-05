@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isPwnedPassword } from "@/lib/pwned";
+import { adultBirthDate } from "@/lib/create-creator-profile";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -21,10 +22,11 @@ export const Route = createFileRoute("/signup")({
 });
 
 function SignupPage() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [birth, setBirth] = useState({ d: "", m: "", y: "" });
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const navigate = useNavigate();
@@ -49,6 +51,17 @@ function SignupPage() {
       toast.error(t("auth.captchaRequired"));
       return;
     }
+    // Site réservé aux 18 ans et plus (date revérifiée sur le serveur)
+    const birthDate = birth.y && birth.m && birth.d ? `${birth.y}-${birth.m.padStart(2, "0")}-${birth.d.padStart(2, "0")}` : "";
+    if (!birthDate) {
+      toast.error(t("auth.birthRequired"));
+      return;
+    }
+    if (!adultBirthDate(birthDate)) {
+      toast.error(t("auth.underage"));
+      return;
+    }
+
     setLoading(true);
 
     // Mot de passe déjà volé dans une fuite connue → refusé (si la vérification échoue, on ne bloque pas)
@@ -76,7 +89,7 @@ function SignupPage() {
       // Le username est enregistré dans les métadonnées du compte : c'est le
       // serveur qui le relit pour créer le profil (jamais une valeur envoyée
       // directement par le navigateur à la création du profil).
-      options: { emailRedirectTo: window.location.origin, ...(CAPTCHA_ENABLED ? { captchaToken } : {}), data: { username: clean } },
+      options: { emailRedirectTo: window.location.origin, ...(CAPTCHA_ENABLED ? { captchaToken } : {}), data: { username: clean, birth_date: birthDate } },
     });
     if (error || !data.user) {
       setLoading(false);
@@ -87,7 +100,7 @@ function SignupPage() {
     const profileResult = await createCreatorProfile({ data: { userId: data.user.id } });
     if (!profileResult.ok) {
       setLoading(false);
-      toast.error(t("auth.profileFailed") + " " + profileResult.error);
+      toast.error(profileResult.error === "underage" ? t("auth.underage") : t("auth.profileFailed") + " " + profileResult.error);
       return;
     }
 
@@ -119,6 +132,32 @@ function SignupPage() {
             <Label htmlFor="email">{t("auth.email")}</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
+          <fieldset className="space-y-1.5">
+            <legend className="text-sm font-medium">{t("auth.birthDate")}</legend>
+            <div className="grid grid-cols-[1fr_1.4fr_1.2fr] gap-2">
+              <select aria-label={t("auth.day")} required value={birth.d} onChange={(e) => setBirth((b) => ({ ...b, d: e.target.value }))} className="h-10 rounded-md border border-input bg-transparent px-2 text-sm">
+                <option value="">{t("auth.day")}</option>
+                {Array.from({ length: 31 }, (_, i) => String(i + 1)).map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+              <select aria-label={t("auth.month")} required value={birth.m} onChange={(e) => setBirth((b) => ({ ...b, m: e.target.value }))} className="h-10 rounded-md border border-input bg-transparent px-2 text-sm">
+                <option value="">{t("auth.month")}</option>
+                {Array.from({ length: 12 }, (_, i) => i).map((i) => (
+                  <option key={i} value={String(i + 1)}>
+                    {new Date(2000, i, 1).toLocaleDateString(lang === "en" ? "en-GB" : "fr-BE", { month: "long" })}
+                  </option>
+                ))}
+              </select>
+              <select aria-label={t("auth.year")} required value={birth.y} onChange={(e) => setBirth((b) => ({ ...b, y: e.target.value }))} className="h-10 rounded-md border border-input bg-transparent px-2 text-sm">
+                <option value="">{t("auth.year")}</option>
+                {Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - i)).map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("auth.birthHint")}</p>
+          </fieldset>
           <div>
             <Label htmlFor="password">{t("auth.password")}</Label>
             <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />

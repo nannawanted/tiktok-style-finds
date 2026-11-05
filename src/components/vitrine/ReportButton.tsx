@@ -12,6 +12,7 @@ const REASONS: { key: string; label: TKey; hint: TKey }[] = [
   { key: "scam", label: "report.scam", hint: "report.scamHint" },
   { key: "shocking", label: "report.shocking", hint: "report.shockingHint" },
   { key: "stolen_photo", label: "report.stolen", hint: "report.stolenHint" },
+  { key: "underage", label: "report.underage", hint: "report.underageHint" },
 ];
 
 /** « Signaler ce contenu » : choix du motif, envoyé à la modération (compte connecté requis). */

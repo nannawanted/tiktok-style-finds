@@ -10,6 +10,7 @@ const REASONS: Record<string, TKey> = {
   scam: "report.scam",
   shocking: "report.shocking",
   stolen_photo: "report.stolen",
+  underage: "report.underage",
 };
 import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useCopyrightQueue, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { Avatar } from "@/components/vitrine/OutfitCard";

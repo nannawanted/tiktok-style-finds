@@ -2,6 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { TERMS_VERSION } from "@/lib/legal";
 import { USERNAME_PATTERN, isReservedUsername } from "./username-rules";
 
+/** Renvoie la date (AAAA-MM-JJ) si elle est valide et que la personne a 18 ans ou plus, sinon null. */
+export function adultBirthDate(raw: unknown): string | null {
+  if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const [y, m, d] = raw.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d || y < 1900) return null;
+  const now = new Date();
+  const adultSince = new Date(Date.UTC(now.getUTCFullYear() - 18, now.getUTCMonth(), now.getUTCDate()));
+  return date <= adultSince ? raw : null;
+}
+
 type Result = { ok: true } | { ok: false; error: string };
 
 // Le profil doit être créé juste après l'inscription : passé ce délai, cet
@@ -37,9 +48,18 @@ export const createCreatorProfile = createServerFn({ method: "POST" })
       return { ok: false, error: "invalid_username" };
     }
 
+    // Site réservé aux 18 ans et plus : date de naissance relue depuis les métadonnées du compte
+    // (jamais depuis la requête) et revérifiée ici. Mineur → le compte est supprimé, rien n'est gardé.
+    const birthDate = adultBirthDate(userData.user.user_metadata?.birth_date);
+    if (!birthDate) {
+      await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
+      return { ok: false, error: "underage" };
+    }
+
     const { error } = await supabaseAdmin.from("creators").insert({
       id: userData.user.id,
       username,
+      birth_date: birthDate,
       // Preuve de l'acceptation des conditions à l'inscription (version + date)
       terms_version: TERMS_VERSION,
       terms_accepted_at: new Date().toISOString(),

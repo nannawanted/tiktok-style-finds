@@ -10,7 +10,7 @@ function TermsPage() {
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-foreground">
       <h1 className="mb-2 text-2xl font-black">Conditions d'utilisation</h1>
       <p className="mb-8 text-xs text-muted-foreground">
-        Dernière mise à jour : 4 novembre 2026. Ce document n'a pas été rédigé ou relu par un
+        Dernière mise à jour : 5 novembre 2026. Ce document n'a pas été rédigé ou relu par un
         juriste — il décrit de bonne foi le fonctionnement du site, mais ne constitue pas un avis juridique.
       </p>
 
@@ -23,8 +23,11 @@ function TermsPage() {
 
       <h2 className="mb-2 mt-6 font-bold">Créer un compte</h2>
       <p className="mb-4">
-        Vous devez fournir une adresse email valide et être en mesure de représenter légalement les informations que
-        vous publiez.
+        Wanted Fashion est réservé aux personnes de <strong>18 ans et plus</strong>. À l'inscription, vous indiquez votre
+        date de naissance et une adresse e-mail valide. Donner une fausse date de naissance est interdit : si un
+        compte appartient à une personne de moins de 18 ans, il est suspendu. Tout le monde peut nous signaler un
+        compte qui semble appartenir à une personne mineure. Avant tout versement d'argent à un créateur, son
+        identité et son âge seront vérifiés.
       </p>
 
       <h2 className="mb-2 mt-6 font-bold">Sécurité de votre compte</h2>

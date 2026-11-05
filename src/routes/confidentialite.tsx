@@ -37,7 +37,7 @@ function PrivacyPage() {
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-foreground">
       <h1 className="mb-2 text-2xl font-black">Politique de confidentialité</h1>
       <p className="mb-8 text-xs text-muted-foreground">
-        Dernière mise à jour : 4 novembre 2026. Ce document n'a pas été rédigé ou relu par un
+        Dernière mise à jour : 5 novembre 2026. Ce document n'a pas été rédigé ou relu par un
         juriste — il décrit de bonne foi ce que le site fait réellement, mais ne constitue pas un avis juridique.
       </p>
 
@@ -52,9 +52,9 @@ function PrivacyPage() {
       <ul className="mb-4 space-y-3">
         <Row
           title="Votre compte"
-          data="E-mail, nom d'utilisateur, mot de passe (jamais stocké en clair), photo de profil, bannière, bio, liens TikTok/Instagram, styles choisis."
-          why="Créer et faire fonctionner votre compte, afficher votre page publique."
-          basis="Exécution du contrat (nos conditions d'utilisation). E-mail, nom d'utilisateur et mot de passe sont obligatoires : sans eux, pas de compte."
+          data="E-mail, nom d'utilisateur, mot de passe (jamais stocké en clair), date de naissance (jamais affichée), photo de profil, bannière, bio, liens TikTok/Instagram, styles choisis, version des conditions acceptée et date."
+          why="Créer et faire fonctionner votre compte, afficher votre page publique, vérifier que vous avez 18 ans ou plus et garder la preuve de votre accord aux conditions."
+          basis="Exécution du contrat (nos conditions d'utilisation). E-mail, nom d'utilisateur, mot de passe et date de naissance sont obligatoires : sans eux, pas de compte. Si vous avez moins de 18 ans, l'inscription est refusée et rien n'est gardé."
           keep="Tant que le compte existe. Supprimer votre compte (Paramètres) efface tout."
         />
         <Row

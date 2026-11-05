@@ -21,6 +21,7 @@ const REASON_LABEL: Record<string, TKey> = {
   scam: "report.scam",
   shocking: "report.shocking",
   stolen_photo: "report.stolen",
+  underage: "report.underage",
 };
 
 function ReasonCounts({ postId }: { postId: string }) {
