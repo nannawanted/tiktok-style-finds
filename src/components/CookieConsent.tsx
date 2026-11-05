@@ -3,11 +3,19 @@ import { AFFILIATE_ENABLED } from "@/lib/features";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
 import { applyConsent } from "@/lib/analytics";
+import { supabase } from "@/integrations/supabase/client";
 import { CONSENT_COOKIE, formatConsent, readConsent, type Consent } from "@/lib/consent";
 
 function saveConsent(c: Consent) {
   const maxAge = 60 * 60 * 24 * 365; // 1 an
-  document.cookie = `${CONSENT_COOKIE}=${formatConsent(c)}; max-age=${maxAge}; path=/; SameSite=Lax`;
+  const value = formatConsent(c);
+  document.cookie = `${CONSENT_COOKIE}=${value}; max-age=${maxAge}; path=/; SameSite=Lax`;
+  // Preuve du choix (RGPD art. 7 §1 : pouvoir démontrer le consentement) : un identifiant au hasard,
+  // le choix et la date sont ajoutés au journal des preuves — sans nom ni adresse IP.
+  let id = document.cookie.split("; ").find((x) => x.startsWith("wf_consent_id="))?.split("=")[1];
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) id = crypto.randomUUID();
+  document.cookie = `wf_consent_id=${id}; max-age=${maxAge}; path=/; SameSite=Lax`;
+  void supabase.rpc("log_cookie_choice" as never, { p_id: id, p_choice: value } as never);
 }
 
 /** Rouvre le bandeau (lien « Gérer les cookies » du pied de page et du menu). */

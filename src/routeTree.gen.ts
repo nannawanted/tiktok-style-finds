@@ -30,6 +30,7 @@ import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as RapportTokenRouteImport } from './routes/rapport.$token'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardBrandsRouteImport } from './routes/_authenticated/dashboard/brands'
+import { Route as AuthenticatedDashboardDossierRouteImport } from './routes/_authenticated/dashboard/dossier'
 import { Route as AuthenticatedDashboardEarningsRouteImport } from './routes/_authenticated/dashboard/earnings'
 import { Route as AuthenticatedDashboardModerationRouteImport } from './routes/_authenticated/dashboard/moderation'
 import { Route as AuthenticatedDashboardRapportMarqueRouteImport } from './routes/_authenticated/dashboard/rapport-marque'
@@ -151,6 +152,12 @@ const AuthenticatedDashboardBrandsRoute =
     path: '/dashboard/brands',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDashboardDossierRoute =
+  AuthenticatedDashboardDossierRouteImport.update({
+    id: '/dashboard/dossier',
+    path: '/dashboard/dossier',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardEarningsRoute =
   AuthenticatedDashboardEarningsRouteImport.update({
     id: '/dashboard/earnings',
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/post/$id': typeof PostIdRoute
   '/rapport/$token': typeof RapportTokenRoute
   '/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
+  '/dashboard/dossier': typeof AuthenticatedDashboardDossierRoute
   '/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
   '/dashboard/moderation': typeof AuthenticatedDashboardModerationRoute
   '/dashboard/rapport-marque': typeof AuthenticatedDashboardRapportMarqueRoute
@@ -271,6 +279,7 @@ export interface FileRoutesByTo {
   '/post/$id': typeof PostIdRoute
   '/rapport/$token': typeof RapportTokenRoute
   '/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
+  '/dashboard/dossier': typeof AuthenticatedDashboardDossierRoute
   '/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
   '/dashboard/moderation': typeof AuthenticatedDashboardModerationRoute
   '/dashboard/rapport-marque': typeof AuthenticatedDashboardRapportMarqueRoute
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/post/$id': typeof PostIdRoute
   '/rapport/$token': typeof RapportTokenRoute
   '/_authenticated/dashboard/brands': typeof AuthenticatedDashboardBrandsRoute
+  '/_authenticated/dashboard/dossier': typeof AuthenticatedDashboardDossierRoute
   '/_authenticated/dashboard/earnings': typeof AuthenticatedDashboardEarningsRoute
   '/_authenticated/dashboard/moderation': typeof AuthenticatedDashboardModerationRoute
   '/_authenticated/dashboard/rapport-marque': typeof AuthenticatedDashboardRapportMarqueRoute
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/rapport/$token'
     | '/dashboard/brands'
+    | '/dashboard/dossier'
     | '/dashboard/earnings'
     | '/dashboard/moderation'
     | '/dashboard/rapport-marque'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/rapport/$token'
     | '/dashboard/brands'
+    | '/dashboard/dossier'
     | '/dashboard/earnings'
     | '/dashboard/moderation'
     | '/dashboard/rapport-marque'
@@ -408,6 +420,7 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/rapport/$token'
     | '/_authenticated/dashboard/brands'
+    | '/_authenticated/dashboard/dossier'
     | '/_authenticated/dashboard/earnings'
     | '/_authenticated/dashboard/moderation'
     | '/_authenticated/dashboard/rapport-marque'
@@ -591,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardBrandsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard/dossier': {
+      id: '/_authenticated/dashboard/dossier'
+      path: '/dashboard/dossier'
+      fullPath: '/dashboard/dossier'
+      preLoaderRoute: typeof AuthenticatedDashboardDossierRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard/earnings': {
       id: '/_authenticated/dashboard/earnings'
       path: '/dashboard/earnings'
@@ -675,6 +695,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnregistresRoute: typeof AuthenticatedEnregistresRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedDashboardBrandsRoute: typeof AuthenticatedDashboardBrandsRoute
+  AuthenticatedDashboardDossierRoute: typeof AuthenticatedDashboardDossierRoute
   AuthenticatedDashboardEarningsRoute: typeof AuthenticatedDashboardEarningsRoute
   AuthenticatedDashboardModerationRoute: typeof AuthenticatedDashboardModerationRoute
   AuthenticatedDashboardRapportMarqueRoute: typeof AuthenticatedDashboardRapportMarqueRoute
@@ -693,6 +714,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEnregistresRoute: AuthenticatedEnregistresRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedDashboardBrandsRoute: AuthenticatedDashboardBrandsRoute,
+  AuthenticatedDashboardDossierRoute: AuthenticatedDashboardDossierRoute,
   AuthenticatedDashboardEarningsRoute: AuthenticatedDashboardEarningsRoute,
   AuthenticatedDashboardModerationRoute: AuthenticatedDashboardModerationRoute,
   AuthenticatedDashboardRapportMarqueRoute:

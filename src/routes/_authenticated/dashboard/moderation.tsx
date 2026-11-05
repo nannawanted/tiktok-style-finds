@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Ban, Check, ExternalLink, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, Check, ExternalLink, ShieldAlert, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +96,9 @@ function Moderation() {
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
         <h1 className="font-display text-3xl font-bold">{t("moderation.title")}</h1>
+        <Link to="/dashboard/dossier" className="ml-auto flex h-11 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold">
+          <FileText className="h-4 w-4" aria-hidden="true" /> {t("dossier.navLink")}
+        </Link>
       </div>
 
       <CopyrightQueue />

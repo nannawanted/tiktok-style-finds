@@ -117,6 +117,13 @@ function PrivacyPage() {
         />
         )}
         <Row
+          title="Preuves légales"
+          data="Dans un journal qui ne peut pas être modifié : votre déclaration d'âge et votre date de naissance à l'inscription, chaque version des conditions acceptée et sa date, la suppression de votre compte ; vos choix de cookies avec un identifiant au hasard (cookie wf_consent_id), sans nom ni adresse IP."
+          why="Pouvoir prouver, en cas de contrôle ou de litige, que vous avez déclaré avoir 18 ans, accepté nos conditions ou donné (ou refusé) votre accord aux cookies."
+          basis="Obligation légale (RGPD art. 7 §1 : pouvoir démontrer le consentement) et intérêt légitime (se défendre en cas de litige). Ces preuves sont gardées même si vous supprimez votre compte (RGPD art. 17 §3 e)."
+          keep="Pendant les délais légaux durant lesquels un litige reste possible, puis effacées."
+        />
+        <Row
           title="Erreurs techniques"
           data="Quand une page plante : l'erreur, la page, le type de navigateur (outil Sentry)."
           why="Corriger les pannes."
@@ -135,6 +142,7 @@ function PrivacyPage() {
       </p>
       <ul className="mb-4 list-disc space-y-1 pl-5">
         <li><code>wf_consent</code> (cookie, 1 an) : mémorise votre choix sur le bandeau cookies.</li>
+        <li><code>wf_consent_id</code> (cookie, 1 an) : un identifiant au hasard qui relie votre choix de cookies à sa preuve.</li>
         <li>Session de connexion (stockage du navigateur, Supabase) : vous garde connecté si vous avez un compte.</li>
         <li><code>wf-lang</code> (stockage du navigateur) : la langue choisie (français ou anglais).</li>
         <li>Brouillon de look et préférences d'affichage (stockage du navigateur) : pour ne pas perdre ce que vous étiez en train de faire.</li>

@@ -16,6 +16,9 @@ export const deleteAccount = createServerFn({ method: "POST" })
 
     const userId = userData.user.id;
 
+    // Journal des preuves : la suppression elle-même est tracée (la preuve d'âge et d'acceptation reste)
+    await supabaseAdmin.from("legal_events" as never).insert({ user_id: userId, kind: "account_deleted", data: {}, hash: "-" } as never);
+
     // Supprime la ligne creator : cascade automatiquement sur posts → products
     // → clicks/sales (contraintes déjà en place en base).
     await supabaseAdmin.from("creators").delete().eq("id", userId);
