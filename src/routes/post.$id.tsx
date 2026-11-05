@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, Camera, Info, Eye } from "lucide-react";
 import { ReportButton } from "@/components/vitrine/ReportButton";
@@ -222,7 +223,12 @@ function OutfitPage() {
                   )}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  {p.brand && <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">{p.brand}</span>}
+                  {(p.brand || AFFILIATE_ENABLED) && (
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary">
+                      {p.brand}
+                      {AFFILIATE_ENABLED && <span className="rounded-full bg-ink px-1.5 py-px text-[9px] normal-case tracking-normal text-surface">{t("outfit.affiliateBadge")}</span>}
+                    </span>
+                  )}
                   <span className="truncate font-semibold">{p.name}</span>
                   <span className="text-sm">
                     {p.price && <span className="font-bold text-primary">{p.price}</span>}
@@ -239,7 +245,7 @@ function OutfitPage() {
           {products.length > 0 && (
             <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground/50">
               <span className="inline-flex items-center gap-1">
-                <Info className="h-3 w-3" aria-hidden="true" /> {t("outfit.disclosure")}
+                <Info className="h-3 w-3" aria-hidden="true" /> {AFFILIATE_ENABLED ? t("outfit.disclosureAffiliate") : t("outfit.disclosure")}
               </span>
               <ReportButton postId={id} />
             </p>
