@@ -152,6 +152,9 @@ function NotificationsPage() {
                       <Link to="/confidentialite" className="font-semibold text-primary underline">
                         {t("moderation.privacyRead")}
                       </Link>
+                      <Link to="/legal" className="font-semibold text-primary underline">
+                        {t("legal.hub")}
+                      </Link>
                     </p>
                   </>
                 ) : (
