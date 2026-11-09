@@ -1,7 +1,15 @@
 import { AFFILIATE_ENABLED } from "@/lib/features";
 
 /** Version des conditions d'utilisation en vigueur (= date de dernière mise à jour affichée sur /conditions). */
-export const TERMS_VERSION = "2026-11-05";
+export const TERMS_VERSION = "2026-11-10";
+/** Date affichée en haut des pages juridiques. */
+export const LEGAL_UPDATED = "10 novembre 2026";
+
+/**
+ * Responsable du site (éditeur) — affiché dans les mentions légales, la confidentialité et les conditions.
+ * null tant que le nom n'a pas été décidé : la page « Mentions légales » reste alors masquée.
+ */
+export const PUBLISHER_NAME: string | null = null;
 
 /**
  * Changement important qui demande une nouvelle acceptation explicite (ex. : retour de l'affiliation).

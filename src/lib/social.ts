@@ -344,13 +344,19 @@ export type CopyrightItem = {
   post_cover: string | null;
   creator_id: string | null;
   creator_username: string | null;
+  kind: "copyright" | "trademark" | "illegal";
+  illegal_category: string | null;
+  tm_name: string | null;
+  tm_country: string | null;
+  tm_number: string | null;
+  tm_registry_url: string | null;
   relation: "owner" | "agent" | "other";
   work_description: string;
   original_url: string | null;
   explanation: string;
-  full_name: string;
-  email: string;
-  signature: string;
+  full_name: string | null;
+  email: string | null;
+  signature: string | null;
   created_at: string;
   creator_strikes: number;
 };
@@ -391,7 +397,7 @@ export const REPORT_ALERT_THRESHOLD = 3;
 
 export type ModerationNotice = {
   id: string;
-  kind: "post_removed" | "account_blocked" | "account_unblocked" | "copyright_removed" | "terms_updated" | "image_removed";
+  kind: "post_removed" | "account_blocked" | "account_unblocked" | "copyright_removed" | "terms_updated" | "image_removed" | "illegal_removed";
   data: { title?: string; reasons?: string[]; strikes?: number; ref?: string; note?: string; reason?: string; work?: string; date?: string; bucket?: string } | null;
   created_at: string;
   read_at: string | null;

@@ -276,20 +276,56 @@ function CopyrightQueue() {
                   {it.post_cover && <img src={it.post_cover} alt="" className="h-full w-full object-cover" />}
                 </div>
                 <div className="min-w-0 flex-1 text-[13px] leading-snug">
-                  <p className="font-bold text-primary">Réf. {it.ref} · {new Date(it.created_at).toLocaleDateString("fr-BE")}</p>
+                  <p className="font-bold text-primary">
+                    {it.kind === "illegal" && it.illegal_category === "minors" && (
+                      <span className="mr-1.5 rounded-full bg-destructive px-2 py-0.5 text-[11px] uppercase text-destructive-foreground">{t("copyright.priority")}</span>
+                    )}
+                    {t(it.kind === "trademark" ? "copyright.kTrademark" : it.kind === "illegal" ? "copyright.kIllegal" : "copyright.kCopyright")} · Réf. {it.ref} ·{" "}
+                    {new Date(it.created_at).toLocaleDateString("fr-BE")}
+                  </p>
                   <p className="truncate text-[15px] font-bold">{it.post_title}</p>
                   <p className="truncate text-foreground/60">
                     @{it.creator_username}
                     {it.creator_strikes > 0 && <span className="ml-1.5 font-semibold text-primary">· {it.creator_strikes} {t("copyright.strikes")}</span>}
                   </p>
                   <p className="mt-1 text-foreground/70">
-                    {t("copyright.by")} {it.full_name} ({it.relation === "owner" ? t("copyright.asOwner") : it.relation === "agent" ? t("copyright.asAgent") : t("copyright.asOther")}) · {it.email}
+                    {it.email ? (
+                      <>
+                        {t("copyright.by")} {it.full_name} ({it.relation === "owner" ? t("copyright.asOwner") : it.relation === "agent" ? t("copyright.asAgent") : t("copyright.asOther")}) · {it.email}
+                      </>
+                    ) : (
+                      t("copyright.anonymous")
+                    )}
                   </p>
                 </div>
               </div>
               <dl className="mt-3 space-y-2 rounded-2xl bg-background p-3 text-[13px] leading-snug">
+                {it.kind === "illegal" && it.illegal_category && (
+                  <div>
+                    <dt className="font-semibold">{t("copyright.category")}</dt>
+                    <dd className="text-foreground/80">{t(`copyright.cat_${it.illegal_category}` as TKey)}</dd>
+                  </div>
+                )}
+                {it.kind === "trademark" && (
+                  <div>
+                    <dt className="font-semibold">{t("copyright.tmName")}</dt>
+                    <dd className="text-foreground/80">
+                      {it.tm_name} — {it.tm_country}, n° {it.tm_number}
+                      {it.tm_registry_url && (
+                        <>
+                          {" "}
+                          <a href={it.tm_registry_url} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-primary underline">
+                            {it.tm_registry_url}
+                          </a>
+                        </>
+                      )}
+                    </dd>
+                  </div>
+                )}
                 <div>
-                  <dt className="font-semibold">{t("copyright.work")}</dt>
+                  <dt className="font-semibold">
+                    {t(it.kind === "trademark" ? "copyright.tmOwnerName" : it.kind === "illegal" ? "copyright.illegalWhat" : "copyright.work")}
+                  </dt>
                   <dd className="text-foreground/80">{it.work_description}</dd>
                 </div>
                 {it.original_url && (
@@ -341,7 +377,7 @@ function CopyrightQueue() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("copyright.removeTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("copyright.removeDesc")}</AlertDialogDescription>
+            <AlertDialogDescription>{t(toRemove?.kind === "illegal" ? "copyright.removeDescIllegal" : "copyright.removeDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>

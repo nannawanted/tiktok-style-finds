@@ -85,11 +85,27 @@ function NotificationsPage() {
                   <>
                     <p className="font-semibold">{t("copyright.noticeRemoved").replace("{title}", n.data?.title ?? "")}</p>
                     <p className="text-foreground/70">
-                      {t("copyright.noticeWhy").replace("{ref}", n.data?.ref ?? "").replace("{work}", (n.data as { work?: string } | null)?.work ?? "")}
+                      {t((n.data as { type?: string } | null)?.type === "trademark" ? "copyright.tmNoticeWhy" : "copyright.noticeWhy")
+                        .replace("{ref}", n.data?.ref ?? "")
+                        .replace("{work}", (n.data as { work?: string } | null)?.work ?? "")}
                     </p>
                     {n.data?.note && <p className="text-foreground/70">« {n.data.note} »</p>}
-                    <p className="text-foreground/70">{t("copyright.noticeBasis")}</p>
+                    <p className="text-foreground/70">
+                      {t((n.data as { type?: string } | null)?.type === "trademark" ? "copyright.tmNoticeBasis" : "copyright.noticeBasis")}
+                    </p>
                     <p className="text-foreground/70">{t("copyright.noticeStrikes").replace("{n}", String(n.data?.strikes ?? 1))}</p>
+                    <Redress />
+                  </>
+                ) : n.kind === "illegal_removed" ? (
+                  <>
+                    <p className="font-semibold">{t("copyright.noticeRemoved").replace("{title}", n.data?.title ?? "")}</p>
+                    <p className="text-foreground/70">
+                      {t("copyright.illegalNoticeWhy")
+                        .replace("{ref}", n.data?.ref ?? "")
+                        .replace("{category}", t(`copyright.cat_${(n.data as { category?: string } | null)?.category ?? "other"}` as TKey).toLowerCase())}
+                    </p>
+                    {n.data?.note && <p className="text-foreground/70">« {n.data.note} »</p>}
+                    <p className="text-foreground/70">{t("copyright.illegalNoticeBasis")}</p>
                     <Redress />
                   </>
                 ) : n.kind === "account_blocked" && n.data?.reason === "copyright" ? (

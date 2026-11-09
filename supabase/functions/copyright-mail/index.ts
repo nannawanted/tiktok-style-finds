@@ -1,4 +1,4 @@
-// E-mails des signalements « droits d'auteur ».
+// E-mails des signalements (droits d'auteur, marques, contenus illégaux).
 // Base légale : règlement européen sur les services numériques (DSA)
 //  - art. 16 §4 : accusé de réception à la personne qui signale ;
 //  - art. 16 §5 : l'informer de la décision et des recours possibles ;
@@ -30,9 +30,17 @@ async function send(key: string, to: string[], subject: string, text: string) {
 }
 
 const REDRESS =
-  "Si vous n'êtes pas d'accord avec cette décision, répondez à cet e-mail (" + CONTACT + ") en expliquant pourquoi : " +
-  "nous réexaminerons le dossier. Vous pouvez aussi saisir un organisme de règlement extrajudiciaire des litiges " +
-  "certifié (art. 21 du règlement (UE) 2022/2065) ou les tribunaux compétents.";
+  "Si vous n'êtes pas d'accord avec cette décision, répondez à cet e-mail (" + CONTACT + ") en expliquant pourquoi, dans les 6 mois : " +
+  "une personne réexaminera le dossier. Vous pouvez aussi saisir un organisme de règlement extrajudiciaire des litiges " +
+  "certifié (art. 21 du règlement (UE) 2022/2065), l'IBPT ou les tribunaux compétents. Détails : " + SITE + "/dsa";
+
+const KIND_LABEL: Record<string, string> = { copyright: "droits d'auteur", trademark: "marque", illegal: "contenu illégal" };
+const CATEGORY_LABEL: Record<string, string> = {
+  speech: "discours illégal", privacy: "atteinte à la vie privée", non_consensual: "image publiée sans accord",
+  minors: "abus sexuel ou exploitation d'un mineur", sexual: "contenu pornographique ou sexuel", violence: "violence ou menaces",
+  public_security: "terrorisme ou danger pour la sécurité publique", scams: "arnaque ou fraude", products: "produit dangereux ou interdit",
+  animals: "maltraitance animale ou espèce protégée", self_harm: "automutilation ou suicide", other: "autre contenu illégal",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -48,11 +56,13 @@ Deno.serve(async (req) => {
       // Un seul accusé par signalement, et seulement juste après l'envoi du formulaire
       if (r.receipt_sent_at || Date.now() - new Date(r.created_at).getTime() > 60 * 60_000) return json({ ok: true, sent: false });
       if (!key) return json({ ok: true, sent: false, reason: "no_email_service" });
+      const label = KIND_LABEL[r.kind] ?? "droits d'auteur";
 
-      await send(
+      // Signalement anonyme (abus sur mineur) : pas d'accusé possible
+      if (r.email) await send(
         key,
         [r.email],
-        `Signalement droits d'auteur reçu — réf. ${r.ref}`,
+        `Signalement (${label}) reçu — réf. ${r.ref}`,
         `Bonjour ${r.full_name},\n\nNous avons bien reçu votre signalement concernant le look « ${r.post_title ?? ""} » (${SITE}/post/${r.post_snap}).\n` +
           `Référence : ${r.ref}\n\nNous l'examinons et vous informerons de notre décision par e-mail.\n\nWantedFashion — ${CONTACT}`,
       );
@@ -64,7 +74,8 @@ Deno.serve(async (req) => {
         if (data?.user?.email) emails.push(data.user.email);
       }
       if (emails.length) {
-        await send(key, emails, `Nouveau signalement droits d'auteur — réf. ${r.ref}`, `Look : « ${r.post_title ?? ""} » de @${r.creator_username ?? "?"}\n\nÀ traiter : ${SITE}/dashboard/moderation`);
+        const urgent = r.kind === "illegal" && r.illegal_category === "minors" ? "URGENT — " : "";
+        await send(key, emails, `${urgent}Nouveau signalement (${label}${r.illegal_category ? " : " + (CATEGORY_LABEL[r.illegal_category] ?? "") : ""}) — réf. ${r.ref}`, `Look : « ${r.post_title ?? ""} » de @${r.creator_username ?? "?"}\n\nÀ traiter : ${SITE}/dashboard/moderation`);
       }
       await admin.from("copyright_reports").update({ receipt_sent_at: new Date().toISOString() }).eq("id", r.id);
       return json({ ok: true, sent: true });
@@ -79,29 +90,48 @@ Deno.serve(async (req) => {
 
       const removed = r.status === "removed";
       const note = r.decision_note ? `\n\nPrécision : ${r.decision_note}` : "";
-      // À la personne qui a signalé (art. 16 §5)
-      await send(
+      const notFound =
+        r.kind === "illegal"
+          ? "le contenu reste en ligne : nous n'avons pas conclu qu'il est illégal ou contraire à nos règles."
+          : r.kind === "trademark"
+            ? "le contenu reste en ligne : les éléments fournis ne nous ont pas permis de conclure à une violation de votre marque."
+            : "le contenu reste en ligne : les éléments fournis ne nous ont pas permis de conclure à une violation de vos droits.";
+      // À la personne qui a signalé (art. 16 §5) — sauf signalement anonyme
+      if (r.email) await send(
         key,
         [r.email],
         `Décision sur votre signalement — réf. ${r.ref}`,
         `Bonjour ${r.full_name},\n\nDécision concernant le look « ${r.post_title ?? ""} » : ` +
-          (removed ? "le contenu a été retiré de WantedFashion." : "le contenu reste en ligne : les éléments fournis ne nous ont pas permis de conclure à une violation de vos droits.") +
+          (removed ? "le contenu a été retiré de WantedFashion." : notFound) +
           note + `\n\nCette décision a été prise par une personne, sans outil automatique.\n\n${REDRESS}\n\nWantedFashion`,
       );
       // Au créateur (art. 17) si le look est retiré
       if (removed && r.creator_id) {
         const { data } = await admin.auth.admin.getUserById(r.creator_id);
         const { data: strikes } = await admin.rpc("copyright_strikes", { p_user: r.creator_id });
+        const why =
+          r.kind === "illegal"
+            ? `une personne de la modération a estimé que ce look est illégal : ${CATEGORY_LABEL[r.illegal_category] ?? "contenu illégal"}. ` +
+              `Cette décision a été prise par une personne, pas par un outil automatique. Base : la loi applicable et nos Règles de la communauté.`
+            : r.kind === "trademark"
+              ? `nous avons estimé que ce look utilise la marque « ${r.tm_name} » sans l'autorisation de son titulaire. ` +
+                `Cette décision a été prise par une personne, pas par un outil automatique. Base : le droit des marques et nos conditions d'utilisation (section « Droits d'auteur et marques »).`
+              : `nous avons estimé que ce look utilise une œuvre protégée par le droit d'auteur sans l'autorisation de son auteur : « ${r.work_description} ». ` +
+                `Cette décision a été prise par une personne, pas par un outil automatique. Base : le droit d'auteur et nos conditions d'utilisation (section « Droits d'auteur »).`;
+        const strikeText =
+          r.kind === "illegal"
+            ? ""
+            : `\n\nAvertissements actifs sur ton compte : ${strikes ?? 1}/3. Un avertissement dure 90 jours. À 3 avertissements, le compte est suspendu.`;
         if (data?.user?.email) {
           await send(
             key,
             [data.user.email],
-            `Ton look « ${r.post_title ?? ""} » a été retiré (droits d'auteur)`,
+            `Ton look « ${r.post_title ?? ""} » a été retiré (${KIND_LABEL[r.kind] ?? "droits d'auteur"})`,
             `Bonjour,\n\nTon look « ${r.post_title ?? ""} » a été supprimé définitivement, sur tout le site WantedFashion.\n\n` +
-              `Pourquoi : à la suite d'un signalement (réf. ${r.ref}), nous avons estimé que ce look utilise une œuvre protégée par le droit d'auteur sans l'autorisation de son auteur : « ${r.work_description} ». ` +
-              `Cette décision a été prise par une personne, pas par un outil automatique. Base : le droit d'auteur et nos conditions d'utilisation (section « Droits d'auteur »).` +
+              `Pourquoi : à la suite d'un signalement (réf. ${r.ref}), ${why}` +
               note +
-              `\n\nAvertissements actifs sur ton compte : ${strikes ?? 1}/3. Un avertissement dure 90 jours. À 3 avertissements, le compte est suspendu.\n\n${REDRESS}\n\nWantedFashion`,
+              strikeText +
+              `\n\n${REDRESS}\n\nWantedFashion`,
           );
         }
       }

@@ -33,6 +33,9 @@ export function Footer() {
           <Link to="/signup" className={link}>
             {t("nav2.createPage")}
           </Link>
+          <Link to="/legal" className={link}>
+            {t("legal.hub")}
+          </Link>
           <Link to="/confidentialite" className={link}>
             {t("footer.privacy")}
           </Link>

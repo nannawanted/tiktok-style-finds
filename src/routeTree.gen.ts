@@ -14,10 +14,15 @@ import { Route as AtChar123usernameChar125RouteImport } from './routes/@{$userna
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as ConditionsRouteImport } from './routes/conditions'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CreateursRouteImport } from './routes/createurs'
 import { Route as DroitsAuteurRouteImport } from './routes/droits-auteur'
+import { Route as DsaRouteImport } from './routes/dsa'
 import { Route as ExplorerRouteImport } from './routes/explorer'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as ReglesRouteImport } from './routes/regles'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -68,6 +73,11 @@ const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
   path: '/confidentialite',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreateursRoute = CreateursRouteImport.update({
   id: '/createurs',
   path: '/createurs',
@@ -78,14 +88,34 @@ const DroitsAuteurRoute = DroitsAuteurRouteImport.update({
   path: '/droits-auteur',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DsaRoute = DsaRouteImport.update({
+  id: '/dsa',
+  path: '/dsa',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExplorerRoute = ExplorerRouteImport.update({
   id: '/explorer',
   path: '/explorer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReglesRoute = ReglesRouteImport.update({
+  id: '/regles',
+  path: '/regles',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -230,10 +260,15 @@ export interface FileRoutesByFullPath {
   '/@{$username}': typeof AtChar123usernameChar125Route
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
+  '/cookies': typeof CookiesRoute
   '/createurs': typeof CreateursRoute
   '/droits-auteur': typeof DroitsAuteurRoute
+  '/dsa': typeof DsaRoute
   '/explorer': typeof ExplorerRoute
+  '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/regles': typeof ReglesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -264,10 +299,15 @@ export interface FileRoutesByTo {
   '/@{$username}': typeof AtChar123usernameChar125Route
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
+  '/cookies': typeof CookiesRoute
   '/createurs': typeof CreateursRoute
   '/droits-auteur': typeof DroitsAuteurRoute
+  '/dsa': typeof DsaRoute
   '/explorer': typeof ExplorerRoute
+  '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/regles': typeof ReglesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -300,10 +340,15 @@ export interface FileRoutesById {
   '/@{$username}': typeof AtChar123usernameChar125Route
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
+  '/cookies': typeof CookiesRoute
   '/createurs': typeof CreateursRoute
   '/droits-auteur': typeof DroitsAuteurRoute
+  '/dsa': typeof DsaRoute
   '/explorer': typeof ExplorerRoute
+  '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/regles': typeof ReglesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -336,10 +381,15 @@ export interface FileRouteTypes {
     | '/@{$username}'
     | '/conditions'
     | '/confidentialite'
+    | '/cookies'
     | '/createurs'
     | '/droits-auteur'
+    | '/dsa'
     | '/explorer'
+    | '/legal'
     | '/login'
+    | '/mentions-legales'
+    | '/regles'
     | '/robots.txt'
     | '/signup'
     | '/sitemap.xml'
@@ -370,10 +420,15 @@ export interface FileRouteTypes {
     | '/@{$username}'
     | '/conditions'
     | '/confidentialite'
+    | '/cookies'
     | '/createurs'
     | '/droits-auteur'
+    | '/dsa'
     | '/explorer'
+    | '/legal'
     | '/login'
+    | '/mentions-legales'
+    | '/regles'
     | '/robots.txt'
     | '/signup'
     | '/sitemap.xml'
@@ -405,10 +460,15 @@ export interface FileRouteTypes {
     | '/@{$username}'
     | '/conditions'
     | '/confidentialite'
+    | '/cookies'
     | '/createurs'
     | '/droits-auteur'
+    | '/dsa'
     | '/explorer'
+    | '/legal'
     | '/login'
+    | '/mentions-legales'
+    | '/regles'
     | '/robots.txt'
     | '/signup'
     | '/sitemap.xml'
@@ -441,10 +501,15 @@ export interface RootRouteChildren {
   AtChar123usernameChar125Route: typeof AtChar123usernameChar125Route
   ConditionsRoute: typeof ConditionsRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
+  CookiesRoute: typeof CookiesRoute
   CreateursRoute: typeof CreateursRoute
   DroitsAuteurRoute: typeof DroitsAuteurRoute
+  DsaRoute: typeof DsaRoute
   ExplorerRoute: typeof ExplorerRoute
+  LegalRoute: typeof LegalRoute
   LoginRoute: typeof LoginRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
+  ReglesRoute: typeof ReglesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -492,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfidentialiteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/createurs': {
       id: '/createurs'
       path: '/createurs'
@@ -506,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DroitsAuteurRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dsa': {
+      id: '/dsa'
+      path: '/dsa'
+      fullPath: '/dsa'
+      preLoaderRoute: typeof DsaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorer': {
       id: '/explorer'
       path: '/explorer'
@@ -513,11 +592,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExplorerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/regles': {
+      id: '/regles'
+      path: '/regles'
+      fullPath: '/regles'
+      preLoaderRoute: typeof ReglesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -742,10 +842,15 @@ const rootRouteChildren: RootRouteChildren = {
   AtChar123usernameChar125Route: AtChar123usernameChar125Route,
   ConditionsRoute: ConditionsRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
+  CookiesRoute: CookiesRoute,
   CreateursRoute: CreateursRoute,
   DroitsAuteurRoute: DroitsAuteurRoute,
+  DsaRoute: DsaRoute,
   ExplorerRoute: ExplorerRoute,
+  LegalRoute: LegalRoute,
   LoginRoute: LoginRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
+  ReglesRoute: ReglesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
