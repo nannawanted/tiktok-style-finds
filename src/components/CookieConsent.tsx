@@ -131,21 +131,24 @@ function Category({
   locked?: boolean;
   onChange?: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <li className="flex items-start gap-3 rounded-2xl bg-background px-3 py-2.5">
       <span className="min-w-0 flex-1 text-[13px] leading-snug">
         <span className="block font-semibold">{title}</span>
         <span className="text-foreground/70">{text}</span>
       </span>
-      {(editable || locked) && (
+      {locked ? (
+        // Comme les bandeaux des grandes plateformes (« Toujours actifs ») : pas d'interrupteur, ces cookies ne demandent pas d'accord
+        <span className="mt-0.5 shrink-0 rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-bold text-foreground/70">{t("cookies.alwaysOn")}</span>
+      ) : editable && (
         <button
           type="button"
           role="switch"
           aria-checked={on}
           aria-label={title}
-          disabled={locked}
           onClick={() => onChange?.(!on)}
-          className={`mt-0.5 flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? "bg-ink" : "bg-border"} ${locked ? "opacity-50" : ""}`}
+          className={`mt-0.5 flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? "bg-ink" : "bg-border"}`}
         >
           <span className={`h-6 w-6 rounded-full bg-surface shadow transition-transform ${on ? "translate-x-5" : ""}`} />
         </button>
