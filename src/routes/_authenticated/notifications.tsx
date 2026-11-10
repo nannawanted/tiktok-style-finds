@@ -11,6 +11,7 @@ const REASONS: Record<string, TKey> = {
   shocking: "report.shocking",
   stolen_photo: "report.stolen",
   underage: "report.underage",
+  off_topic: "report.offTopic",
 };
 import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useCopyrightQueue, useDeleteNotification, useHideModerationNotice, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { SwipeToDelete } from "@/components/vitrine/SwipeToDelete";

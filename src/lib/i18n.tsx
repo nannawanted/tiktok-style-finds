@@ -1033,6 +1033,8 @@ const dict = {
     shockingHint: { fr: "Nudité, violence, haine…", en: "Nudity, violence, hate…" },
     stolen: { fr: "Vol de photo", en: "Stolen photo" },
     underage: { fr: "Personne de moins de 18 ans", en: "Person under 18" },
+    offTopic: { fr: "Hors sujet", en: "Off topic" },
+    offTopicHint: { fr: "Ce n'est pas une tenue ou une pièce de mode (photo ou pièce sans rapport)", en: "It's not an outfit or a fashion piece (unrelated photo or piece)" },
     underageHint: { fr: "Le créateur a l'air d'avoir moins de 18 ans. Une personne vérifiera son compte.", en: "The creator seems to be under 18. A person will check their account." },
     stolenHint: { fr: "Ce n'est pas la photo ou la tenue de ce créateur", en: "It's not this creator's photo or outfit" },
     details: { fr: "Précisions (facultatif)", en: "Details (optional)" },
