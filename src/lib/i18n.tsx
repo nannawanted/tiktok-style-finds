@@ -349,6 +349,8 @@ const dict = {
     invalidCreds: { fr: "Identifiants invalides", en: "Invalid credentials" },
     emailNotConfirmed: { fr: "Confirme ton email avant de te connecter — vérifie ta boîte mail.", en: "Confirm your email before signing in — check your inbox." },
     captchaRequired: { fr: "Merci de valider la vérification anti-robot ci-dessus.", en: "Please complete the anti-bot check above." },
+    captchaChecking: { fr: "Vérification anti-robot…", en: "Checking you're not a robot…" },
+    captchaFailed: { fr: "La vérification anti-robot n'a pas marché. Recharge la page et réessaie ; si ça continue, désactive le bloqueur de pub ou le VPN pour ce site.", en: "The robot check didn't work. Reload the page and try again; if it keeps happening, turn off your ad blocker or VPN for this site." },
     welcome: { fr: "Bienvenue !", en: "Welcome!" },
     signupTitle: { fr: "Inscription", en: "Sign up" },
     signupSubtitle: { fr: "Crée ton compte créateur Wanted Fashion.", en: "Create your Wanted Fashion creator account." },

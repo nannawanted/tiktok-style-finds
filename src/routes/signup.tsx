@@ -11,7 +11,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createCreatorProfile } from "@/lib/create-creator-profile";
-import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { TurnstileWidget, isCaptchaError } from "@/components/TurnstileWidget";
 import { CAPTCHA_ENABLED } from "@/lib/captcha";
 import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
@@ -29,6 +29,10 @@ function SignupPage() {
   const [birth, setBirth] = useState({ d: "", m: "", y: "" });
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaBroken, setCaptchaBroken] = useState(false);
+  // On attend le jeton anti-robot, sauf si Cloudflare ne répond pas (le serveur décidera)
+  const waitingCaptcha = CAPTCHA_ENABLED && !captchaToken && !captchaBroken;
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -47,7 +51,7 @@ function SignupPage() {
       toast.error(t("auth.usernameReserved"));
       return;
     }
-    if (CAPTCHA_ENABLED && !captchaToken) {
+    if (waitingCaptcha) {
       toast.error(t("auth.captchaRequired"));
       return;
     }
@@ -91,9 +95,11 @@ function SignupPage() {
       // directement par le navigateur à la création du profil).
       options: { emailRedirectTo: window.location.origin, ...(CAPTCHA_ENABLED ? { captchaToken } : {}), data: { username: clean, birth_date: birthDate } },
     });
+    // Un jeton anti-robot ne sert qu'une fois : on en redemande un pour un éventuel nouvel essai
+    if (CAPTCHA_ENABLED) setCaptchaKey((k) => k + 1);
     if (error || !data.user) {
       setLoading(false);
-      toast.error(error?.message ?? t("auth.signupError"));
+      toast.error(isCaptchaError(error?.message) ? t("auth.captchaFailed") : (error?.message ?? t("auth.signupError")));
       return;
     }
 
@@ -163,9 +169,9 @@ function SignupPage() {
             <PasswordInput id="password" name="new-password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
             <p className="mt-1 text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
           </div>
-          {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}
-          <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
-            {loading ? t("auth.creating") : t("auth.createAccount")}
+          {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} onError={setCaptchaBroken} resetKey={captchaKey} />}
+          <Button type="submit" disabled={loading || waitingCaptcha} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
+            {loading ? t("auth.creating") : waitingCaptcha ? t("auth.captchaChecking") : t("auth.createAccount")}
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
             {t("auth.legalBefore")}{" "}

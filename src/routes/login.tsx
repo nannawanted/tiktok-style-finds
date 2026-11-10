@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { TurnstileWidget, isCaptchaError } from "@/components/TurnstileWidget";
 import { CAPTCHA_ENABLED } from "@/lib/captcha";
 
 export const Route = createFileRoute("/login")({
@@ -23,6 +23,10 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaBroken, setCaptchaBroken] = useState(false);
+  // On attend le jeton anti-robot, sauf si Cloudflare ne répond pas (le serveur décidera)
+  const waitingCaptcha = CAPTCHA_ENABLED && !captchaToken && !captchaBroken;
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -32,15 +36,19 @@ function LoginPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (CAPTCHA_ENABLED && !captchaToken) {
+    if (waitingCaptcha) {
       toast.error(t("auth.captchaRequired"));
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password, options: CAPTCHA_ENABLED ? { captchaToken } : undefined });
     setLoading(false);
+    // Un jeton anti-robot ne sert qu'une fois : on en redemande un pour l'essai suivant
+    if (CAPTCHA_ENABLED) setCaptchaKey((k) => k + 1);
     if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
+      if (isCaptchaError(error.message)) {
+        toast.error(t("auth.captchaFailed"));
+      } else if (error.message.toLowerCase().includes("email not confirmed")) {
         toast.error(t("auth.emailNotConfirmed"));
       } else {
         toast.error(t("auth.invalidCreds"));
@@ -64,9 +72,9 @@ function LoginPage() {
             <Label htmlFor="password">{t("auth.password")}</Label>
             <PasswordInput id="password" name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-          {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}
-          <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
-            {loading ? t("auth.loggingIn") : t("auth.login")}
+          {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} onError={setCaptchaBroken} resetKey={captchaKey} />}
+          <Button type="submit" disabled={loading || waitingCaptcha} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
+            {loading ? t("auth.loggingIn") : waitingCaptcha ? t("auth.captchaChecking") : t("auth.login")}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
