@@ -122,6 +122,21 @@
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
+  /* Retour visuel immédiat au toucher (comme les boutons d'iOS / Instagram) :
+     ce qu'on touche s'assombrit tout de suite, on ne clique jamais « dans le vide ». */
+  a, button, [role="button"], summary, label[for] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  @media (hover: none) {
+    a, button:not(:disabled), [role="button"], summary {
+      transition: opacity 180ms ease-out;
+    }
+    a:active, button:not(:disabled):active, [role="button"]:active, summary:active {
+      opacity: 0.55;
+      transition: opacity 0s;
+    }
+  }
 }
 
 @layer utilities {

@@ -414,6 +414,7 @@ export function useModerationNotices() {
         .from("moderation_notices" as never)
         .select("id, kind, data, created_at, read_at")
         .eq("user_id", user!.id)
+        .is("hidden_at", null)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -431,6 +432,38 @@ export function useMarkModerationNoticesRead() {
       await supabase.from("moderation_notices" as never).update({ read_at: new Date().toISOString() } as never).eq("user_id", user.id).is("read_at", null);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["moderation-notices", user?.id] }),
+  });
+}
+
+/** Supprimer une notification (balayage). Retirée de la liste tout de suite, puis supprimée en base. */
+export function useDeleteNotification() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: (id: string) => {
+      qc.setQueryData<NotificationRow[]>(["notifications", user?.id], (rows) => rows?.filter((r) => r.id !== id));
+    },
+    onError: () => qc.invalidateQueries({ queryKey: ["notifications", user?.id] }),
+  });
+}
+
+/** Masquer un avis de modération : il disparaît de la liste, mais la preuve de l'envoi est gardée (art. 17 DSA). */
+export function useHideModerationNotice() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("moderation_notices" as never).update({ hidden_at: new Date().toISOString() } as never).eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: (id: string) => {
+      qc.setQueryData<ModerationNotice[]>(["moderation-notices", user?.id], (rows) => rows?.filter((r) => r.id !== id));
+    },
+    onError: () => qc.invalidateQueries({ queryKey: ["moderation-notices", user?.id] }),
   });
 }
 

@@ -258,7 +258,11 @@ export type Database = {
       }
       products: {
         Row: {
-          affiliate_link: string
+          affiliate_link: string | null
+          description: string | null
+          stock_checked_at: string | null
+          stock_manual: boolean
+          stock_status: string | null
           brand: string | null
           brand_id: string | null
           id: string
@@ -271,7 +275,11 @@ export type Database = {
           price: string | null
         }
         Insert: {
-          affiliate_link: string
+          affiliate_link?: string | null
+          description?: string | null
+          stock_checked_at?: string | null
+          stock_manual?: boolean
+          stock_status?: string | null
           brand?: string | null
           brand_id?: string | null
           id?: string
@@ -284,7 +292,11 @@ export type Database = {
           price?: string | null
         }
         Update: {
-          affiliate_link?: string
+          affiliate_link?: string | null
+          description?: string | null
+          stock_checked_at?: string | null
+          stock_manual?: boolean
+          stock_status?: string | null
           brand?: string | null
           brand_id?: string | null
           id?: string

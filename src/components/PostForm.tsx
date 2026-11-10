@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, Pencil, RefreshCw, X,
+  ArrowLeft, Check, Crop, ImagePlus, Link2, Loader2, PackageX, Pencil, Plus, RefreshCw, Store, X,
 } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 import { StylePicker } from "@/components/vitrine/StyleChips";
@@ -31,7 +31,14 @@ export type ProductDraft = {
   name: string;
   price: string;
   image_url: string;
+  /** Vide pour une pièce manuelle (pas vendue en ligne). */
   affiliate_link: string;
+  /** Pièce ajoutée à la main, sans lien d'achat : photo, marque et explication obligatoires. */
+  manual?: boolean;
+  description?: string;
+  /** « Rupture de stock » : détectée sur la boutique, ou cochée par le créateur (stock_manual). */
+  stock_status?: "in_stock" | "out_of_stock" | null;
+  stock_manual?: boolean;
   /** Clé locale (non enregistrée). */
   _k?: string;
 };
@@ -136,6 +143,10 @@ export function PostForm({
   const [partnerBrands, setPartnerBrands] = useState<PartnerBrand[]>([]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const pieceFileRef = useRef<HTMLInputElement>(null);
+  const pieceTarget = useRef<string | null>(null);
+  const [pendingPiece, setPendingPiece] = useState<{ key: string; file: File } | null>(null);
+  const [pieceUploading, setPieceUploading] = useState<Record<string, boolean>>({});
   const productDebounce = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
@@ -346,6 +357,8 @@ export function PostForm({
           // Le nom de marque déduit du domaine est plus fiable que la page
           ...(meta.brand && !brandFromDomain ? { brand: meta.brand } : {}),
         });
+        // Disponibilité donnée par la boutique (sauf si le créateur l'a déjà fixée à la main)
+        if (meta.stock) setData((d) => ({ ...d, products: d.products.map((p) => (p._k === key && !p.stock_manual ? { ...p, stock_status: meta.stock } : p)) }));
       } catch {
         /* le créateur complète à la main */
       } finally {
@@ -392,6 +405,49 @@ export function PostForm({
     if (!checkLinkShape(url)) fetchPieceMeta(key, url, brand, false);
   }
 
+  // ——— Pièce manuelle (pas vendue en ligne) ———
+  function addManualPiece() {
+    const key = newKey();
+    setData((d) => ({
+      ...d,
+      products: [...d.products, { _k: key, manual: true, affiliate_link: "", brand: "", brand_id: null, name: "", price: "", image_url: "", description: "" }],
+    }));
+    setEditing(key);
+    // La photo est obligatoire : on ouvre tout de suite la galerie
+    pickPiecePhoto(key);
+  }
+
+  function pickPiecePhoto(key: string) {
+    pieceTarget.current = key;
+    pieceFileRef.current?.click();
+  }
+
+  async function uploadPiecePhoto(key: string, file: File) {
+    setPieceUploading((s) => ({ ...s, [key]: true }));
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("covers").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+      if (upErr) throw upErr;
+      // Même vérification que pour la photo du look (nudité, sur le serveur)
+      if ((await checkUploadedImage("covers", path)) === "explicit") {
+        toast.error(t("safety.explicit"));
+        return;
+      }
+      updateProduct(key, { image_url: supabase.storage.from("covers").getPublicUrl(path).data.publicUrl });
+    } catch (e) {
+      console.warn("[piece] envoi impossible", e);
+      toast.error(t("postForm.uploadPhotoFailed"));
+    } finally {
+      setPieceUploading((s) => ({ ...s, [key]: false }));
+    }
+  }
+
+  function setOutOfStock(key: string, out: boolean) {
+    // Coché à la main : le site ne le change plus tout seul. Décoché : la boutique décide de nouveau.
+    updateProduct(key, out ? { stock_status: "out_of_stock", stock_manual: true } : { stock_status: null, stock_manual: false });
+  }
+
   function removeProduct(key: string) {
     clearTimeout(productDebounce.current[key]);
     setData((d) => ({ ...d, products: d.products.filter((p) => p._k !== key) }));
@@ -432,9 +488,15 @@ export function PostForm({
 
   // ——— Validation & envoi ———
   const anyLoading = data.products.some((p) => productLoading[p._k ?? ""]);
+  const anyUploading = Object.values(pieceUploading).some(Boolean);
+
+  const manualProblem = (p: ProductDraft): TKey | null =>
+    !p.image_url ? "studio.manualNeedPhoto" : !p.name.trim() ? "studio.nameRequired" : !p.brand.trim() ? "studio.manualNeedBrand" : (p.description ?? "").trim().length < 3 ? "studio.manualNeedDescription" : null;
 
   function firstInvalidPiece() {
-    return data.products.find((p) => !isHttpUrl(p.affiliate_link) || !!linkIssue[p._k ?? ""] || !!checkLinkShape(p.affiliate_link) || !p.name.trim());
+    return data.products.find((p) =>
+      p.manual ? !!manualProblem(p) : !isHttpUrl(p.affiliate_link) || !!linkIssue[p._k ?? ""] || !!checkLinkShape(p.affiliate_link) || !p.name.trim(),
+    );
   }
 
   async function submit() {
@@ -453,6 +515,10 @@ export function PostForm({
     if (bad) {
       go(2);
       setEditing(bad._k ?? null);
+      if (bad.manual) {
+        toast(t(manualProblem(bad) ?? "studio.nameRequired"));
+        return;
+      }
       const issue = linkIssue[bad._k ?? ""] ?? (isHttpUrl(bad.affiliate_link) ? checkLinkShape(bad.affiliate_link) : null);
       toast(issue ? t(`link.${issue}` as TKey) : !isHttpUrl(bad.affiliate_link) ? t("studio.linkInvalid") : t("studio.nameRequired"));
       return;
@@ -476,12 +542,12 @@ export function PostForm({
   const single = mode === "edit";
   const cta = useMemo(() => {
     if (verifying) return { label: t("studio.verifyingPhoto"), ok: false, why: "", sub: "" };
-    if (single) return { label: submitLabel, ok: !loading && !anyLoading, why: t("studio.loadingPieces"), sub: "" };
+    if (single) return { label: submitLabel, ok: !loading && !anyLoading && !anyUploading, why: t("studio.loadingPieces"), sub: "" };
     if (step === 1) return { label: t("studio.toPieces"), ok: data.title.trim().length > 0, why: t("studio.needTitle"), sub: "" };
-    if (step === 2) return { label: t("studio.next"), ok: !anyLoading && data.products.length > 0, why: anyLoading ? t("studio.loadingPieces") : t("studio.needPiece"), sub: "" };
+    if (step === 2) return { label: t("studio.next"), ok: !anyLoading && !anyUploading && data.products.length > 0, why: anyLoading ? t("studio.loadingPieces") : t("studio.needPiece"), sub: "" };
     if (step === 3) return { label: submitLabel, ok: !loading && !anyLoading, why: "", sub: "" };
     return null;
-  }, [step, data, anyLoading, loading, submitLabel, mode, single, t, verifying]);
+  }, [step, data, anyLoading, anyUploading, loading, submitLabel, mode, single, t, verifying]);
 
   const steps: TKey[] = ["studio.stepPhoto", "studio.stepPieces", "studio.stepStyle"];
 
@@ -723,6 +789,13 @@ export function PostForm({
               </button>
             )}
           </form>
+          <button
+            type="button"
+            onClick={addManualPiece}
+            className="-mt-1 inline-flex items-center gap-2 self-start rounded-full px-1 py-1 text-[14px] font-semibold text-foreground/75 underline-offset-4 hover:underline"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" /> {t("studio.addManualPiece")}
+          </button>
           {data.products.length > 0 && (
             <ul className="flex flex-col gap-2.5">
               {data.products.map((p, i) => {
@@ -733,8 +806,14 @@ export function PostForm({
                   <li key={key} className="fade-up rounded-[22px] bg-surface p-2.5">
                     <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3">
                       <span className="relative h-16 w-16 overflow-hidden rounded-2xl bg-card">
-                        {isLoading ? (
-                          <span className="block h-full w-full animate-pulse bg-card" />
+                        {isLoading || pieceUploading[key] ? (
+                          <span className="flex h-full w-full animate-pulse items-center justify-center bg-card">
+                            {pieceUploading[key] && <Loader2 className="h-5 w-5 animate-spin text-foreground/50" aria-hidden="true" />}
+                          </span>
+                        ) : p.manual && !p.image_url ? (
+                          <button type="button" onClick={() => pickPiecePhoto(key)} aria-label={t("studio.manualPhoto")} className="flex h-full w-full items-center justify-center border-2 border-dashed border-primary/60 text-primary">
+                            <ImagePlus className="h-5 w-5" aria-hidden="true" />
+                          </button>
                         ) : p.image_url ? (
                           <>
                             {/* Fond : la même image floutée qui remplit la bulle ; devant : la pièce entière, centrée */}
@@ -756,7 +835,15 @@ export function PostForm({
                               {p.brand || extractHostname(p.affiliate_link) || t("studio.newPiece")}
                             </span>
                             <span className={`block truncate text-[15px] font-bold ${p.name ? "" : "text-primary"}`}>{p.name || t("studio.nameRequired")}</span>
-                            {p.price ? (
+                            {p.manual ? (
+                              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground/60">
+                                <Store className="h-3.5 w-3.5" aria-hidden="true" /> {t("outfit.notOnline")}
+                              </span>
+                            ) : p.stock_status === "out_of_stock" ? (
+                              <span className="inline-flex items-center gap-1 text-[13px] font-bold text-destructive">
+                                <PackageX className="h-3.5 w-3.5" aria-hidden="true" /> {t("outfit.outOfStock")}
+                              </span>
+                            ) : p.price ? (
                               <span className="block text-sm font-bold text-primary">{p.price}</span>
                             ) : (
                               <button type="button" onClick={() => setEditing(key)} className="text-left text-sm font-semibold text-foreground/60 underline decoration-dotted underline-offset-4">
@@ -777,22 +864,64 @@ export function PostForm({
                     )}
                     {isEditing && (
                       <div className="mt-3 grid gap-3 border-t border-border/60 px-1 pb-1 pt-3 sm:grid-cols-2">
-                        <div className="sm:col-span-2">
-                          <Label htmlFor={`pl-${key}`}>{t("postForm.buyLink")}</Label>
-                          <Input id={`pl-${key}`} type="url" inputMode="url" className="mt-1" value={p.affiliate_link} onChange={(e) => onPieceLinkEdited(key, e.target.value)} placeholder="https://…" />
-                        </div>
+                        {p.manual ? (
+                          <div className="sm:col-span-2">
+                            <p className="rounded-xl bg-background px-3 py-2 text-[13px] text-foreground/70">{t("studio.manualHelp")}</p>
+                            <button type="button" onClick={() => pickPiecePhoto(key)} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 text-[13px] font-semibold text-surface">
+                              <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" /> {p.image_url ? t("studio.change") : t("studio.manualPhoto")}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="sm:col-span-2">
+                            <Label htmlFor={`pl-${key}`}>{t("postForm.buyLink")}</Label>
+                            <Input id={`pl-${key}`} type="url" inputMode="url" className="mt-1" value={p.affiliate_link} onChange={(e) => onPieceLinkEdited(key, e.target.value)} placeholder="https://…" />
+                          </div>
+                        )}
                         <div>
                           <Label htmlFor={`pn-${key}`}>{t("postForm.name")}</Label>
-                          <Input id={`pn-${key}`} className="mt-1" value={p.name} onChange={(e) => updateProduct(key, { name: e.target.value })} />
+                          <Input id={`pn-${key}`} className="mt-1" maxLength={200} value={p.name} onChange={(e) => updateProduct(key, { name: e.target.value })} />
                         </div>
-                        <div>
-                          <Label htmlFor={`pp-${key}`}>{t("postForm.price")}</Label>
-                          <Input id={`pp-${key}`} className="mt-1" value={p.price} onChange={(e) => updateProduct(key, { price: e.target.value })} placeholder="29,90 €" />
-                        </div>
+                        {!p.manual && (
+                          <div>
+                            <Label htmlFor={`pp-${key}`}>{t("postForm.price")}</Label>
+                            <Input id={`pp-${key}`} className="mt-1" value={p.price} onChange={(e) => updateProduct(key, { price: e.target.value })} placeholder="29,90 €" />
+                          </div>
+                        )}
                         <div>
                           <Label htmlFor={`pb-${key}`}>{t("postForm.brand")}</Label>
-                          <Input id={`pb-${key}`} className="mt-1" value={p.brand} onChange={(e) => updateProduct(key, { brand: e.target.value })} />
+                          <Input id={`pb-${key}`} className="mt-1" maxLength={120} value={p.brand} onChange={(e) => updateProduct(key, { brand: e.target.value })} placeholder={p.manual ? t("studio.manualBrandPh") : undefined} />
                         </div>
+                        {p.manual && (
+                          <div className="sm:col-span-2">
+                            <Label htmlFor={`pd-${key}`}>{t("studio.manualDescription")}</Label>
+                            <textarea
+                              id={`pd-${key}`}
+                              rows={3}
+                              maxLength={300}
+                              value={p.description ?? ""}
+                              onChange={(e) => updateProduct(key, { description: e.target.value })}
+                              placeholder={t("studio.manualDescriptionPh")}
+                              className="mt-1 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground/50"
+                            />
+                            <p className="text-right text-xs tabular-nums text-foreground/50">{(p.description ?? "").length}/300</p>
+                          </div>
+                        )}
+                        {!p.manual && (
+                          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-background px-3 py-2.5 text-sm sm:col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={p.stock_status === "out_of_stock"}
+                              onChange={(e) => setOutOfStock(key, e.target.checked)}
+                              className="h-5 w-5 shrink-0 accent-[var(--ink)]"
+                            />
+                            <span>
+                              <span className="block font-semibold">{t("studio.outOfStock")}</span>
+                              <span className="block text-xs text-foreground/60">
+                                {p.stock_status === "out_of_stock" && !p.stock_manual ? t("studio.outOfStockAuto") : t("studio.outOfStockHelp")}
+                              </span>
+                            </span>
+                          </label>
+                        )}
                         <div className="flex flex-wrap gap-2 sm:col-span-2">
                           <button type="button" onClick={() => removeProduct(key)} className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1.5 text-[13px] font-semibold text-destructive">
                             <X className="h-3.5 w-3.5" aria-hidden="true" /> {t("postForm.remove")}
@@ -896,6 +1025,28 @@ export function PostForm({
           const f = e.target.files?.[0];
           if (f) setPendingCover(f);
           e.target.value = "";
+        }}
+      />
+      <input
+        ref={pieceFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          const key = pieceTarget.current;
+          if (f && key) setPendingPiece({ key, file: f });
+          e.target.value = "";
+        }}
+      />
+      <ImageCropDialog
+        file={pendingPiece?.file ?? null}
+        aspect={1}
+        onCancel={() => setPendingPiece(null)}
+        onDone={(f) => {
+          const key = pendingPiece?.key;
+          setPendingPiece(null);
+          if (key) void uploadPiecePhoto(key, f);
         }}
       />
       <ImageCropDialog

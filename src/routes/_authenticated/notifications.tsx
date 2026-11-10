@@ -12,7 +12,8 @@ const REASONS: Record<string, TKey> = {
   stolen_photo: "report.stolen",
   underage: "report.underage",
 };
-import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useCopyrightQueue, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
+import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useCopyrightQueue, useDeleteNotification, useHideModerationNotice, useImageQuota, useMarkModerationNoticesRead, useMarkNotificationsRead, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
+import { SwipeToDelete } from "@/components/vitrine/SwipeToDelete";
 import { Avatar } from "@/components/vitrine/OutfitCard";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { EmptyBox } from "@/components/vitrine/EmptyBox";
@@ -36,6 +37,8 @@ function NotificationsPage() {
   const markRead = useMarkNotificationsRead();
   const { data: notices } = useModerationNotices();
   const markNoticesRead = useMarkModerationNoticesRead();
+  const deleteNotif = useDeleteNotification();
+  const hideNotice = useHideModerationNotice();
   const unreadNotices = notices?.some((n) => !n.read_at);
   useEffect(() => {
     if (unreadNotices) markNoticesRead.mutate();
@@ -77,7 +80,9 @@ function NotificationsPage() {
       {notices && notices.length > 0 && (
         <ul className="mb-5 space-y-2">
           {notices.slice(0, 5).map((n) => (
-            <li key={n.id} className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : n.kind === "terms_updated" ? "bg-surface" : "bg-destructive/10"}`}>
+            <li key={n.id}>
+              <SwipeToDelete className="rounded-3xl" rowClassName="bg-background" onDelete={() => hideNotice.mutate(n.id)}>
+              <div className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : n.kind === "terms_updated" ? "bg-surface" : "bg-destructive/10"}`}>
               <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" ? "text-emerald-700" : n.kind === "terms_updated" ? "text-foreground/70" : "text-destructive"}`} aria-hidden="true" />
               <div className="min-w-0 text-sm leading-relaxed">
                 {/* Chaque avis contient les éléments de l'art. 17 §3 du DSA : mesure et portée, faits, base, décision humaine, recours */}
@@ -162,6 +167,8 @@ function NotificationsPage() {
                 )}
                 <p className="mt-0.5 text-xs text-foreground/50">{new Date(n.created_at).toLocaleDateString("fr-BE")}</p>
               </div>
+              </div>
+              </SwipeToDelete>
             </li>
           ))}
         </ul>
@@ -221,7 +228,8 @@ function NotificationsPage() {
       ) : !notifications?.length ? (
         <EmptyBox text={t("engage.noNotifications")} action={{ to: "/explorer", label: t("nav2.explore") }} />
       ) : (
-        <ul className="divide-y divide-border/60 rounded-3xl bg-surface px-4">
+        <>
+        <ul className="divide-y divide-border/60 overflow-hidden rounded-3xl bg-surface">
           {notifications.map((n) => {
             const actor = n.actor_id ? extra?.actors.get(n.actor_id) : undefined;
             const post = n.post_id ? extra?.posts.get(n.post_id) : undefined;
@@ -236,7 +244,8 @@ function NotificationsPage() {
                     ? t("engage.notifMilestoneOne")
                     : `${t("engage.notifMilestone")} ${n.count} ${t("engage.notifMilestoneSuffix")}`;
             return (
-              <li key={n.id} className={`flex items-center gap-3 py-3.5 ${n.read_at ? "" : "font-semibold"}`}>
+              <li key={n.id}>
+                <SwipeToDelete rowClassName={`flex items-center gap-3 bg-surface px-4 py-3.5 ${n.read_at ? "" : "font-semibold"}`} onDelete={() => deleteNotif.mutate(n.id)}>
                 <span className="relative shrink-0">
                   {actor ? (
                     <Avatar src={actor.profile_image ?? null} name={actor.username ?? "?"} className="h-11 w-11" />
@@ -274,10 +283,13 @@ function NotificationsPage() {
                     <img src={post.cover_image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
                   </Link>
                 ) : null}
+                </SwipeToDelete>
               </li>
             );
           })}
         </ul>
+        <p className="mt-3 text-center text-xs text-foreground/50 [@media(hover:hover)]:hidden">{t("engage.swipeHint")}</p>
+        </>
       )}
     </main>
   );

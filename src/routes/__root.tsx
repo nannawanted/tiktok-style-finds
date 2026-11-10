@@ -22,6 +22,7 @@ import { OfflineBanner } from "../components/OfflineBanner";
 import { AnalyticsTracker } from "../components/AnalyticsTracker";
 import { TwoFactorGate } from "../components/TwoFactor";
 import { TermsGate } from "../components/TermsGate";
+import { NavProgress } from "../components/NavProgress";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "../lib/site";
 import { CollectionPickerProvider } from "../components/vitrine/CollectionPicker";
 import { InterestsDialog } from "../components/vitrine/InterestsDialog";
@@ -131,6 +132,7 @@ function RootComponent() {
         <AuthProvider>
           <CollectionPickerProvider>
             <Header />
+            <NavProgress />
             <Outlet />
             <Footer />
             <CookieConsent />

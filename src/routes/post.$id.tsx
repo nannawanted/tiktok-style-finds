@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AFFILIATE_ENABLED } from "@/lib/features";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, Camera, Info, Eye } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Camera, ChevronDown, Info, Eye, PackageX, Store } from "lucide-react";
+import { refreshPostStock } from "@/lib/stock";
 import { ReportButton } from "@/components/vitrine/ReportButton";
 import { VideoSourceIcon, videoPlatform } from "@/components/vitrine/VideoSourceIcon";
 import { compactCount, deviceId, viewSource } from "@/lib/views";
@@ -87,7 +88,8 @@ function NotFoundOutfit() {
   );
 }
 
-function hostOf(url: string) {
+function hostOf(url: string | null) {
+  if (!url) return "";
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
@@ -99,7 +101,16 @@ function OutfitPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = Route.useParams();
-  const { post, products, creator } = Route.useLoaderData();
+  const { post, products: loaded, creator } = Route.useLoaderData();
+  // Stock revérifié en arrière-plan (au plus une fois par jour et par pièce)
+  const [stock, setStock] = useState<Record<string, string>>({});
+  useEffect(() => {
+    setStock({});
+    refreshPostStock({ data: { postId: id } })
+      .then((r) => setStock(Object.fromEntries(r.changed.map((c) => [c.id, c.stock ?? ""]))))
+      .catch(() => undefined);
+  }, [id]);
+  const products = loaded.map((p) => (stock[p.id] ? { ...p, stock_status: stock[p.id] } : p));
 
   // Vue comptée par le serveur, avec ses protections (voir src/lib/views.ts)
   useEffect(() => {
@@ -206,39 +217,7 @@ function OutfitPage() {
           <div className="mt-3 flex flex-col gap-2.5">
             {products.length === 0 && <p className="text-foreground/70">{t("outfit.noPieces")}</p>}
             {products.map((p, i) => (
-              <a
-                key={p.id}
-                href={`/go/${p.id}`}
-                target="_blank"
-                rel="noopener noreferrer nofollow sponsored"
-                className="fade-up group flex items-center gap-3.5 rounded-2xl bg-surface p-2.5 pr-3 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
-                style={{ animationDelay: `${200 + i * 60}ms` }}
-              >
-                <span className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-card">
-                  {p.image_url && (
-                    <>
-                      <img src={p.image_url} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 h-full w-full scale-125 object-cover blur-md" />
-                      <img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105" />
-                    </>
-                  )}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  {(p.brand || AFFILIATE_ENABLED) && (
-                    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary">
-                      {p.brand}
-                      {AFFILIATE_ENABLED && <span className="rounded-full bg-ink px-1.5 py-px text-[9px] normal-case tracking-normal text-surface">{t("outfit.affiliateBadge")}</span>}
-                    </span>
-                  )}
-                  <span className="truncate font-semibold">{p.name}</span>
-                  <span className="text-sm">
-                    {p.price && <span className="font-bold text-primary">{p.price}</span>}
-                    {hostOf(p.affiliate_link) && <span className="text-foreground/55"> · {hostOf(p.affiliate_link)}</span>}
-                  </span>
-                </span>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-surface transition-colors group-hover:bg-primary">
-                  <ArrowUpRight className="h-4 w-4" aria-label={t("outfit.view")} />
-                </span>
-              </a>
+              <PieceRow key={p.id} p={p} i={i} />
             ))}
           </div>
 
@@ -285,5 +264,81 @@ function OutfitPage() {
       </section>
 
     </main>
+  );
+}
+
+type Piece = ReturnType<typeof Route.useLoaderData>["products"][number];
+
+/** Une pièce du look : lien vers la boutique, ou pièce pas vendue en ligne (avec l'explication du créateur). */
+function PieceRow({ p, i }: { p: Piece; i: number }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const out = p.stock_status === "out_of_stock";
+  const image = (
+    <span className={`relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-card ${out ? "opacity-60" : ""}`}>
+      {p.image_url && (
+        <>
+          <img src={p.image_url} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 h-full w-full scale-125 object-cover blur-md" />
+          <img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105" />
+        </>
+      )}
+    </span>
+  );
+  const brandLine = (p.brand || (AFFILIATE_ENABLED && p.affiliate_link)) && (
+    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary">
+      {p.brand}
+      {AFFILIATE_ENABLED && p.affiliate_link && <span className="rounded-full bg-ink px-1.5 py-px text-[9px] normal-case tracking-normal text-surface">{t("outfit.affiliateBadge")}</span>}
+    </span>
+  );
+  const style = { animationDelay: `${200 + i * 60}ms` };
+
+  if (!p.affiliate_link) {
+    return (
+      <div className="fade-up rounded-2xl bg-surface p-2.5 pr-3" style={style}>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="group flex w-full items-center gap-3.5 text-left">
+          {image}
+          <span className="flex min-w-0 flex-1 flex-col">
+            {brandLine}
+            <span className="truncate font-semibold">{p.name}</span>
+            <span className="inline-flex items-center gap-1 text-sm text-foreground/60">
+              <Store className="h-3.5 w-3.5" aria-hidden="true" /> {t("outfit.notOnline")}
+            </span>
+          </span>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background">
+            <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} aria-label={t("outfit.notOnlineMore")} />
+          </span>
+        </button>
+        {open && p.description && <p className="mt-2.5 whitespace-pre-line rounded-xl bg-background px-3 py-2.5 text-[14px] leading-relaxed">{p.description}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={`/go/${p.id}`}
+      target="_blank"
+      rel="noopener noreferrer nofollow sponsored"
+      className="fade-up group flex items-center gap-3.5 rounded-2xl bg-surface p-2.5 pr-3 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+      style={style}
+    >
+      {image}
+      <span className="flex min-w-0 flex-1 flex-col">
+        {brandLine}
+        <span className="truncate font-semibold">{p.name}</span>
+        <span className="text-sm">
+          {out ? (
+            <span className="inline-flex items-center gap-1 font-bold text-destructive">
+              <PackageX className="h-3.5 w-3.5" aria-hidden="true" /> {t("outfit.outOfStock")}
+            </span>
+          ) : (
+            p.price && <span className="font-bold text-primary">{p.price}</span>
+          )}
+          {hostOf(p.affiliate_link) && <span className="text-foreground/55"> · {hostOf(p.affiliate_link)}</span>}
+        </span>
+      </span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-surface transition-colors group-hover:bg-primary">
+        <ArrowUpRight className="h-4 w-4" aria-label={t("outfit.view")} />
+      </span>
+    </a>
   );
 }

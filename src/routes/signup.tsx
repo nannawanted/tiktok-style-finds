@@ -126,11 +126,11 @@ function SignupPage() {
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="username">{t("auth.username")}</Label>
-            <Input id="username" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t("auth.usernamePlaceholder")} />
+            <Input id="username" name="nickname" autoComplete="nickname" autoCapitalize="none" autoCorrect="off" spellCheck={false} required value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t("auth.usernamePlaceholder")} />
           </div>
           <div>
             <Label htmlFor="email">{t("auth.email")}</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input id="email" name="email" type="email" autoComplete="username" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium">{t("auth.birthDate")}</legend>
@@ -160,7 +160,7 @@ function SignupPage() {
           </fieldset>
           <div>
             <Label htmlFor="password">{t("auth.password")}</Label>
-            <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput id="password" name="new-password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
             <p className="mt-1 text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
           </div>
           {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}

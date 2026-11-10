@@ -280,7 +280,10 @@ export type OutfitDetail = {
     brand: string | null;
     price: string | null;
     image_url: string | null;
-    affiliate_link: string;
+    /** null = pièce pas vendue en ligne (ajoutée à la main) */
+    affiliate_link: string | null;
+    description: string | null;
+    stock_status: string | null;
   }[];
   creator: CreatorCard | null;
 };
@@ -297,7 +300,7 @@ export async function fetchOutfit(id: string): Promise<OutfitDetail | null> {
   const [{ data: products, error: e2 }, { data: creator }] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, brand, price, image_url, affiliate_link")
+      .select("id, name, brand, price, image_url, affiliate_link, description, stock_status")
       .eq("post_id", id)
       .order("position", { ascending: true }),
     supabase

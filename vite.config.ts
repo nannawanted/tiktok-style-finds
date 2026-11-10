@@ -8,6 +8,9 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
 
 export default defineConfig({
+  // Fonctions serveur Vercel à Dublin (comme la base Supabase, eu-west-1) : plus rapide, et les boutiques
+  // voient une visite depuis l'Europe, donc affichent leurs prix en euros et pas en dollars.
+  nitro: { vercel: { functions: { regions: ["dub1"] } } },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

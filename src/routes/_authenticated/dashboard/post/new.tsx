@@ -70,7 +70,10 @@ function NewPost() {
           name: p.name,
           price: p.price || null,
           image_url: p.image_url || null,
-          affiliate_link: p.affiliate_link,
+          affiliate_link: p.manual ? null : p.affiliate_link,
+          description: p.manual ? (p.description ?? "").trim() || null : null,
+          stock_status: p.manual ? null : (p.stock_status ?? null),
+          stock_manual: !p.manual && !!p.stock_manual,
           position: i,
         }))
       );

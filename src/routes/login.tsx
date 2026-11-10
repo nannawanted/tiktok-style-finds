@@ -58,11 +58,11 @@ function LoginPage() {
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="email">{t("auth.email")}</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input id="email" name="email" type="email" autoComplete="username" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
             <Label htmlFor="password">{t("auth.password")}</Label>
-            <PasswordInput id="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput id="password" name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}
           <Button type="submit" disabled={loading} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">

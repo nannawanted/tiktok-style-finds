@@ -1,11 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { checkLinkShape, isFashionText, isKnownFashionShop, type LinkProblem } from "@/lib/link-safety";
 
+export type StockStatus = "in_stock" | "out_of_stock";
+
 export type ProductMetadata = {
   name: string;
   image_url: string;
   price: string;
   brand: string;
+  /** Disponibilité donnée par la boutique (schema.org « availability »), si elle la donne. */
+  stock?: StockStatus | null;
 };
 
 const BROWSER_USER_AGENT =
@@ -301,6 +305,44 @@ function findJsonLdPrice(node: unknown): string {
   return "";
 }
 
+/** « https://schema.org/OutOfStock », « oos », « in stock »… → état du stock. */
+function normalizeAvailability(v: unknown): StockStatus | null {
+  if (typeof v !== "string") return null;
+  const s = v.toLowerCase().replace(/^https?:\/\/schema\.org\//, "").replace(/[\s_-]/g, "");
+  if (/^(outofstock|soldout|discontinued|oos)$/.test(s)) return "out_of_stock";
+  if (/^(instock|limitedavailability|instoreonly|onlineonly|preorder|presale|backorder)$/.test(s)) return "in_stock";
+  return null;
+}
+
+/** Disponibilité dans le JSON-LD : en rupture seulement si toutes les variantes le sont. */
+function findJsonLdStock(node: unknown): StockStatus | null {
+  if (!node || typeof node !== "object") return null;
+  if (Array.isArray(node)) {
+    let out = false;
+    for (const n of node) {
+      const st = findJsonLdStock(n);
+      if (st === "in_stock") return "in_stock";
+      if (st === "out_of_stock") out = true;
+    }
+    return out ? "out_of_stock" : null;
+  }
+  const obj = node as Record<string, unknown>;
+  const offers = obj.offers as Record<string, unknown> | Record<string, unknown>[] | undefined;
+  const list = Array.isArray(offers) ? offers : offers ? [offers] : [];
+  let seenOut = false;
+  for (const offer of list) {
+    const st = normalizeAvailability(offer.availability) ?? findJsonLdStock(offer.offers);
+    if (st === "in_stock") return "in_stock";
+    if (st === "out_of_stock") seenOut = true;
+  }
+  if (seenOut) return "out_of_stock";
+  for (const key of ["@graph", "mainEntity", "itemOffered", "hasVariant"]) {
+    const st = findJsonLdStock(obj[key]);
+    if (st) return st;
+  }
+  return null;
+}
+
 /**
  * Récupère le prix directement sur la page du produit, via les balises que
  * la plupart des boutiques remplissent (Shopify, WooCommerce, etc.) :
@@ -329,56 +371,75 @@ async function safeFetch(url: string, init: RequestInit): Promise<Response | nul
   return null;
 }
 
-async function fetchPriceFromPage(targetUrl: string): Promise<string> {
+async function fetchPageOffer(targetUrl: string): Promise<{ price: string; stock: StockStatus | null }> {
+  const none = { price: "", stock: null };
   try {
-    if (!isPublicHttpsUrl(new URL(targetUrl))) return "";
+    if (!isPublicHttpsUrl(new URL(targetUrl))) return none;
   } catch {
-    return "";
+    return none;
   }
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 6000);
     const res = await safeFetch(targetUrl, {
-      headers: { "User-Agent": BROWSER_USER_AGENT, Accept: "text/html,application/xhtml+xml", "Accept-Language": "fr-BE,fr;q=0.9,en;q=0.8" },
+      headers: {
+        "User-Agent": BROWSER_USER_AGENT,
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "fr-BE,fr;q=0.9,en;q=0.8",
+        // Boutiques Shopify (« Markets ») : demande la version belge en euros au lieu de deviner le pays
+        Cookie: "localization=BE; cart_currency=EUR",
+      },
       signal: controller.signal,
     });
     clearTimeout(timer);
-    if (!res || !res.ok || !(res.headers.get("content-type") ?? "").includes("text/html")) return "";
+    if (!res || !res.ok || !(res.headers.get("content-type") ?? "").includes("text/html")) return none;
     const html = (await res.text()).slice(0, 1_500_000);
 
     const meta = (prop: string) =>
       html.match(new RegExp(`<meta[^>]+(?:property|name|itemprop)=["']${prop}["'][^>]*content=["']([^"']+)["']`, "i"))?.[1] ??
       html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name|itemprop)=["']${prop}["']`, "i"))?.[1];
+    let price = "";
+    let stock: StockStatus | null = normalizeAvailability(meta("product:availability") ?? meta("og:availability") ?? meta("availability"));
     const amount = meta("product:price:amount") ?? meta("og:price:amount") ?? meta("price");
-    if (amount) {
-      const f = formatPrice(amount, meta("product:price:currency") ?? meta("og:price:currency") ?? meta("priceCurrency"));
-      if (f) return f;
-    }
+    if (amount) price = formatPrice(amount, meta("product:price:currency") ?? meta("og:price:currency") ?? meta("priceCurrency"));
     for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+      if (price && stock) break;
       try {
-        const p = findJsonLdPrice(JSON.parse(m[1].trim()));
-        if (p) return p;
+        const json = JSON.parse(m[1].trim());
+        if (!price) price = findJsonLdPrice(json);
+        if (!stock) stock = findJsonLdStock(json);
       } catch {
         /* JSON-LD mal formé : on passe au suivant */
       }
     }
+    return { price, stock };
   } catch {
     /* page inaccessible ou trop lente */
   }
-  return "";
+  return none;
+}
+
+/** État du stock d'une pièce, relu sur la page de la boutique (utilisé pour la mise à jour automatique). */
+export async function readStock(targetUrl: string): Promise<StockStatus | null> {
+  return (await fetchPageOffer(targetUrl)).stock;
 }
 
 async function resolveProductMetadata(
   targetUrl: string,
 ): Promise<ProductMetadata> {
-  const microlink = await fetchFromMicrolink(targetUrl);
+  // Le prix est lu d'abord par notre serveur (en Europe, en demandant la version belge en euros).
+  // Microlink visite la page depuis ses propres serveurs, souvent aux États-Unis : beaucoup de boutiques
+  // y affichent alors le prix en dollars. Son prix ne sert donc qu'en dernier recours.
+  const [microlink, page] = await Promise.all([fetchFromMicrolink(targetUrl), fetchPageOffer(targetUrl)]);
   const result = microlink ?? (await fetchFromJsonLink(targetUrl));
-  if (result && !result.price) result.price = await fetchPriceFromPage(targetUrl);
-  if (result) return result;
+  if (result) {
+    if (page.price) result.price = page.price;
+    result.stock = page.stock;
+    return result;
+  }
 
   // Dernier essai : au moins le prix, si la page est lisible
-  const price = await fetchPriceFromPage(targetUrl);
-  if (price) return { name: "", image_url: "", price, brand: "" };
+  if (page.price) return { name: "", image_url: "", price: page.price, brand: "", stock: page.stock };
 
   throw new Error("Impossible de récupérer les informations du produit");
 }

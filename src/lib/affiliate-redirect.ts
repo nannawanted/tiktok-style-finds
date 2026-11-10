@@ -36,7 +36,9 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
       .eq("id", data.productId)
       .maybeSingle();
 
-    if (!product || !isSafeRedirectTarget(product.affiliate_link)) return { found: false };
+    // Pièce manuelle (pas vendue en ligne) : pas de lien, rien à ouvrir
+    if (!product?.affiliate_link || !isSafeRedirectTarget(product.affiliate_link)) return { found: false };
+    const link = product.affiliate_link;
     // Site bloqué par l'admin depuis la publication : on n'envoie plus personne dessus
     const { data: blocked } = await supabaseAdmin.rpc("is_domain_blocked" as never, { p_url: product.affiliate_link } as never);
     if (blocked) return { found: false };
@@ -125,7 +127,7 @@ export const resolveAffiliateRedirect = createServerFn({ method: "GET" })
     // côté serveur (au lieu du pixel navigateur) et de nous le renvoyer
     // elle-même lors de la déclaration de vente — plus fiable et plus sûr
     // (le serveur de la marque n'expose jamais ça au client final).
-    const targetUrl = new URL(product.affiliate_link);
+    const targetUrl = new URL(link);
     targetUrl.searchParams.set("wf_click", cookieId);
     // Étiquette UTM : la marque voit elle-même, dans son propre outil de statistiques (Google Analytics,
     // Shopify…), les visites venues de WantedFashion et de quel créateur. Jamais d'écrasement d'une

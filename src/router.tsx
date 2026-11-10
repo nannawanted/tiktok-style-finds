@@ -12,6 +12,8 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
+    // Commence à charger la page dès que le doigt touche le lien (ou que la souris le survole)
+    defaultPreload: "intent",
   });
 
   if (!router.isServer) {
