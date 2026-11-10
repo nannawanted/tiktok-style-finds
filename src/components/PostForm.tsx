@@ -434,7 +434,14 @@ export function PostForm({
         toast.error(t("safety.explicit"));
         return;
       }
-      updateProduct(key, { image_url: supabase.storage.from("covers").getPublicUrl(path).data.publicUrl });
+      const url = supabase.storage.from("covers").getPublicUrl(path).data.publicUrl;
+      // Même IA mode que pour la photo du look : une photo sans rapport avec la mode est refusée
+      const topic = await checkPhotoTopic(url);
+      if (topic.status === "off") {
+        toast.error(t("safety.offTopic").replace("{what}", topic.reason), { duration: 8000 });
+        return;
+      }
+      updateProduct(key, { image_url: url });
     } catch (e) {
       console.warn("[piece] envoi impossible", e);
       toast.error(t("postForm.uploadPhotoFailed"));
