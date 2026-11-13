@@ -15,6 +15,31 @@ export function adultBirthDate(raw: unknown): string | null {
 
 type Result = { ok: true } | { ok: false; error: string };
 
+/**
+ * Vérifie le jeton anti-robot Cloudflare Turnstile auprès de Cloudflare (côté serveur, comme le demande
+ * leur documentation). Seulement à l'inscription : la connexion reste protégée par les limites d'essais
+ * de Supabase. Tant que TURNSTILE_SECRET_KEY n'est pas configurée sur Vercel, la vérification est sautée
+ * (rien n'est bloqué).
+ */
+async function captchaOk(token: unknown): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) return true;
+  if (typeof token !== "string" || !token || token.length > 2048) return false;
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: token }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const out = (await res.json()) as { success?: boolean };
+    return out.success === true;
+  } catch {
+    // Cloudflare injoignable : on ne bloque pas une vraie inscription pour une panne chez eux
+    return true;
+  }
+}
+
 // Le profil doit être créé juste après l'inscription : passé ce délai, cet
 // endpoint ne sert plus à rien (et ne doit pas pouvoir être rejoué plus tard).
 const MAX_ACCOUNT_AGE_MS = 15 * 60 * 1000;
@@ -30,7 +55,7 @@ const MAX_ACCOUNT_AGE_MS = 15 * 60 * 1000;
 // requête), puis re-validé ici — les vérifications faites dans le navigateur
 // peuvent être contournées en appelant directement cette fonction.
 export const createCreatorProfile = createServerFn({ method: "POST" })
-  .inputValidator((data: { userId: string }) => data)
+  .inputValidator((data: { userId: string; captchaToken?: string }) => data)
   .handler(async ({ data }): Promise<Result> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -40,6 +65,12 @@ export const createCreatorProfile = createServerFn({ method: "POST" })
     const createdAt = new Date(userData.user.created_at).getTime();
     if (!Number.isFinite(createdAt) || Date.now() - createdAt > MAX_ACCOUNT_AGE_MS) {
       return { ok: false, error: "invalid_account" };
+    }
+
+    // Anti-robot : jeton invalide → le compte qui vient d'être créé est supprimé, aucun profil
+    if (!(await captchaOk(data.captchaToken))) {
+      await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
+      return { ok: false, error: "captcha" };
     }
 
     const rawUsername = userData.user.user_metadata?.username;

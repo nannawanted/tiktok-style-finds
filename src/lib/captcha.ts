@@ -1,5 +1,5 @@
-// Vérification anti-robot (Cloudflare Turnstile) sur l'inscription et la connexion.
-// Elle n'est vraiment obligatoire qu'une fois « Enable CAPTCHA protection » activé dans Supabase
-// (Authentication > Attack Protection, fournisseur Turnstile, avec la clé secrète).
-// Tant que ce n'est pas fait, le jeton est envoyé mais pas vérifié : rien ne peut bloquer la connexion.
+// Vérification anti-robot (Cloudflare Turnstile), seulement à l'inscription.
+// Le jeton est vérifié par notre serveur (src/lib/create-creator-profile.ts) avec la clé secrète
+// TURNSTILE_SECRET_KEY (variable d'environnement Vercel). Ne PAS activer « CAPTCHA protection »
+// dans Supabase : elle s'appliquerait aussi à la connexion.
 export const CAPTCHA_ENABLED = true;

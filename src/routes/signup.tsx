@@ -11,7 +11,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createCreatorProfile } from "@/lib/create-creator-profile";
-import { TurnstileWidget, isCaptchaError } from "@/components/TurnstileWidget";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { CAPTCHA_ENABLED } from "@/lib/captcha";
 import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
@@ -93,20 +93,27 @@ function SignupPage() {
       // Le username est enregistré dans les métadonnées du compte : c'est le
       // serveur qui le relit pour créer le profil (jamais une valeur envoyée
       // directement par le navigateur à la création du profil).
-      options: { emailRedirectTo: window.location.origin, ...(CAPTCHA_ENABLED ? { captchaToken } : {}), data: { username: clean, birth_date: birthDate } },
+      options: { emailRedirectTo: window.location.origin, data: { username: clean, birth_date: birthDate } },
     });
-    // Un jeton anti-robot ne sert qu'une fois : on en redemande un pour un éventuel nouvel essai
-    if (CAPTCHA_ENABLED) setCaptchaKey((k) => k + 1);
     if (error || !data.user) {
       setLoading(false);
-      toast.error(isCaptchaError(error?.message) ? t("auth.captchaFailed") : (error?.message ?? t("auth.signupError")));
+      toast.error(error?.message ?? t("auth.signupError"));
       return;
     }
 
-    const profileResult = await createCreatorProfile({ data: { userId: data.user.id } });
+    // Le jeton anti-robot est vérifié par notre serveur, une seule fois, à la création du profil
+    const profileResult = await createCreatorProfile({ data: { userId: data.user.id, captchaToken: CAPTCHA_ENABLED ? captchaToken : undefined } });
+    // Un jeton ne sert qu'une fois : on en redemande un pour un éventuel nouvel essai
+    if (CAPTCHA_ENABLED) setCaptchaKey((k) => k + 1);
     if (!profileResult.ok) {
       setLoading(false);
-      toast.error(profileResult.error === "underage" ? t("auth.underage") : t("auth.profileFailed") + " " + profileResult.error);
+      toast.error(
+        profileResult.error === "underage"
+          ? t("auth.underage")
+          : profileResult.error === "captcha"
+            ? t("auth.captchaFailed")
+            : t("auth.profileFailed") + " " + profileResult.error,
+      );
       return;
     }
 
