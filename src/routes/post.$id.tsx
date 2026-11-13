@@ -117,7 +117,7 @@ function OutfitPage() {
   useEffect(() => {
     const device = deviceId();
     void supabase.rpc("record_post_view" as never, { p_post: id, p_device: device, p_source: viewSource() } as never);
-    // Sert à mettre le look qui buzze en haut de la page du créateur (« 🔥 En ce moment »)
+    // Sert à mettre le look qui buzze en haut de la page du créateur (« En ce moment »)
     logLookOpen(id, device);
   }, [id]);
 

@@ -4,7 +4,8 @@
 // (comme la recherche dans un profil Instagram / la recherche Pinterest).
 //
 // On cherche partout : marque, nom de la pièce, description, titre, hashtags,
-// styles, ce que l'IA voit sur la photo (couleurs, vêtements, motifs), numéro de look.
+// styles, ce que l'IA voit sur la photo (couleurs, vêtements, motifs).
+// Une couleur large prend toutes ses nuances (rouge → bordeaux, cerise ; bleu → marine, ciel…).
 // Accents, majuscules, pluriels, synonymes (baskets = sneakers) et fautes de frappe
 // (« zaar » → Zara, « blazr » → blazer) sont tolérés.
 
@@ -20,7 +21,6 @@ import {
 
 export type LookIndexEntry = {
   id: string;
-  lookNumber: number | null;
   tags: string[];
   visualTags: string[];
   products: { name: string; brand: string | null; description: string | null }[];
@@ -28,16 +28,14 @@ export type LookIndexEntry = {
 
 type Raw = {
   id: string;
-  look_number?: number | null;
   tags?: string[] | null;
   visual_tags?: string[] | null;
   products?: { name: string | null; brand: string | null; description?: string | null }[] | null;
 };
 
-/** Les looks du créateur avec leurs pièces. Fonctionne aussi avant la mise à jour de la base (sans numéros). */
+/** Les looks du créateur avec leurs pièces. */
 export async function fetchProfileIndex(creatorId: string): Promise<LookIndexEntry[]> {
   const attempts = [
-    "id, look_number, tags, visual_tags, products(name, brand, description)",
     "id, tags, visual_tags, products(name, brand, description)",
     "id, tags, products(name, brand)",
   ];
@@ -51,7 +49,6 @@ export async function fetchProfileIndex(creatorId: string): Promise<LookIndexEnt
     if (error) continue;
     return ((data ?? []) as unknown as Raw[]).map((r) => ({
       id: r.id,
-      lookNumber: typeof r.look_number === "number" ? r.look_number : null,
       tags: r.tags ?? [],
       visualTags: r.visual_tags ?? [],
       products: (r.products ?? []).map((p) => ({
@@ -88,7 +85,6 @@ export function logLookOpen(postId: string, device: string | null) {
 type Field = { text: string; words: string[]; weight: number; label?: string };
 type Doc = {
   id: string;
-  lookNumber: number | null;
   fields: Field[];
   all: string;
   compact: string;
@@ -133,7 +129,6 @@ export function buildIndex(looks: SearchableLook[], index: LookIndexEntry[]): Do
     const all = fields.map((f) => f.text).join(" ");
     return {
       id: look.id,
-      lookNumber: e?.lookNumber ?? null,
       fields,
       all,
       compact: all.replace(/ /g, ""),
@@ -166,12 +161,13 @@ function typoDistance(a: string, b: string, max: number): number {
 }
 
 /** Qualité de la correspondance entre un mot cherché et un mot du look (0 = rien). */
-function wordMatch(q: string, w: string, isLast: boolean): number {
+function wordMatch(q: string, w: string, isLast: boolean, allowTypo = true): number {
   if (w === q) return 1;
   if (w.length > q.length && w.startsWith(q)) return q.length >= 3 || isLast ? 0.85 : 0; // en cours de frappe, pluriels
   if (q.length > w.length && q.startsWith(w) && w.length >= 4 && q.length - w.length <= 2)
     return 0.8; // « vestes » → veste
-  if (q.length >= 4 && w.length >= 3) {
+  // fautes de frappe : seulement sur ce qui a été tapé, pas sur les synonymes (sinon « verte » ≈ « veste »)
+  if (allowTypo && q.length >= 4 && w.length >= 3) {
     const max = q.length >= 8 ? 2 : 1;
     if (typoDistance(q, w, max) <= max) return 0.6;
   }
@@ -181,7 +177,7 @@ function wordMatch(q: string, w: string, isLast: boolean): number {
 function groupScore(doc: Doc, alts: string[], isLast: boolean): { score: number; label?: string } {
   let best = 0;
   let label: string | undefined;
-  for (const alt of alts) {
+  for (const [ai, alt] of alts.entries()) {
     if (alt.includes(" ")) {
       // expression (« veste en cuir », « pull and bear »)
       for (const f of doc.fields) {
@@ -194,7 +190,7 @@ function groupScore(doc: Doc, alts: string[], isLast: boolean): { score: number;
     }
     for (const f of doc.fields) {
       for (const w of f.words) {
-        const m = wordMatch(alt, w, isLast);
+        const m = wordMatch(alt, w, isLast, ai === 0);
         if (m && m * f.weight > best) {
           best = m * f.weight;
           label = f.label;
@@ -217,8 +213,6 @@ function groupScore(doc: Doc, alts: string[], isLast: boolean): { score: number;
 
 export type SearchResult = { id: string; score: number; note?: string };
 
-const LOOK_NUMBER = /^(?:look|tenue|n|no|num|numero)?\s*#?\s*(\d{1,4})$/;
-
 /**
  * Cherche dans les looks. Renvoie d'abord les looks qui contiennent TOUS les mots,
  * puis (`partial: true`) ceux qui s'en rapprochent le plus s'il n'y en a aucun.
@@ -226,16 +220,9 @@ const LOOK_NUMBER = /^(?:look|tenue|n|no|num|numero)?\s*#?\s*(\d{1,4})$/;
 export function searchLooks(
   docs: Doc[],
   rawQuery: string,
-): { results: SearchResult[]; partial: boolean; lookNumber: number | null } {
+): { results: SearchResult[]; partial: boolean } {
   const q = normalizeText(rawQuery);
-  if (!q) return { results: [], partial: false, lookNumber: null };
-
-  const num = q.match(LOOK_NUMBER);
-  if (num) {
-    const n = Number(num[1]);
-    const hit = docs.find((d) => d.lookNumber === n);
-    if (hit) return { results: [{ id: hit.id, score: 100 }], partial: false, lookNumber: n };
-  }
+  if (!q) return { results: [], partial: false };
 
   const groups = searchGroups(rawQuery).map((g) => g.split("|").filter(Boolean));
   if (!groups.length) groups.push([q]);
@@ -263,7 +250,6 @@ export function searchLooks(
     return {
       results: full.map(({ id, score, note }) => ({ id, score, note })),
       partial: false,
-      lookNumber: null,
     };
   }
   const near = scored
@@ -273,7 +259,6 @@ export function searchLooks(
   return {
     results: near.map(({ id, score, note }) => ({ id, score, note })),
     partial: near.length > 0,
-    lookNumber: null,
   };
 }
 

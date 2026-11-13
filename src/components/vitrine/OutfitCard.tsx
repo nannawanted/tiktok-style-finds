@@ -77,15 +77,12 @@ export function OutfitCard({
   index = 0,
   showCreator = true,
   showPinned = false,
-  lookNumber,
   note,
 }: {
   outfit: OutfitCardData;
   index?: number;
   showCreator?: boolean;
   showPinned?: boolean;
-  /** Numéro du look chez ce créateur (« Look 12 »), affiché sur sa page */
-  lookNumber?: number | null;
   /** Petite ligne sous le titre (ex. la pièce trouvée par la recherche) */
   note?: string;
 }) {
@@ -148,11 +145,6 @@ export function OutfitCard({
           <span className="absolute right-2 top-2">
             <SaveButton postId={outfit.id} count={outfit.likes} />
           </span>
-          {!!lookNumber && (
-            <span className="absolute bottom-10 left-2.5 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm">
-              {t("profile.lookN").replace("{n}", String(lookNumber))}
-            </span>
-          )}
           {outfit.tiktok_url ? (
             <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
               <VideoSourceIcon url={outfit.tiktok_url} className="h-3 w-3" /> {t("card.video")}
@@ -220,13 +212,11 @@ export function OutfitGrid({
   outfits,
   showCreator = true,
   showPinned = false,
-  lookNumbers,
   notes,
 }: {
   outfits: OutfitCardData[];
   showCreator?: boolean;
   showPinned?: boolean;
-  lookNumbers?: Map<string, number>;
   notes?: Map<string, string>;
 }) {
   const n = useColumnCount();
@@ -243,7 +233,6 @@ export function OutfitGrid({
               index={i}
               showCreator={showCreator}
               showPinned={showPinned}
-              lookNumber={lookNumbers?.get(o.id)}
               note={notes?.get(o.id)}
             />
           ))}

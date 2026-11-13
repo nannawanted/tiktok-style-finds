@@ -23,9 +23,9 @@ type HeroKind = "buzz" | "pinned" | "latest";
 
 /**
  * Les looks d'un créateur, pensés pour quelqu'un qui arrive depuis le lien en bio TikTok/Insta :
- * 1. « Tu viens de voir… » : 🔥 le look le plus ouvert en ce moment, 📌 les épinglés, 🆕 le dernier ;
+ * 1. « Tu viens de voir… » : le look le plus ouvert en ce moment, les épinglés, le dernier ;
  * 2. tous les autres, du plus récent au plus ancien ;
- * 3. une barre de recherche qui fouille marques, pièces, couleurs, hashtags et numéros de look.
+ * 3. une barre de recherche qui fouille marques, pièces, couleurs, hashtags et styles.
  */
 export function ProfileLooks({
   creatorId,
@@ -56,18 +56,6 @@ export function ProfileLooks({
     refetchInterval: 120_000,
   });
 
-  // Numéros de look : ceux de la base ; à défaut (base pas encore à jour), l'ordre de publication
-  const lookNumbers = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const e of index) if (e.lookNumber) m.set(e.id, e.lookNumber);
-    if (!m.size && index.length) [...index].reverse().forEach((e, i) => m.set(e.id, i + 1));
-    return m;
-  }, [index]);
-  const indexWithNumbers = useMemo(
-    () => index.map((e) => ({ ...e, lookNumber: lookNumbers.get(e.id) ?? null })),
-    [index, lookNumbers],
-  );
-
   const docs = useMemo(
     () =>
       buildIndex(
@@ -77,9 +65,9 @@ export function ProfileLooks({
           styles: o.styles,
           styleLabels: o.styles.map((s) => t(styleLabelKey(s))),
         })),
-        indexWithNumbers,
+        index,
       ),
-    [outfits, indexWithNumbers, t],
+    [outfits, index, t],
   );
 
   const outfitStyles = useMemo(() => {
@@ -265,7 +253,6 @@ export function ProfileLooks({
                   </div>
                 </div>
               )}
-              <p className="px-1 text-xs text-foreground/55">{t("profile.searchLookHint")}</p>
             </div>
           )}
           {trimmed && typed.length > 0 && (
@@ -299,7 +286,7 @@ export function ProfileLooks({
           <ul className="grid gap-3 md:grid-cols-2">
             {hero.map(({ o, kind }, i) => (
               <li key={o.id} className="fade-up" style={{ animationDelay: `${i * 70}ms` }}>
-                <HeroCard outfit={o} kind={kind} lookNumber={lookNumbers.get(o.id)} />
+                <HeroCard outfit={o} kind={kind} />
               </li>
             ))}
           </ul>
@@ -378,7 +365,6 @@ export function ProfileLooks({
             outfits={shown.slice(0, visible)}
             showCreator={false}
             showPinned={sort === "recent" && !searching}
-            lookNumbers={lookNumbers}
             notes={notes}
           />
           {visible < shown.length && (
@@ -400,15 +386,7 @@ export function ProfileLooks({
   );
 }
 
-function HeroCard({
-  outfit,
-  kind,
-  lookNumber,
-}: {
-  outfit: OutfitCard;
-  kind: HeroKind;
-  lookNumber?: number;
-}) {
+function HeroCard({ outfit, kind }: { outfit: OutfitCard; kind: HeroKind }) {
   const { t } = useTranslation();
   const tag =
     kind === "buzz"
@@ -448,11 +426,6 @@ function HeroCard({
             referrerPolicy="no-referrer"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-        )}
-        {!!lookNumber && (
-          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink/80 px-2 py-0.5 text-[10px] font-bold text-surface">
-            {t("profile.lookN").replace("{n}", String(lookNumber))}
-          </span>
         )}
       </span>
       <span className="min-w-0 flex-1">

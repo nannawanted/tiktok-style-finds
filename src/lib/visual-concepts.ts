@@ -20,24 +20,24 @@ const PROMPT: Record<Cat, (en: string) => string> = {
 const RAW = `
 black|color|black|noir,noire,noirs,noires,black,all black,total black
 white|color|white|blanc,blanche,blancs,blanches,white
-grey|color|grey|gris,grise,grises,grey,gray
+grey|color|grey|gris,grise,grises,grey,gray,gris clair,gris fonce,anthracite
 beige|color|beige|beige,beiges,sable,nude
 cream|color|cream and off-white|creme,ecru,ivoire,cream,off white
-brown|color|brown|marron,marrons,brun,brune,chocolat,brown
+brown|color|brown|marron,marrons,brun,brune,chocolat,brown,marron fonce,marron clair,taupe
 camel|color|camel|camel,caramel,cognac
-red|color|red|rouge,rouges,red
-burgundy|color|burgundy|bordeaux,burgundy,lie de vin,cerise
-pink|color|pink|rose,roses,pink,fuchsia
-baby-pink|color|pastel pink|rose pale,rose pastel,rose poudre,baby pink
+red|color|red|rouge,rouges,red,rouge vif,rouge clair,carmin,vermillon
+burgundy|color|burgundy|bordeaux,burgundy,lie de vin,cerise,rouge fonce,grenat,framboise,prune
+pink|color|pink|rose,roses,pink,fuchsia,rose fonce,rose vif,magenta
+baby-pink|color|pastel pink|rose pale,rose pastel,rose poudre,rose clair,baby pink
 orange|color|orange|orange,oranges
-yellow|color|yellow|jaune,jaunes,yellow,moutarde
-green|color|green|vert,verte,verts,vertes,green
+yellow|color|yellow|jaune,jaunes,yellow,moutarde,jaune pastel,jaune vif
+green|color|green|vert,verte,verts,vertes,green,vert fonce,vert clair,vert pomme,vert emeraude,emeraude
 khaki|color|khaki and olive green|kaki,olive,vert militaire,khaki
 sage|color|sage green|vert sauge,sauge,sage
-blue|color|blue|bleu,bleue,bleus,bleues,blue
-light-blue|color|light blue|bleu clair,bleu ciel,ciel,light blue
-navy|color|navy blue|bleu marine,marine,navy
-purple|color|purple|violet,violette,violets,mauve,lilas,lavande,purple
+blue|color|blue|bleu,bleue,bleus,bleues,blue,bleu roi,bleu electrique,cobalt
+light-blue|color|light blue|bleu clair,bleu ciel,ciel,light blue,bleu pastel,bleu bebe,turquoise
+navy|color|navy blue|bleu marine,marine,navy,bleu fonce,bleu nuit
+purple|color|purple|violet,violette,violets,mauve,lilas,lavande,purple,violet fonce,aubergine
 gold|color|gold|dore,doree,or,gold
 silver|color|silver metallic|argent,argente,argentee,metallise,silver
 colorful|color|very colorful|colore,coloree,multicolore,couleurs vives,colorful
@@ -312,6 +312,27 @@ export function conceptLabel(key: string): string {
   return c ? displayWord(c.words[0]) : key;
 }
 
+// Couleurs larges : « rouge » prend aussi toutes ses nuances (bordeaux, cerise…), « bleu » prend
+// marine, ciel, turquoise… Une nuance précise (« bordeaux ») reste précise, comme sur Pinterest.
+const COLOR_FAMILIES: Record<string, string[]> = {
+  red: ["burgundy"],
+  pink: ["baby-pink"],
+  blue: ["light-blue", "navy"],
+  green: ["khaki", "sage"],
+  brown: ["camel"],
+  beige: ["cream"],
+  white: ["cream"],
+  neutral: ["beige", "cream", "white", "grey"],
+};
+// « bleu foncé », « rouge vif » : si la nuance n'est pas connue, on garde la couleur (sans exiger le mot « foncé »)
+const SHADE_WORDS = new Set(["clair", "claire", "clairs", "claires", "fonce", "foncee", "fonces", "foncees", "pale", "vif", "vive", "vifs", "pastel", "light", "dark", "bright", "intense"]);
+
+/** Tous les mots d'une notion, avec ceux de ses nuances si c'est une couleur large. */
+function conceptAlternatives(key: string): string[] {
+  const keys = [key, ...(COLOR_FAMILIES[key] ?? [])];
+  return keys.flatMap((k) => VISUAL_CONCEPTS.find((x) => x.key === k)?.words ?? []);
+}
+
 /**
  * Découpe une recherche en groupes de mots pour la recherche texte : chaque
  * mot (ou expression connue) avec ses synonymes. « baskets noires » →
@@ -321,22 +342,26 @@ export function searchGroups(query: string): string[] {
   const tokens = normalizeText(query.replace(/#/g, " ")).split(" ").filter(Boolean);
   const groups: string[] = [];
   let i = 0;
+  let lastColor = false;
   while (i < tokens.length && groups.length < 8) {
     let matched = 0;
     for (let len = Math.min(4, tokens.length - i); len >= 1; len--) {
       const phrase = tokens.slice(i, i + len).join(" ");
       const key = PHRASES.get(phrase);
       if (key) {
-        const c = VISUAL_CONCEPTS.find((x) => x.key === key);
-        const words = [phrase, ...(c?.words ?? [])].map(normalizeText).filter(Boolean);
-        groups.push([...new Set(words)].slice(0, 12).join("|"));
+        const words = [phrase, ...conceptAlternatives(key)].map(normalizeText).filter(Boolean);
+        groups.push([...new Set(words)].slice(0, 40).join("|"));
         matched = len;
+        lastColor = VISUAL_CONCEPTS.find((x) => x.key === key)?.category === "color";
         break;
       }
     }
     if (matched) {
       i += matched;
+    } else if (lastColor && SHADE_WORDS.has(tokens[i])) {
+      i += 1; // « bleu foncé » → toutes les nuances de bleu
     } else {
+      lastColor = false;
       if (!STOP.has(tokens[i]) && tokens[i].length > 1) groups.push(tokens[i]);
       i += 1;
     }
