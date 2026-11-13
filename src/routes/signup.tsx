@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isPwnedPassword } from "@/lib/pwned";
 import { adultBirthDate } from "@/lib/create-creator-profile";
@@ -25,6 +26,7 @@ function SignupPage() {
   const { t, lang } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
   const [username, setUsername] = useState("");
   const [birth, setBirth] = useState({ d: "", m: "", y: "" });
   const [loading, setLoading] = useState(false);
@@ -63,6 +65,15 @@ function SignupPage() {
     }
     if (!adultBirthDate(birthDate)) {
       toast.error(t("auth.underage"));
+      return;
+    }
+
+    if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
+      toast.error(t("auth.pwRuleLength"));
+      return;
+    }
+    if (password !== password2) {
+      toast.error(t("auth.pwNoMatch"));
       return;
     }
 
@@ -139,7 +150,8 @@ function SignupPage() {
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="username">{t("auth.username")}</Label>
-            <Input id="username" name="nickname" autoComplete="nickname" autoCapitalize="none" autoCorrect="off" spellCheck={false} required value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t("auth.usernamePlaceholder")} />
+            <Input id="username" name="nickname" autoComplete="nickname" autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={31} value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} placeholder={t("auth.usernamePlaceholder")} aria-describedby="username-rules" />
+            <UsernameRules value={username} />
           </div>
           <div>
             <Label htmlFor="email">{t("auth.email")}</Label>
@@ -173,8 +185,21 @@ function SignupPage() {
           </fieldset>
           <div>
             <Label htmlFor="password">{t("auth.password")}</Label>
-            <PasswordInput id="password" name="new-password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
-            <p className="mt-1 text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
+            <PasswordInput id="password" name="new-password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} aria-describedby="password-rules" />
+            <ul id="password-rules" className="mt-1.5 space-y-0.5 text-xs">
+              <Rule ok={password.length >= 8} active={password.length > 0} label={t("auth.pwRuleLength")} />
+              {new TextEncoder().encode(password).length > 72 && <Rule ok={false} active label={t("auth.pwTooLong")} />}
+              <li className="text-muted-foreground">{t("auth.pwRuleAny")}</li>
+            </ul>
+          </div>
+          <div>
+            <Label htmlFor="password2">{t("auth.passwordConfirm")}</Label>
+            <PasswordInput id="password2" name="new-password-confirm" autoComplete="new-password" required value={password2} onChange={(e) => setPassword2(e.target.value)} />
+            {password2.length > 0 && (
+              <ul className="mt-1.5 text-xs">
+                <Rule ok={password === password2} active label={password === password2 ? t("auth.pwMatch") : t("auth.pwNoMatch")} />
+              </ul>
+            )}
           </div>
           {CAPTCHA_ENABLED && <TurnstileWidget onToken={setCaptchaToken} onError={setCaptchaBroken} resetKey={captchaKey} />}
           <Button type="submit" disabled={loading || waitingCaptcha} className="w-full bg-brand text-brand-foreground hover:bg-brand/90">
@@ -198,5 +223,33 @@ function SignupPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+/** Une règle qui se coche en direct pendant la frappe (comme sur Google ou Instagram). */
+function Rule({ ok, active, label }: { ok: boolean; active: boolean; label: string }) {
+  return (
+    <li className={`flex items-start gap-1.5 ${!active ? "text-muted-foreground" : ok ? "text-emerald-700" : "text-destructive"}`}>
+      {active && ok ? <Check className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : active ? <X className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />}
+      <span>{label}</span>
+    </li>
+  );
+}
+
+/** Règles du nom d'utilisateur, vérifiées en direct ; montre exactement le caractère refusé. */
+function UsernameRules({ value }: { value: string }) {
+  const { t } = useTranslation();
+  const v = value.trim().replace(/^@/, "");
+  const bad = [...new Set([...value.replace(/^@/, "")].filter((c) => !/[a-z0-9_.]/.test(c)))];
+  return (
+    <ul id="username-rules" className="mt-1.5 space-y-0.5 text-xs">
+      <Rule ok={v.length >= 3 && v.length <= 30} active={v.length > 0} label={t("auth.unRuleLength")} />
+      <Rule ok={bad.length === 0} active={v.length > 0} label={t("auth.unRuleChars")} />
+      {bad.length > 0 && (
+        <li className="pl-5 font-semibold text-destructive">
+          {t("auth.unBadChar")} {bad.map((c) => (c === " " ? `« ${t("auth.unSpace")} »` : `« ${c} »`)).join(" ")}
+        </li>
+      )}
+    </ul>
   );
 }

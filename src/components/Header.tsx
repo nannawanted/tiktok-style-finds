@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut, Bell } from "lucide-react";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import { Search, Menu, Heart, LayoutGrid, Users, Compass, LogOut, Bell, ArrowLeft } from "lucide-react";
 import { REPORT_ALERT_THRESHOLD, quotaNearlyUsed, useCopyrightQueue, useImageQuota, useModerationNotices, useModerationQueue, useNotifications } from "@/lib/social";
 import { toast } from "sonner";
 import { Logo } from "./Logo";
@@ -203,10 +203,22 @@ function NotificationBell({ className = "" }: { className?: string }) {
   );
 }
 
+// Pages qui ont déjà leur propre flèche « retour » dans la page
+const OWN_BACK = [/^\/post\//, /^\/dashboard\/(post|settings|moderation|dossier|stats|stats-marques|rapport-marque)(\/|$)/];
+
 export function Header() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Flèche « retour » sur toutes les pages sauf l'accueil (comme dans les applis)
+  const showBack = pathname !== "/" && !OWN_BACK.some((r) => r.test(pathname));
+  function goBack() {
+    // Arrivé directement sur la page (lien partagé) : pas de page précédente, on va à l'accueil
+    if (router.history.canGoBack()) router.history.back();
+    else navigate({ to: "/" });
+  }
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [hidden, setHidden] = useState(false);
@@ -258,7 +270,28 @@ export function Header() {
       className={`sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-md transition-transform duration-300 ${hidden && !open ? "-translate-y-full" : ""}`}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 md:gap-5 md:px-6">
-        <Link to="/" aria-label="WantedFashion" className="shrink-0">
+        {showBack && (
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label={t("studio.back")}
+            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-surface"
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
+        <Link
+          to="/"
+          aria-label="WantedFashion"
+          className="shrink-0"
+          onClick={(e) => {
+            // Comme le logo d'Instagram ou de X : déjà sur l'accueil → on remonte tout en haut
+            if (pathname === "/") {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+        >
           <Logo className="h-12 md:h-14" />
         </Link>
 
