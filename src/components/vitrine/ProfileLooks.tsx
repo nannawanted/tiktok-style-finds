@@ -166,8 +166,8 @@ export function ProfileLooks({
 
   return (
     <div>
-      {/* Barre de recherche */}
-      {outfits.length > 1 && (
+      {/* Barre de recherche (dès le premier look, comme « Rechercher tes épingles » sur un profil Pinterest) */}
+      {outfits.length > 0 && (
         <div className="mb-4">
           <form
             role="search"
