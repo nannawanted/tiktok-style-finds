@@ -328,7 +328,8 @@ export async function fetchCreatorProfile(username: string): Promise<{ creator: 
   if (error) throw error;
   const creator = row ? toCreatorCard(row) : null;
   if (!creator) return null;
-  const outfits = await fetchOutfits({ creatorIds: [creator.id], sort: "latest", limit: 60 });
+  // Tous ses looks (jusqu'à 300) : la recherche de sa page doit pouvoir retrouver n'importe lequel
+  const outfits = await fetchOutfits({ creatorIds: [creator.id], sort: "latest", limit: 300 });
   return { creator, outfits };
 }
 

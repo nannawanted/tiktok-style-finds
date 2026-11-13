@@ -72,7 +72,23 @@ function FadeInImage({ src, alt, eager, ratio, color }: { src: string; alt: stri
   );
 }
 
-export function OutfitCard({ outfit, index = 0, showCreator = true, showPinned = false }: { outfit: OutfitCardData; index?: number; showCreator?: boolean; showPinned?: boolean }) {
+export function OutfitCard({
+  outfit,
+  index = 0,
+  showCreator = true,
+  showPinned = false,
+  lookNumber,
+  note,
+}: {
+  outfit: OutfitCardData;
+  index?: number;
+  showCreator?: boolean;
+  showPinned?: boolean;
+  /** Numéro du look chez ce créateur (« Look 12 »), affiché sur sa page */
+  lookNumber?: number | null;
+  /** Petite ligne sous le titre (ex. la pièce trouvée par la recherche) */
+  note?: string;
+}) {
   const { t } = useTranslation();
   const h = hash(outfit.id);
   const pieces = `${outfit.pieceCount} ${outfit.pieceCount > 1 ? t("card.pieces") : t("card.piece")}`;
@@ -132,6 +148,11 @@ export function OutfitCard({ outfit, index = 0, showCreator = true, showPinned =
           <span className="absolute right-2 top-2">
             <SaveButton postId={outfit.id} count={outfit.likes} />
           </span>
+          {!!lookNumber && (
+            <span className="absolute bottom-10 left-2.5 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm">
+              {t("profile.lookN").replace("{n}", String(lookNumber))}
+            </span>
+          )}
           {outfit.tiktok_url ? (
             <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-semibold text-surface">
               <VideoSourceIcon url={outfit.tiktok_url} className="h-3 w-3" /> {t("card.video")}
@@ -154,6 +175,7 @@ export function OutfitCard({ outfit, index = 0, showCreator = true, showPinned =
         <h3 className="mt-2.5 line-clamp-2 px-0.5 text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
           {outfit.title}
         </h3>
+        {note && <p className="mt-0.5 line-clamp-1 px-0.5 text-[12px] font-medium text-primary">{note}</p>}
       </Link>
       {showCreator && (
         <div className="mt-1.5 px-0.5">
@@ -194,7 +216,19 @@ function useColumnCount() {
  * gauche, le 2e en haut à droite…), donc les premiers de la liste (épinglés,
  * plus récents) sont vraiment tout en haut.
  */
-export function OutfitGrid({ outfits, showCreator = true, showPinned = false }: { outfits: OutfitCardData[]; showCreator?: boolean; showPinned?: boolean }) {
+export function OutfitGrid({
+  outfits,
+  showCreator = true,
+  showPinned = false,
+  lookNumbers,
+  notes,
+}: {
+  outfits: OutfitCardData[];
+  showCreator?: boolean;
+  showPinned?: boolean;
+  lookNumbers?: Map<string, number>;
+  notes?: Map<string, string>;
+}) {
   const n = useColumnCount();
   const columns: { o: OutfitCardData; i: number }[][] = Array.from({ length: n }, () => []);
   outfits.forEach((o, i) => columns[i % n].push({ o, i }));
@@ -203,7 +237,15 @@ export function OutfitGrid({ outfits, showCreator = true, showPinned = false }: 
       {columns.map((col, c) => (
         <div key={c} className="min-w-0 flex-1">
           {col.map(({ o, i }) => (
-            <OutfitCard key={o.id} outfit={o} index={i} showCreator={showCreator} showPinned={showPinned} />
+            <OutfitCard
+              key={o.id}
+              outfit={o}
+              index={i}
+              showCreator={showCreator}
+              showPinned={showPinned}
+              lookNumber={lookNumbers?.get(o.id)}
+              note={notes?.get(o.id)}
+            />
           ))}
         </div>
       ))}

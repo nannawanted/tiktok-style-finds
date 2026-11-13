@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Camera, Instagram, Music2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -7,13 +7,13 @@ import { checkUploadedImage } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { fetchCreatorProfile } from "@/lib/public-data";
-import { styleLabelKey, type StyleKey } from "@/lib/styles";
+import { styleLabelKey } from "@/lib/styles";
 import { absoluteUrl, clip, DEFAULT_OG_IMAGE, profilePath, SITE_NAME } from "@/lib/site";
 import { ShareButton } from "@/components/ShareButton";
-import { Avatar, OutfitGrid } from "@/components/vitrine/OutfitCard";
+import { Avatar } from "@/components/vitrine/OutfitCard";
+import { ProfileLooks } from "@/components/vitrine/ProfileLooks";
 import { FollowButton } from "@/components/vitrine/FollowButton";
 import { MadeWithBadge } from "@/components/vitrine/MadeWith";
-import { EmptyBox } from "@/components/vitrine/EmptyBox";
 import { ImageCropDialog } from "@/components/vitrine/ImageCropDialog";
 import { FollowedByLine, FollowSuggestions, ProfileStats } from "@/components/vitrine/FollowLists";
 
@@ -77,7 +77,7 @@ function NotFoundProfile() {
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
-// Changer de profil = repartir de zéro (filtres et tri remis par défaut)
+// Changer de profil = repartir de zéro (recherche, filtres et tri remis par défaut)
 function ProfilePage() {
   const { creator } = Route.useLoaderData();
   return <ProfileContent key={creator.id} />;
@@ -89,29 +89,10 @@ function ProfileContent() {
   const { user } = useAuth();
   const { creator, outfits } = Route.useLoaderData();
   const isOwner = user?.id === creator.id;
-  const [filter, setFilter] = useState<StyleKey | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState<{ kind: "avatars" | "banners"; file: File } | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
   const bannerInput = useRef<HTMLInputElement>(null);
-
-  // Styles présents dans les tenues du créateur (pour filtrer sa page)
-  const outfitStyles = useMemo(() => {
-    const s = new Set<StyleKey>();
-    outfits.forEach((o) => o.styles.forEach((x) => s.add(x)));
-    return [...s];
-  }, [outfits]);
-  const [sort, setSort] = useState<"recent" | "popular">("recent");
-  const activeFilter = filter && outfitStyles.includes(filter) ? filter : null;
-  const filtered = activeFilter ? outfits.filter((o) => o.styles.includes(activeFilter)) : outfits;
-  // Récents : looks épinglés d'abord (comme Insta), puis ordre de publication. Populaires : les plus likés.
-  // Récents : comme Instagram, les looks épinglés sont simplement les premiers de la liste
-  const pinned =
-    sort === "recent" ? filtered.filter((o) => o.pinned_at).sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? "")) : [];
-  const shown =
-    sort === "popular"
-      ? filtered.map((o, i) => ({ o, i })).sort((a, b) => b.o.likes - a.o.likes || a.i - b.i).map(({ o }) => o)
-      : [...pinned, ...filtered.filter((o) => !pinned.includes(o))];
 
   async function upload(kind: "avatars" | "banners", file: File) {
     if (!isOwner) return;
@@ -147,11 +128,6 @@ function ProfileContent() {
     toast.success(t("profile.updated"));
     router.invalidate();
   }
-
-  const chip = (active: boolean) =>
-    `shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-      active ? "bg-ink text-surface" : "border border-border bg-surface text-foreground hover:border-foreground/40"
-    }`;
 
   return (
     <main className="mx-auto max-w-5xl md:px-6 md:pt-6">
@@ -245,44 +221,7 @@ function ProfileContent() {
       </div>
 
       <section className="mt-8 px-4 md:px-0">
-        {outfits.length > 1 && (
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="font-display text-2xl font-bold">{t("profile.looks")}</h2>
-            <div className="flex shrink-0 gap-1 rounded-full bg-surface p-1" role="tablist" aria-label={t("profile.sortLabel")}>
-              {(["recent", "popular"] as const).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  role="tab"
-                  aria-selected={sort === k}
-                  onClick={() => setSort(k)}
-                  className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${sort === k ? "bg-ink text-surface" : "text-foreground/70"}`}
-                >
-                  {k === "recent" ? t("profile.sortRecent") : t("profile.sortPopular")}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {outfitStyles.length > 0 && (
-          <div className="no-scrollbar sticky top-[var(--sticky-top,118px)] z-30 -mx-4 mb-5 flex gap-2 overflow-x-auto bg-background/90 px-4 py-2.5 backdrop-blur-md transition-[top] duration-300 md:mx-0 md:px-0" role="group">
-            <button type="button" aria-pressed={!activeFilter} className={chip(!activeFilter)} onClick={() => setFilter(null)}>
-              {t("profile.all")} · {outfits.length}
-            </button>
-            {outfitStyles.map((s) => (
-              <button key={s} type="button" aria-pressed={activeFilter === s} className={chip(activeFilter === s)} onClick={() => setFilter(activeFilter === s ? null : s)}>
-                {t(styleLabelKey(s))}
-              </button>
-            ))}
-          </div>
-        )}
-        {shown.length ? (
-          <OutfitGrid outfits={shown} showCreator={false} showPinned={sort === "recent"} />
-        ) : isOwner ? (
-          <EmptyBox text={t("profile.emptyOwner")} action={{ to: "/dashboard/post/new", label: t("profile.publish") }} />
-        ) : (
-          <EmptyBox text={t("profile.empty")} />
-        )}
+        <ProfileLooks creatorId={creator.id} outfits={outfits} isOwner={isOwner} />
       </section>
 
       <FollowSuggestions creatorId={creator.id} styles={creator.styles} />

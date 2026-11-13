@@ -6,6 +6,7 @@ import { refreshPostStock } from "@/lib/stock";
 import { ReportButton } from "@/components/vitrine/ReportButton";
 import { VideoSourceIcon, videoPlatform } from "@/components/vitrine/VideoSourceIcon";
 import { compactCount, deviceId, viewSource } from "@/lib/views";
+import { logLookOpen } from "@/lib/profile-search";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/lib/i18n";
 import { fetchMoreLikeThis, fetchOutfit } from "@/lib/public-data";
@@ -114,7 +115,10 @@ function OutfitPage() {
 
   // Vue comptée par le serveur, avec ses protections (voir src/lib/views.ts)
   useEffect(() => {
-    void supabase.rpc("record_post_view" as never, { p_post: id, p_device: deviceId(), p_source: viewSource() } as never);
+    const device = deviceId();
+    void supabase.rpc("record_post_view" as never, { p_post: id, p_device: device, p_source: viewSource() } as never);
+    // Sert à mettre le look qui buzze en haut de la page du créateur (« 🔥 En ce moment »)
+    logLookOpen(id, device);
   }, [id]);
 
 
