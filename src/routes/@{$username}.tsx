@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { Camera, Eye, Instagram, Music2, Plus, UserPlus } from "lucide-react";
+import { Camera, Instagram, Music2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUploadedImage } from "@/lib/nsfw-check";
@@ -88,10 +88,7 @@ function ProfileContent() {
   const router = useRouter();
   const { user } = useAuth();
   const { creator, outfits } = Route.useLoaderData();
-  const isMe = user?.id === creator.id;
-  // « Voir comme un visiteur » (comme « Voir en tant que » sur Facebook) : ta page sans tes boutons de créateur
-  const [preview, setPreview] = useState(false);
-  const isOwner = isMe && !preview;
+  const isOwner = user?.id === creator.id;
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState<{ kind: "avatars" | "banners"; file: File } | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -134,15 +131,6 @@ function ProfileContent() {
 
   return (
     <main className="mx-auto max-w-5xl md:px-6 md:pt-6">
-      {isMe && preview && (
-        <div className="sticky top-0 z-30 flex items-center gap-3 bg-ink px-4 py-2.5 text-surface md:rounded-b-2xl">
-          <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <p className="min-w-0 flex-1 text-[13px] font-semibold leading-snug">{t("profile.previewBanner")}</p>
-          <button type="button" onClick={() => setPreview(false)} className="shrink-0 rounded-full bg-surface px-3.5 py-1.5 text-[13px] font-bold text-ink">
-            {t("profile.previewExit")}
-          </button>
-        </div>
-      )}
       <div className="relative h-40 overflow-hidden bg-secondary sm:h-56 md:rounded-[28px]">
         {creator.banner_image && <img src={creator.banner_image} alt="" className="h-full w-full object-cover" />}
         <div className="absolute right-3 top-3 flex gap-2">
@@ -225,24 +213,7 @@ function ProfileContent() {
               <Link to="/dashboard/post/new" className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary font-bold text-primary-foreground">
                 <Plus className="h-4 w-4" aria-hidden="true" /> {t("profile.publish")}
               </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  setPreview(true);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                aria-label={t("profile.previewOpen")}
-                title={t("profile.previewOpen")}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border bg-surface"
-              >
-                <Eye className="h-5 w-5" aria-hidden="true" />
-              </button>
             </div>
-          ) : isMe ? (
-            // Aperçu : le bouton que voient les visiteurs (sans effet sur ta propre page)
-            <span className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-bold text-primary-foreground opacity-90">
-              <UserPlus className="h-4 w-4" aria-hidden="true" /> {t("profile.previewFollow")}
-            </span>
           ) : (
             <FollowButton creatorId={creator.id} size="lg" tone="brand" className="w-full" />
           )}
