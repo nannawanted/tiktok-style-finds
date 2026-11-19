@@ -1,5 +1,6 @@
+import { askLogin } from "@/components/AuthPrompt";
 import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Flag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -20,7 +21,6 @@ const REASONS: { key: string; label: TKey; hint: TKey }[] = [
 export function ReportButton({ postId, className = "" }: { postId: string; className?: string }) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState("");
@@ -49,8 +49,7 @@ export function ReportButton({ postId, className = "" }: { postId: string; class
         type="button"
         onClick={() => {
           if (!user) {
-            toast(t("report.loginFirst"));
-            navigate({ to: "/login" });
+            askLogin("report.loginFirst");
             return;
           }
           setOpen(true);

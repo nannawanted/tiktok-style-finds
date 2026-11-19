@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { LEGAL_UPDATED, PUBLISHER_NAME } from "@/lib/legal";
+import { PUBLISHER_NAME, legalUpdated } from "@/lib/legal";
+import { useTranslation } from "@/lib/i18n";
 import { ContactMail, LegalPage, type LegalSection } from "@/components/legal/LegalPage";
 
 export const Route = createFileRoute("/mentions-legales")({
@@ -11,7 +12,9 @@ export const Route = createFileRoute("/mentions-legales")({
 // (article III.74 du Code de droit économique en Belgique) : identité de l'éditeur, contact direct et rapide,
 // et, comme sur les pages « Imprint » des grandes plateformes, l'hébergeur.
 function ImprintPage() {
-  const sections: LegalSection[] = [
+  const { lang } = useTranslation();
+  const en = lang === "en";
+  const sections: LegalSection[] = en ? imprintEn() : [
     {
       id: "editeur",
       title: "Éditeur du site",
@@ -71,5 +74,67 @@ function ImprintPage() {
     },
   ];
 
-  return <LegalPage path="/mentions-legales" title="Mentions légales" updated={LEGAL_UPDATED} sections={sections} />;
+  return <LegalPage path="/mentions-legales" title={en ? "Legal notice" : "Mentions légales"} updated={legalUpdated(lang)} sections={sections} />;
+}
+
+/** Traduction anglaise fidèle des mentions légales (la version française fait foi). */
+function imprintEn(): LegalSection[] {
+  return [
+    {
+      id: "editeur",
+      title: "Publisher of the site",
+      body: PUBLISHER_NAME ? (
+        <p>
+          Wanted Fashion is published by <strong>{PUBLISHER_NAME}</strong>, on a non-commercial basis, in Belgium. Contact:{" "}
+          <ContactMail />.
+        </p>
+      ) : (
+        <p>
+          Information about the publisher will be published here soon. In the meantime, the publisher can be contacted
+          directly at <ContactMail />.
+        </p>
+      ),
+    },
+    {
+      id: "contact",
+      title: "Contact us",
+      body: (
+        <p>
+          By email at <ContactMail />, in French or English. A person reads every message. To report content, use the{" "}
+          <Link to="/droits-auteur">report form</Link>.
+        </p>
+      ),
+    },
+    {
+      id: "hebergeur",
+      title: "Hosting",
+      body: (
+        <ul>
+          <li>
+            <strong>Website</strong>: Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, United States —{" "}
+            <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">
+              vercel.com
+            </a>
+            .
+          </li>
+          <li>
+            <strong>Database and photos</strong>: Supabase, servers located in Ireland (European Union) —{" "}
+            <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">
+              supabase.com
+            </a>
+            .
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "autres",
+      title: "Other information",
+      body: (
+        <p>
+          The rules of use, data protection and remedies are explained in the <Link to="/legal">Legal centre</Link>.
+        </p>
+      ),
+    },
+  ];
 }

@@ -419,6 +419,12 @@ const dict = {
     privacy: { fr: "Confidentialité", en: "Privacy" },
     terms: { fr: "Conditions d'utilisation", en: "Terms of use" },
   },
+  authPrompt: {
+    text: { fr: "Crée un compte gratuit ou connecte-toi. Tu reviendras ici juste après.", en: "Create a free account or log in. You'll come right back here." },
+    signup: { fr: "Créer un compte", en: "Create an account" },
+    login: { fr: "Se connecter", en: "Log in" },
+    later: { fr: "Pas maintenant", en: "Not now" },
+  },
   legal: {
     hub: { fr: "Centre juridique", en: "Legal centre" },
     hubIntro: { fr: "Toutes les règles de WantedFashion au même endroit : ce que tu acceptes en utilisant le site, comment on protège tes données, ce qui est autorisé et comment nous contacter.", en: "All of WantedFashion's rules in one place: what you agree to when you use the site, how we protect your data, what's allowed and how to contact us." },
@@ -429,6 +435,7 @@ const dict = {
     inShort: { fr: "En bref :", en: "In short:" },
     otherPages: { fr: "Les autres pages du centre juridique", en: "Other pages in the legal centre" },
     disclaimer: { fr: "Ces textes n'ont pas encore été relus par un juriste. Ils décrivent de bonne foi le fonctionnement réel du site et s'appuient sur les règles européennes et belges, et sur l'organisation des grandes plateformes. Ils ne constituent pas un avis juridique.", en: "These texts have not yet been reviewed by a lawyer. They describe in good faith how the site actually works and are based on EU and Belgian rules and on how major platforms organise theirs. They are not legal advice." },
+    translationNote: { fr: "Ceci est une traduction. La version française fait foi.", en: "This English version is a translation provided for convenience. The French version is the reference version." },
     contactTitle: { fr: "Une question ?", en: "A question?" },
     contactText: { fr: "Écris-nous : une personne te répond, en français ou en anglais.", en: "Email us: a person will reply, in French or English." },
     pTerms: { fr: "Conditions d'utilisation", en: "Terms of use" },

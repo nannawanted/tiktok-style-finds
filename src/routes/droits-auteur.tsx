@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, Copyright, Loader2, Tag } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation, type TKey } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/site";
-import { LEGAL_UPDATED } from "@/lib/legal";
+import { legalUpdated } from "@/lib/legal";
 import { ContactMail } from "@/components/legal/LegalPage";
 
 export type ReportKind = "copyright" | "trademark" | "illegal";
@@ -338,8 +338,8 @@ function ReportPage() {
  * 3 = suspension), Instagram / Pinterest (exceptions, contre-notification) et des articles 16, 17, 20 et 23 du DSA.
  */
 function Policy() {
-  const { t } = useTranslation();
-  const items: { id: string; title: string; body: ReactNode }[] = [
+  const { t, lang } = useTranslation();
+  const items: { id: string; title: string; body: ReactNode }[] = lang === "en" ? policyEn() : [
     {
       id: "apres",
       title: "Après ton signalement",
@@ -419,7 +419,7 @@ function Policy() {
         {t("copyright.howItWorks")}
       </h2>
       <p className="mt-1 text-xs font-semibold text-foreground/55">
-        {t("legal.version")} {LEGAL_UPDATED}
+        {t("legal.version")} {legalUpdated(lang)}
       </p>
       <div className="mt-4 flex flex-col gap-3">
         {items.map((it) => (
@@ -511,4 +511,79 @@ function Check({ checked, onChange, label }: { checked: boolean; onChange: (v: b
       <span>{label}</span>
     </label>
   );
+}
+
+/** Traduction anglaise fidèle de « Comment ça marche » (la version française fait foi). */
+function policyEn(): { id: string; title: string; body: ReactNode }[] {
+  return [
+    {
+      id: "apres",
+      title: "After your report",
+      body: (
+        <ul>
+          <li>You receive an acknowledgement of receipt by email with a reference.</li>
+          <li>A person examines the report, without an automated tool, objectively and without delay. Reports of child abuse are handled first.</li>
+          <li>You receive our decision by email, with the possible remedies.</li>
+          <li>
+            If the look is removed, the creator receives a message explaining the measure, its reason and how to appeal it.
+            Your name and email are only shared with them if strictly necessary.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "exceptions",
+      title: "Before reporting: what is still allowed",
+      body: (
+        <ul>
+          <li>
+            <strong>Copyright</strong>: the law provides exceptions, for example quotation, criticism, parody, caricature
+            or pastiche (Article 5 of Directive 2001/29/EC, Article XI.190 of the Belgian Code of Economic Law). A use that
+            falls under an exception is not an infringement.
+          </li>
+          <li>
+            <strong>Trademarks</strong>: mentioning a brand to describe a real product (“jacket by brand X”) is in
+            principle allowed. What is targeted is counterfeits and misleading use of a brand, for example an account
+            pretending to be it.
+          </li>
+          <li>
+            Content you don't like but that isn't illegal can be reported with the “Report” button if it doesn't follow
+            our <Link to="/regles">Community guidelines</Link>.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "avertissements",
+      title: "Strikes and suspension",
+      body: (
+        <p>
+          Each look removed for copyright or a trademark gives the creator a strike valid for 90 days. At 3 active strikes,
+          the account is suspended. For illegal content, the measure depends on how serious it is: for a serious violation,
+          the account may be suspended immediately (see the <Link to="/conditions" hash="moderation">Terms of use</Link>).
+        </p>
+      ),
+    },
+    {
+      id: "contester",
+      title: "Appealing a decision",
+      body: (
+        <p>
+          Both the creator and the person who reported can appeal the decision for 6 months by writing to <ContactMail />. A
+          person reviews the case; if the appeal is justified, the strike is cancelled. The other remedies (certified dispute
+          settlement bodies, BIPT, courts) are explained on the <Link to="/dsa">Digital services (DSA)</Link> page.
+        </p>
+      ),
+    },
+    {
+      id: "abus",
+      title: "Abusive reports",
+      body: (
+        <p>
+          A false statement may make its author liable. If a person frequently sends manifestly unfounded reports, we may,
+          after warning them, stop handling their reports for a reasonable period (Article 23 DSA).
+        </p>
+      ),
+    },
+  ];
 }

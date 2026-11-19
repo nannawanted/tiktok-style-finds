@@ -23,6 +23,7 @@ import { AnalyticsTracker } from "../components/AnalyticsTracker";
 import { TwoFactorGate } from "../components/TwoFactor";
 import { TermsGate } from "../components/TermsGate";
 import { NavProgress } from "../components/NavProgress";
+import { AuthPromptHost } from "../components/AuthPrompt";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "../lib/site";
 import { CollectionPickerProvider } from "../components/vitrine/CollectionPicker";
 import { InterestsDialog } from "../components/vitrine/InterestsDialog";
@@ -140,6 +141,7 @@ function RootComponent() {
             <AnalyticsTracker />
             <TwoFactorGate />
             <TermsGate />
+            <AuthPromptHost />
             <InterestsDialog />
             <Toaster />
           </CollectionPickerProvider>

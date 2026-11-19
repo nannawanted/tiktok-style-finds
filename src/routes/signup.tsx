@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { safeRedirect } from "@/components/AuthPrompt";
 import { createCreatorProfile } from "@/lib/create-creator-profile";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { CAPTCHA_ENABLED } from "@/lib/captcha";
@@ -18,6 +19,7 @@ import { USERNAME_PATTERN, isReservedUsername } from "@/lib/username-rules";
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => ({ redirect: safeRedirect(s.redirect) }),
   head: () => ({ meta: [{ title: "Inscription — Wanted Fashion" }] }),
   component: SignupPage,
 });
@@ -36,11 +38,16 @@ function SignupPage() {
   // On attend le jeton anti-robot, sauf si Cloudflare ne répond pas (le serveur décidera)
   const waitingCaptcha = CAPTCHA_ENABLED && !captchaToken && !captchaBroken;
   const navigate = useNavigate();
+  // Après la connexion : retour sur la page d'où vient la personne (sinon son espace)
+  const { redirect: back } = Route.useSearch();
+  const router = useRouter();
+  const goAfter = () => (back ? router.history.push(back) : navigate({ to: "/dashboard" }));
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) navigate({ to: "/dashboard" });
-  }, [user, navigate]);
+    if (user) goAfter();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +146,7 @@ function SignupPage() {
     }
 
     toast.success(t("auth.accountCreated"));
-    navigate({ to: "/dashboard" });
+    goAfter();
   }
 
   return (
@@ -219,7 +226,7 @@ function SignupPage() {
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           {t("auth.alreadyAccount")}{" "}
-          <Link to="/login" className="font-semibold text-brand hover:underline">{t("auth.loginLink")}</Link>
+          <Link to="/login" search={{ redirect: back }} className="font-semibold text-brand hover:underline">{t("auth.loginLink")}</Link>
         </p>
       </div>
     </main>

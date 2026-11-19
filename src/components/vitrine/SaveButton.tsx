@@ -1,7 +1,7 @@
+import { askLogin } from "@/components/AuthPrompt";
 import { useRef } from "react";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { useSavedIds, useToggleSave } from "@/lib/social";
@@ -10,7 +10,6 @@ import { useCollectionPicker } from "./CollectionPicker";
 export function SaveButton({ postId, variant = "icon", count }: { postId: string; variant?: "icon" | "wide"; count?: number }) {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: savedIds } = useSavedIds();
   const toggle = useToggleSave();
   const saved = !!savedIds?.has(postId);
@@ -20,8 +19,7 @@ export function SaveButton({ postId, variant = "icon", count }: { postId: string
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast(t("card.loginToSave"));
-      navigate({ to: "/login" });
+      askLogin("card.loginToSave");
       return;
     }
     toggle.mutate(

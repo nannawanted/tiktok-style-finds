@@ -1,5 +1,5 @@
+import { askLogin } from "@/components/AuthPrompt";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { useFollowedIds, useToggleFollow } from "@/lib/social";
@@ -17,7 +17,6 @@ export function FollowButton({
 }) {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: followed } = useFollowedIds();
   const toggle = useToggleFollow();
   const following = !!followed?.has(creatorId);
@@ -29,8 +28,7 @@ export function FollowButton({
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast(t("card.loginToFollow"));
-      navigate({ to: "/login" });
+      askLogin("card.loginToFollow");
       return;
     }
     toggle.mutate({ creatorId, following }, { onError: () => toast.error(t("card.actionError")) });

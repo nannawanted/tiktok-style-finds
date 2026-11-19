@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { LEGAL_UPDATED } from "@/lib/legal";
+import { legalUpdated } from "@/lib/legal";
+import { useTranslation } from "@/lib/i18n";
 import { ContactMail, LegalPage, type LegalSection } from "@/components/legal/LegalPage";
 
 export const Route = createFileRoute("/regles")({
@@ -10,7 +11,9 @@ export const Route = createFileRoute("/regles")({
 // Catégories reprises des « Community Guidelines » de Pinterest (sécurité des contenus, propriété
 // intellectuelle, sécurité du site, spam), adaptées à un site de looks et de liens mode.
 function RulesPage() {
-  const sections: LegalSection[] = [
+  const { lang } = useTranslation();
+  const en = lang === "en";
+  const sections: LegalSection[] = en ? rulesEn() : [
     {
       id: "esprit",
       title: "L'esprit de Wanted Fashion",
@@ -251,9 +254,14 @@ function RulesPage() {
   return (
     <LegalPage
       path="/regles"
-      title="Règles de la communauté"
-      updated={LEGAL_UPDATED}
-      essentials={[
+      title={en ? "Community guidelines" : "Règles de la communauté"}
+      updated={legalUpdated(lang)}
+      essentials={en ? [
+        "Post real outfits with real fashion links.",
+        "Criticise a style if you want, never a person or their body.",
+        "No nudity, hate, counterfeits, scams or fake engagement.",
+        "A person decides on every sanction, and you can always appeal.",
+      ] : [
         "Publie de vraies tenues avec de vrais liens de mode.",
         "Critique un style si tu veux, jamais une personne ou son corps.",
         "Pas de nudité, de haine, de contrefaçons, d'arnaques ni de faux engagement.",
@@ -262,4 +270,225 @@ function RulesPage() {
       sections={sections}
     />
   );
+}
+
+/** Traduction anglaise fidèle des règles de la communauté (la version française fait foi). */
+function rulesEn(): LegalSection[] {
+  return [
+    {
+      id: "esprit",
+      title: "The spirit of Wanted Fashion",
+      short: "Real outfits, real links, and respect.",
+      body: (
+        <>
+          <p>
+            Wanted Fashion is for sharing outfits and helping people find the clothes being worn. These rules apply to
+            everything published on the site: looks, photos, texts, links, profile pictures, banners, bios and usernames.
+            They are part of the <Link to="/conditions">Terms of use</Link>.
+          </p>
+          <ul>
+            <li><strong>A look is a real outfit</strong>: the photo must show clothes or accessories being worn or presented.</li>
+            <li><strong>A link is a real product</strong>: it must lead to the page of a piece of clothing or an accessory at a brand or shop, without misleading redirects.</li>
+            <li><strong>Respect</strong>: everyone dresses the way they want. You can dislike an outfit, not attack the person.</li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: "nudite",
+      title: "Sexual content and nudity",
+      short: "No nudity or sexual content. Lingerie and swimwear presented as fashion are allowed.",
+      body: (
+        <>
+          <p>The following are prohibited:</p>
+          <ul>
+            <li>nudity, visible intimate parts, explicit or suggestive sexual content;</li>
+            <li>the promotion of sexual services;</li>
+            <li>intimate images shared without the person's consent, sextortion, tools that “undress” a photo.</li>
+          </ul>
+          <p>Lingerie, swimwear and close-fitting outfits are allowed when presented as fashion, without a sexual pose or intent.</p>
+        </>
+      ),
+    },
+    {
+      id: "mineurs",
+      title: "Protection of minors",
+      short: "Zero tolerance for any content that endangers children.",
+      body: (
+        <ul>
+          <li>Any content involving the sexual exploitation of minors is prohibited, removed immediately and reported to the competent authorities.</li>
+          <li>Also prohibited: sexualised depictions of minors, soliciting or manipulating minors, and nudity, even partial, of minors.</li>
+          <li>Wanted Fashion is for people aged 18 and over: report to us any account that seems to belong to a minor.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "haine",
+      title: "Hate",
+      short: "No attacks on people for who they are.",
+      body: (
+        <p>
+          Insults, degrading stereotypes, calls for exclusion or attacks targeting people because of their origin, skin
+          colour, religion, disability, gender, gender identity, sexual orientation, age or any other protected
+          characteristic are prohibited, as is support for hate groups.
+        </p>
+      ),
+    },
+    {
+      id: "harcelement",
+      title: "Harassment and criticism",
+      short: "Criticising a style, yes. Mocking a body or harassing someone, no.",
+      body: (
+        <ul>
+          <li>Harassment, personal attacks and cyberbullying are prohibited.</li>
+          <li>Mocking someone's body, weight, height or physical appearance (“body shaming”) is prohibited.</li>
+          <li>Unwanted sexual remarks are prohibited.</li>
+          <li>Mocking someone's pain or grief is prohibited.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "violence",
+      title: "Violence, threats and violent groups",
+      short: "No threats, shocking violence or support for violent groups.",
+      body: (
+        <ul>
+          <li>Threats, calls for violence and the glorification of violence are prohibited.</li>
+          <li>Images of shocking violence or violent events are prohibited.</li>
+          <li>Accounts and content that support or represent extremist, terrorist or violent groups are prohibited.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "sante",
+      title: "Self-harm and eating disorders",
+      short: "Nothing that encourages self-harm, dangerous weight loss or deprivation.",
+      body: (
+        <ul>
+          <li>Content that shows, encourages or normalises self-harm or suicide is prohibited.</li>
+          <li>Content that encourages eating disorders or extreme thinness (for example “thinspiration”, deprivation challenges) is prohibited.</li>
+          <li>
+            If you're going through a difficult time, talk to someone you trust. In Belgium, the Centre de Prévention du
+            Suicide answers on 0800 32 123 (in Dutch: 1813); in France, call 3114. In an emergency, call 112.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "vie-privee",
+      title: "Private information",
+      short: "Don't publish someone's private information, or their photo without their consent.",
+      body: (
+        <p>
+          It is prohibited to publish private information about a person (address, phone number, identity documents, health
+          data, banking information, login credentials) or the photo of a private person without their consent. If a photo
+          of you has been published without your consent, report it.
+        </p>
+      ),
+    },
+    {
+      id: "usurpation",
+      title: "Impersonation",
+      short: "Don't pretend to be someone else, or a brand.",
+      body: (
+        <p>
+          It is prohibited to use the identity of another person, creator or brand in a misleading way (name, photo, logo).
+          Fan or parody accounts are allowed if they clearly state that they have no official connection with the person or
+          brand.
+        </p>
+      ),
+    },
+    {
+      id: "produits",
+      title: "Counterfeits, prohibited products and scams",
+      short: "No counterfeits, illegal products or booby-trapped links.",
+      body: (
+        <ul>
+          <li><strong>Counterfeits</strong>: links to copies of branded products sold as originals, or that use a brand's logo or name without permission, are prohibited.</li>
+          <li><strong>Prohibited or regulated products</strong>: weapons, drugs, medicines sold without a prescription, and tobacco and alcohol sold illegally are prohibited.</li>
+          <li><strong>Protected animals</strong>: products made from endangered or protected species are prohibited.</li>
+          <li><strong>Scams</strong>: fake products, fake contests, promises of easy money, links that steal data or credentials, and pages that imitate a real shop are prohibited.</li>
+          <li><strong>Dangerous false information</strong>: “miracle” products or advice presented as remedies (for example for weight loss) and false information that endangers health are prohibited.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "spam",
+      title: "Spam and fake engagement",
+      short: "No bots, fake accounts or buying views or followers.",
+      body: (
+        <ul>
+          <li>Using unauthorised bots or automated programs is prohibited.</li>
+          <li>Fake accounts, accounts created in bulk and multiple accounts used to manipulate the site are prohibited.</li>
+          <li>Buying, selling or exchanging views, clicks, likes or followers is prohibited.</li>
+          <li>Repetitive content, misleading links or abusive redirects, and piling up hashtags unrelated to the look are prohibited.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "pi",
+      title: "Copyright and trademarks",
+      short: "Only publish photos that belong to you or that you have the right to use.",
+      body: (
+        <p>
+          It is prohibited to publish content that infringes someone else's copyright, image rights or trademark. A rights
+          holder can ask for content to be removed on the <Link to="/droits-auteur">Copyright and trademarks</Link> page.
+          Each removal on these grounds gives a 90-day strike; at 3 strikes, the account is suspended.
+        </p>
+      ),
+    },
+    {
+      id: "securite",
+      title: "Site security",
+      short: "Don't hack the site or collect other people's data.",
+      body: (
+        <ul>
+          <li>It is prohibited to try to get around the site's protections, access it without authorisation or disrupt how it works.</li>
+          <li>It is prohibited to copy the site's content in bulk (“scraping”) or collect other users' data without authorisation.</li>
+          <li>It is prohibited to share your login credentials or sell an account or username.</li>
+          <li>If you find a security flaw, let us know at <ContactMail /> without exploiting it.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "mesures",
+      title: "What happens if a rule is broken",
+      short: "Depending on how serious it is: removal, warning or account suspension. A person always decides.",
+      body: (
+        <>
+          <p>Depending on how serious and repeated it is, we may:</p>
+          <ul>
+            <li>refuse content on upload (automated checks);</li>
+            <li>remove a look, a profile picture or a banner;</li>
+            <li>block a site in product links;</li>
+            <li>give a warning;</li>
+            <li>suspend the account, immediately for the most serious violations (exploitation of minors, threats, serious illegal content).</li>
+          </ul>
+          <p>
+            Every removal or suspension is decided by a person, and the person concerned receives a message explaining the
+            measure, its reason, its basis and how to appeal. Manifestly illegal content may be reported to the competent
+            authorities.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "signaler",
+      title: "Report and appeal",
+      short: "The “Report” button on each look, or the public form, even without an account.",
+      body: (
+        <ul>
+          <li>Signed in: use the “Report” button on the look's page.</li>
+          <li>
+            Without an account, or for illegal content, copyright or a trademark: use the{" "}
+            <Link to="/droits-auteur">report form</Link>.
+          </li>
+          <li>
+            To appeal a decision: write to <ContactMail /> explaining why. A person reviews the case. The other possible
+            remedies are explained on the <Link to="/dsa">Digital services</Link> page.
+          </li>
+        </ul>
+      ),
+    },
+  ];
 }

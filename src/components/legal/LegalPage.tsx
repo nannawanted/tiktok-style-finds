@@ -32,7 +32,7 @@ export function LegalPage({
   sections: LegalSection[];
   intro?: ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
@@ -63,6 +63,10 @@ export function LegalPage({
           <Printer className="h-3.5 w-3.5" aria-hidden="true" /> {t("legal.print")}
         </button>
       </div>
+      {lang === "en" && (
+        // Comme beaucoup de sites européens : la traduction est fournie pour aider, le texte français fait foi
+        <p className="mt-4 rounded-2xl bg-surface px-4 py-3 text-[13px] leading-snug text-foreground/75">{t("legal.translationNote")}</p>
+      )}
       {intro && <div className="mt-4 text-foreground/80">{intro}</div>}
 
       {essentials && essentials.length > 0 && (

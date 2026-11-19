@@ -1,7 +1,7 @@
+import { askLogin } from "@/components/AuthPrompt";
 import { useRef, useState } from "react";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { useSavedIds, useToggleSave } from "@/lib/social";
@@ -28,7 +28,6 @@ export function DoubleTapLike({
 }) {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: savedIds } = useSavedIds();
   const toggle = useToggleSave();
   const picker = useCollectionPicker();
@@ -39,8 +38,7 @@ export function DoubleTapLike({
   function like(x: number, y: number) {
     setBurst({ x, y, key: Date.now() });
     if (!user) {
-      toast(t("card.loginToSave"));
-      navigate({ to: "/login" });
+      askLogin("card.loginToSave");
       return;
     }
     if (!savedIds?.has(postId)) {
@@ -89,14 +87,12 @@ export function DoubleTapLike({
 export function useQuickLike(postId: string) {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: savedIds } = useSavedIds();
   const toggle = useToggleSave();
   const picker = useCollectionPicker();
   return () => {
     if (!user) {
-      toast(t("card.loginToSave"));
-      navigate({ to: "/login" });
+      askLogin("card.loginToSave");
       return false;
     }
     if (!savedIds?.has(postId)) {

@@ -3,7 +3,7 @@ import { ChevronRight, Cookie, FileText, Gavel, Landmark, Lock, ShieldCheck, Use
 import { useTranslation } from "@/lib/i18n";
 import { LEGAL_PAGES, type LegalPath } from "@/components/legal/legal-pages";
 import { ContactMail } from "@/components/legal/LegalPage";
-import { LEGAL_UPDATED } from "@/lib/legal";
+import { legalUpdated } from "@/lib/legal";
 
 export const Route = createFileRoute("/legal")({
   head: () => ({ meta: [{ title: "Centre juridique — Wanted Fashion" }] }),
@@ -22,13 +22,13 @@ const ICONS: Record<LegalPath, typeof FileText> = {
 
 /** Page d'accueil des pages juridiques (sur le modèle de policy.pinterest.com). */
 function LegalHub() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 md:pt-10">
       <h1 className="font-display text-[38px] font-bold leading-[1.05] md:text-5xl">{t("legal.hub")}</h1>
       <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-foreground/75">{t("legal.hubIntro")}</p>
       <p className="mt-2 text-xs font-semibold text-foreground/55">
-        {t("legal.version")} {LEGAL_UPDATED}
+        {t("legal.version")} {legalUpdated(lang)}
       </p>
 
       <ul className="mt-6 grid gap-3 sm:grid-cols-2">

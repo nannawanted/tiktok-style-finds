@@ -4,6 +4,9 @@ import { AFFILIATE_ENABLED } from "@/lib/features";
 export const TERMS_VERSION = "2026-11-10";
 /** Date affichée en haut des pages juridiques. */
 export const LEGAL_UPDATED = "10 novembre 2026";
+export const LEGAL_UPDATED_EN = "10 November 2026";
+/** Date de mise à jour dans la langue affichée. */
+export const legalUpdated = (lang: string) => (lang === "en" ? LEGAL_UPDATED_EN : LEGAL_UPDATED);
 
 /**
  * Responsable du site (éditeur) — affiché dans les mentions légales, la confidentialité et les conditions.

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AFFILIATE_ENABLED } from "@/lib/features";
-import { LEGAL_UPDATED, PUBLISHER_NAME } from "@/lib/legal";
+import { PUBLISHER_NAME, legalUpdated } from "@/lib/legal";
+import { useTranslation } from "@/lib/i18n";
 import { ContactMail, LegalPage, type LegalSection } from "@/components/legal/LegalPage";
 
 export const Route = createFileRoute("/conditions")({
@@ -11,7 +12,9 @@ export const Route = createFileRoute("/conditions")({
 // Organisation inspirée des conditions de Pinterest (service, compte, contenus, sécurité, résiliation,
 // responsabilité, litiges, modifications), adaptée à ce que WantedFashion fait réellement.
 function TermsPage() {
-  const sections: (LegalSection | false)[] = [
+  const { lang } = useTranslation();
+  const en = lang === "en";
+  const sections: (LegalSection | false)[] = en ? termsEn() : [
     {
       id: "service",
       title: "Le service",
@@ -157,7 +160,7 @@ function TermsPage() {
           </li>
           <li>
             <strong>Les signalements</strong> : un utilisateur connecté peut signaler un look (lien cassé, arnaque, contenu
-            choquant, photo volée, personne de moins de 18 ans). Toute personne, même sans compte, peut signaler une
+            choquant, photo volée, personne de moins de 18 ans, hors sujet). Toute personne, même sans compte, peut signaler une
             violation de droits d'auteur ou de marque, ou un contenu illégal (voir la page{" "}
             <Link to="/dsa">Services numériques</Link>). Chaque signalement est examiné par une personne, de façon
             objective et proportionnée.
@@ -301,9 +304,14 @@ function TermsPage() {
   return (
     <LegalPage
       path="/conditions"
-      title="Conditions d'utilisation"
-      updated={LEGAL_UPDATED}
-      essentials={[
+      title={en ? "Terms of use" : "Conditions d'utilisation"}
+      updated={legalUpdated(lang)}
+      essentials={en ? [
+        "Wanted Fashion is for people aged 18 and over.",
+        "Your photos remain yours: you only allow us to display them to run the site.",
+        "We don't sell anything: purchases are made directly with the brand.",
+        "A person decides on every removal, and you can always appeal.",
+      ] : [
         "Wanted Fashion est réservé aux 18 ans et plus.",
         "Tes photos restent à toi : tu nous autorises seulement à les afficher pour faire marcher le site.",
         "On ne vend rien : un achat se fait directement chez la marque.",
@@ -312,4 +320,285 @@ function TermsPage() {
       sections={sections.filter(Boolean) as LegalSection[]}
     />
   );
+}
+
+/** Traduction anglaise fidèle des conditions (la version française fait foi). */
+function termsEn(): (LegalSection | false)[] {
+  return [
+    {
+      id: "service",
+      title: "The service",
+      short: AFFILIATE_ENABLED
+        ? "Creators share their outfits with links to the clothes; we earn a commission on some sales."
+        : "Creators share their outfits with links to the clothes they wear. It's free.",
+      body: (
+        <>
+          {AFFILIATE_ENABLED ? (
+            <p>
+              Wanted Fashion lets creators publish outfits with shopping links to partner brands. Wanted Fashion earns a
+              commission on sales made through these links and passes part of it on to the creator concerned.
+            </p>
+          ) : (
+            <p>
+              Wanted Fashion lets creators publish their outfits with links to the clothes they wear, on the brands'
+              websites. Wanted Fashion earns no commission on these links and pays no money to creators. Using the site is
+              free.
+            </p>
+          )}
+          <p>
+            The site is published from Belgium{PUBLISHER_NAME ? ` by ${PUBLISHER_NAME}` : ""} (see{" "}
+            {PUBLISHER_NAME ? <Link to="/mentions-legales">Legal notice</Link> : "the point of contact below"}). By using
+            Wanted Fashion, you accept these terms, our <Link to="/regles">Community guidelines</Link> and our{" "}
+            <Link to="/confidentialite">Privacy policy</Link>.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "age",
+      title: "Who can use Wanted Fashion",
+      short: "You must be 18 or over to create an account.",
+      body: (
+        <>
+          <p>
+            Wanted Fashion is for people aged <strong>18 and over</strong>. When you sign up, you give your date of birth
+            and a valid email address. Giving a false date of birth is prohibited: if an account belongs to a person under
+            18, it is suspended. Anyone can report an account that seems to belong to a minor.
+          </p>
+          {AFFILIATE_ENABLED && <p>Before any money is paid to a creator, their identity and age are verified.</p>}
+          <p>You don't need an account to browse published looks.</p>
+        </>
+      ),
+    },
+    {
+      id: "compte",
+      title: "Your account and its security",
+      short: "Keep your password secret; tell us if someone uses your account.",
+      body: (
+        <ul>
+          <li>You are responsible for what happens on your account. An account is personal: don't lend it or sell it.</li>
+          <li>Keep your password secret and don't reuse it elsewhere. A password that has appeared in a known data breach is refused at sign-up.</li>
+          <li>You can turn on two-factor authentication in Settings → Security.</li>
+          <li>
+            If you think someone is using your account without your permission, change your password and let us know at{" "}
+            <ContactMail />.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "contenus",
+      title: "Your content",
+      short: "Your photos remain yours. You only allow us to show them on the site.",
+      body: (
+        <>
+          <p>
+            You remain the owner of the content you publish (photos, videos, descriptions). By publishing it, you grant
+            Wanted Fashion a free, non-exclusive, worldwide permission to host it, reproduce it (for example to create
+            thumbnails), display it publicly on the site and in share previews, and analyse it with automated tools
+            (content checks, suggestions of similar looks). This permission is used only to run the site; it ends when you
+            delete the content or your account.
+          </p>
+          <p>
+            By publishing, you guarantee that you are the author of the photos and texts you publish, or have their
+            author's permission, and that the people visible in your photos agree. You undertake to publish only real
+            product links and not to try to distort the site's statistics (views, clicks).
+          </p>
+          <p>
+            The Wanted Fashion name, its logo and the site's design belong to us: don't use them in a way that could
+            suggest a connection with us.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "regles",
+      title: "Community guidelines",
+      short: "Some content and behaviour is prohibited; the full list is on a separate page.",
+      body: (
+        <p>
+          The <Link to="/regles">Community guidelines</Link> are part of these terms. They list what is prohibited
+          (nudity, hate, harassment, counterfeits, scams, spam, fake engagement, etc.) and what happens when a rule is
+          broken.
+        </p>
+      ),
+    },
+    {
+      id: "droits-auteur",
+      title: "Copyright and trademarks",
+      short: "Only publish what belongs to you. A rights holder can ask for content to be removed.",
+      body: (
+        <ul>
+          <li>
+            Product images are displayed from the website of the brand concerned, with a link to its product page. A brand
+            can ask for them to be removed at any time.
+          </li>
+          <li>
+            Anyone, with or without an account, can report content that infringes their copyright or trademark on the{" "}
+            <Link to="/droits-auteur">Copyright and trademarks</Link> page. Every request is reviewed by a person.
+          </li>
+          <li>
+            Each look removed for copyright or trademark infringement gives the creator a strike, valid for 90 days. With 3
+            active strikes, the account is suspended.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "moderation",
+      title: "Content moderation",
+      short: "Tools check photos and links when they are uploaded; a person decides on every removal.",
+      body: (
+        <ul>
+          <li>
+            <strong>Automated checks on upload</strong>: every photo uploaded (look, profile picture, banner) is analysed
+            by an automated tool (Sightengine) that refuses nudity and sexual content; the photo of a look is also analysed
+            by an artificial intelligence tool that checks that it shows an outfit or a piece of clothing; every product
+            link is checked automatically (link format, blocked site, page that is really about a piece of clothing or an
+            accessory). Refused content is not published and a message gives the reason.
+          </li>
+          <li>
+            <strong>Human checks</strong>: if the automated check of a photo could not be carried out, the photo is
+            published and then checked by a member of the team. Any decision to remove published content or to suspend an
+            account is made by a person, never by an automated tool.
+          </li>
+          <li>
+            <strong>Reports</strong>: a signed-in user can report a look (broken link, scam, shocking content, stolen
+            photo, person under 18, off-topic). Anyone, even without an account, can report a copyright or trademark
+            infringement, or illegal content (see the <Link to="/dsa">Digital services</Link> page). Every report is
+            reviewed by a person, objectively and proportionately.
+          </li>
+          <li>
+            <strong>Possible measures</strong>: refusal of content on upload, removal of a look, profile picture or banner,
+            blocking of a site in product links, warning, suspension of an account for serious or repeated violations. The
+            person concerned receives a message explaining the measure, its reason, its basis and how to appeal.
+          </li>
+          <li>
+            <strong>Appealing a decision</strong>: write to <ContactMail /> explaining why you think the decision is
+            unfair. A member of the team reviews the case and replies. You can also turn to a certified out-of-court
+            dispute settlement body, or to the courts.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "marques-liens",
+      title: "Links to brands",
+      short: "We don't sell anything: purchases are made directly with the brand.",
+      body: (
+        <p>
+          Wanted Fashion doesn't sell anything. A purchase made after clicking a link takes place directly between you and
+          the brand or shop: it is responsible for the product, its price, delivery, returns and your right of withdrawal.
+          We check links when they are published, but we don't control brands' websites and don't guarantee that the
+          product, its price or its availability haven't changed.
+          {AFFILIATE_ENABLED &&
+            " Affiliate links are marked “Affiliate link”: the creator and Wanted Fashion may earn a commission if you buy, at no extra cost to you."}
+        </p>
+      ),
+    },
+    AFFILIATE_ENABLED && {
+      id: "commissions",
+      title: "Commissions and payments",
+      short: "The creator receives half of the commission, after a 30-day security period.",
+      body: (
+        <ul>
+          <li>The share paid to the creator is 50% of the commission received by Wanted Fashion on each sale.</li>
+          <li>
+            A sale only counts as final after a security period of 30 days from its detection, to check that it isn't
+            cancelled or refunded by the brand.
+          </li>
+          <li>
+            Wanted Fashion may withhold or refuse a commission in case of reasonable suspicion of fraud (self-purchase,
+            false sale declaration, abnormal activity).
+          </li>
+        </ul>
+      ),
+    },
+    AFFILIATE_ENABLED && {
+      id: "partenaires",
+      title: "Partner brands",
+      short: "A partner brand declares in good faith the sales that come from the site.",
+      body: (
+        <p>
+          A brand that joins the affiliate programme agrees to declare in good faith the sales generated through its links,
+          according to the agreed technical arrangements (pixel or server-to-server integration).
+        </p>
+      ),
+    },
+    {
+      id: "fin",
+      title: "Suspension and deletion of the account",
+      short: "You can leave whenever you want; we can suspend an account that breaks the rules.",
+      body: (
+        <ul>
+          <li>
+            You can delete your account at any time from the dashboard settings. This is permanent and deletes your posts,
+            products and related statistics. Remember to download your data first (Settings → Account → “Download my
+            data”).
+          </li>
+          <li>
+            We can suspend an account for serious or repeated violations of these terms or of the Community guidelines
+            {AFFILIATE_ENABLED ? ", and cancel pending commissions in case of fraud" : ""}. The person concerned receives a
+            message giving reasons and can appeal the decision.
+          </li>
+          <li>Some evidence (declared age, accepted terms) is kept after deletion, as explained in the Privacy policy.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "responsabilite",
+      title: "Liability",
+      short: "We do our best, everyone is responsible for what they publish, and your consumer rights remain intact.",
+      body: (
+        <ul>
+          <li>We do our best to make the site work well and securely, but it may experience outages or errors.</li>
+          <li>
+            Each creator is responsible for what they publish. We don't check every piece of content before it is
+            published, but we act quickly when illegal content is reported to us.
+          </li>
+          <li>
+            Nothing in these terms limits our liability in case of intentional or gross misconduct, nor the rights the law
+            gives you as a consumer.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "contact",
+      title: "Point of contact",
+      short: "One address for everything: users and authorities.",
+      body: (
+        <p>
+          For any question about these terms, moderation or your rights, and for the authorities of Member States, the
+          European Commission and the European Board for Digital Services: write to <ContactMail />. A person will reply,
+          in French or English.
+        </p>
+      ),
+    },
+    {
+      id: "modifications",
+      title: "Changes to these terms",
+      short: "We warn you before any important change; you can always leave.",
+      body: (
+        <p>
+          We may change these terms, for example when the site evolves or when the law changes. In case of an important
+          change, registered users are informed by a notification on the site before it applies, unless the law requires an
+          immediate change. If you don't agree, you can delete your account at any time; if you continue to use the site,
+          the new terms apply.
+        </p>
+      ),
+    },
+    {
+      id: "droit-applicable",
+      title: "Governing law and disputes",
+      short: "Belgian law, but you keep the protection of your own country.",
+      body: (
+        <p>
+          These terms are governed by Belgian law. If you are a consumer living in another country of the European Union,
+          you keep the protection of the mandatory rules of your country and can go to the courts of your country. If
+          there's a problem, write to us first: most difficulties are settled amicably.
+        </p>
+      ),
+    },
+  ];
 }

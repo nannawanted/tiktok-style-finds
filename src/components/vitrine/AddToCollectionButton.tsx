@@ -1,6 +1,6 @@
+import { askLogin } from "@/components/AuthPrompt";
 import { FolderPlus } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
 import { useCollectionPicker } from "./CollectionPicker";
@@ -8,7 +8,6 @@ import { useCollectionPicker } from "./CollectionPicker";
 export function AddToCollectionButton({ postId }: { postId: string }) {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const picker = useCollectionPicker();
   return (
     <button
@@ -17,8 +16,7 @@ export function AddToCollectionButton({ postId }: { postId: string }) {
       title={t("engage.addToCollection")}
       onClick={() => {
         if (!user) {
-          toast(t("card.loginToSave"));
-          navigate({ to: "/login" });
+          askLogin("card.loginToSave");
           return;
         }
         picker.open(postId);

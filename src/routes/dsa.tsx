@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { LEGAL_UPDATED } from "@/lib/legal";
+import { legalUpdated } from "@/lib/legal";
+import { useTranslation } from "@/lib/i18n";
 import { ContactMail, LegalPage, type LegalSection } from "@/components/legal/LegalPage";
 
 export const Route = createFileRoute("/dsa")({
@@ -18,7 +19,9 @@ const BODIES: { name: string; url: string; note: string }[] = [
 ];
 
 function DsaPage() {
-  const sections: LegalSection[] = [
+  const { lang } = useTranslation();
+  const en = lang === "en";
+  const sections: LegalSection[] = en ? dsaEn() : [
     {
       id: "service",
       title: "Le service concerné",
@@ -163,9 +166,14 @@ function DsaPage() {
   return (
     <LegalPage
       path="/dsa"
-      title="Services numériques (DSA)"
-      updated={LEGAL_UPDATED}
-      essentials={[
+      title={en ? "Digital services (DSA)" : "Services numériques (DSA)"}
+      updated={legalUpdated(lang)}
+      essentials={en ? [
+        "Anyone can report illegal content, even without an account.",
+        "Every report is read by a person, who replies to you.",
+        "You can appeal a decision for free for 6 months.",
+        "Single point of contact: nannawanted@gmail.com (FR / EN).",
+      ] : [
         "Tout le monde peut signaler un contenu illégal, même sans compte.",
         "Chaque signalement est lu par une personne, qui te répond.",
         "Tu peux contester une décision gratuitement pendant 6 mois.",
@@ -174,4 +182,153 @@ function DsaPage() {
       sections={sections}
     />
   );
+}
+
+const BODIES_EN: { name: string; url: string; note: string }[] = [
+  { name: "ADR Center", url: "https://ods.adrcenter.com/", note: "broad scope: illegal products, privacy, hate, intellectual property, scams, violence" },
+  { name: "ADR Point", url: "https://ods.adrpoint.com/en", note: "privacy, illegal speech, intellectual property, dangerous products, scams" },
+  { name: "ADROIT", url: "https://adroit.legal/", note: "content sharing, online shopping, marketplaces" },
+  { name: "Central European Appeals Hub", url: "https://ceappeals.online/", note: "illegal content and breaches of terms and conditions" },
+];
+
+/** Traduction anglaise fidèle de la page DSA (la version française fait foi). */
+function dsaEn(): LegalSection[] {
+  return [
+    {
+      id: "service",
+      title: "The service concerned",
+      short: "Wanted Fashion hosts the looks published by its users.",
+      body: (
+        <p>
+          Wanted Fashion is a hosting service within the meaning of Regulation (EU) 2022/2065 on digital services (the
+          “DSA”): it stores and displays the looks, photos and links published by its users. This page brings together
+          the information required by that regulation.
+        </p>
+      ),
+    },
+    {
+      id: "contact",
+      title: "Single point of contact",
+      short: "One address for users and authorities, in French or English.",
+      body: (
+        <p>
+          Users, Member State authorities, the European Commission and the European Board for Digital Services can write to
+          us at <ContactMail /> (Articles 11 and 12 DSA). Accepted languages: French and English. A person reads every
+          message.
+        </p>
+      ),
+    },
+    {
+      id: "signaler",
+      title: "Reporting illegal content",
+      short: "Public form, even without an account. We confirm receipt and give you our decision.",
+      body: (
+        <>
+          <p>
+            Anyone, with or without an account, can report content they consider illegal using the{" "}
+            <Link to="/droits-auteur" search={{ type: "illegal" }}>report form</Link> (Article 16 DSA). A signed-in user can
+            also use the “Report” button on a look's page.
+          </p>
+          <p>To be handled quickly, a report must contain:</p>
+          <ul>
+            <li>an explanation of why the content is illegal;</li>
+            <li>the exact link to the content;</li>
+            <li>your name and email address;</li>
+            <li>a statement confirming that you are acting in good faith and that the information is accurate and complete.</li>
+          </ul>
+          <p>
+            We confirm receipt of the report, examine it objectively and without delay, then inform you of our decision and
+            the possible remedies. Decisions are made by a person, not by an automated tool.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "decisions",
+      title: "Our decisions and their reasons",
+      short: "Every measure is explained to the person concerned.",
+      body: (
+        <p>
+          When we remove content or suspend an account, the person concerned receives a statement of reasons (Article 17
+          DSA): the measure taken and its scope, the facts on which it is based, the ground (law or{" "}
+          <Link to="/regles">Community guidelines</Link>), the fact that it was decided by a person, and the available
+          remedies. How moderation works is detailed in the <Link to="/conditions" hash="moderation">Terms of use</Link>.
+        </p>
+      ),
+    },
+    {
+      id: "contester",
+      title: "Appealing a decision",
+      short: "Write to us within 6 months: a person reviews it for free.",
+      body: (
+        <p>
+          You can appeal a decision (removal of content, account suspension, refusal to act on your report) by writing to{" "}
+          <ContactMail /> within 6 months, explaining why. It's free. A person who did not take the first decision, where
+          possible, reviews the case and replies to you.
+        </p>
+      ),
+    },
+    {
+      id: "extrajudiciaire",
+      title: "Out-of-court dispute settlement",
+      short: "Certified bodies can settle a disagreement without going to court.",
+      body: (
+        <>
+          <p>
+            You can also turn to a certified out-of-court dispute settlement body (Article 21 DSA). Its decisions are not
+            binding, but we undertake to take part in good faith. Some certified bodies whose scope covers this type of
+            site:
+          </p>
+          <ul>
+            {BODIES_EN.map((b) => (
+              <li key={b.name}>
+                <a href={b.url} target="_blank" rel="noopener noreferrer">
+                  {b.name}
+                </a>{" "}
+                — {b.note}
+              </li>
+            ))}
+          </ul>
+          <p>
+            The full, up-to-date list is published by the{" "}
+            <a href="https://digital-strategy.ec.europa.eu/en/policies/dsa-out-court-dispute-settlement" target="_blank" rel="noopener noreferrer">
+              European Commission
+            </a>
+            .
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "autorites",
+      title: "Complaints to authorities and courts",
+      short: "You can also contact the BIPT, the police for manifestly illegal content, or a court.",
+      body: (
+        <ul>
+          <li>
+            In Belgium, the Digital Services Coordinator is the{" "}
+            <a href="https://www.bipt.be/consumers/digital-service-act-in-a-nutshell" target="_blank" rel="noopener noreferrer">
+              BIPT
+            </a>
+            : you can file a complaint there if a report is not handled properly.
+          </li>
+          <li>Manifestly illegal content can also be reported to the police or the competent authority (for example the FPS Economy for scams).</li>
+          <li>You can always go to the competent courts.</li>
+        </ul>
+      ),
+    },
+    {
+      id: "transparence",
+      title: "Transparency",
+      short: "Wanted Fashion is a very small platform: the obligations of the giants don't apply to it.",
+      body: (
+        <p>
+          Wanted Fashion is a very small organisation: the obligations that the DSA reserves for larger platforms
+          (transparency reports, publication of the number of users, etc.) do not apply to it (Articles 15(2) and 19 DSA).
+          It has far fewer than 45 million users in the European Union and is therefore not a “very large platform”. We
+          nevertheless apply the rules on reporting, statements of reasons and appeals described on this page.
+        </p>
+      ),
+    },
+  ];
 }
