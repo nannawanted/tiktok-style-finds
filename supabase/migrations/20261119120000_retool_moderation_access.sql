@@ -1,0 +1,9 @@
+-- Accès « modération » pour Retool (appliqué le 19/11/2026 via l'outil Supabase).
+-- Résumé :
+--  - schéma « moderation » : fonctions qui réutilisent celles du site (décision humaine, avis DSA, journal) ;
+--  - rôle Postgres « retool_moderator » : ne peut lancer QUE ces fonctions ; connexion activée par Nana
+--    avec son propre mot de passe :  alter role retool_moderator with login password '…';
+--  - table moderation.operators : quel admin est derrière ce rôle (traçabilité).
+--  - fonctions admin du schéma public retirées de PUBLIC/anon (réservées aux comptes connectés).
+-- Le détail exact est dans l'historique des migrations Supabase : retool_moderation_access,
+-- retool_moderation_fix, harden_admin_functions_grants.
