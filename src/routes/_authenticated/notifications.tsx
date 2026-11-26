@@ -83,8 +83,8 @@ function NotificationsPage() {
           {notices.slice(0, 5).map((n) => (
             <li key={n.id}>
               <SwipeToDelete className="rounded-3xl" rowClassName="bg-background" onDelete={() => hideNotice.mutate(n.id)}>
-              <div className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" ? "bg-emerald-600/10" : n.kind === "terms_updated" ? "bg-surface" : "bg-destructive/10"}`}>
-              <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" ? "text-emerald-700" : n.kind === "terms_updated" ? "text-foreground/70" : "text-destructive"}`} aria-hidden="true" />
+              <div className={`flex gap-3 rounded-3xl p-4 ${n.kind === "account_unblocked" || n.kind === "post_unhidden" ? "bg-emerald-600/10" : n.kind === "terms_updated" ? "bg-surface" : "bg-destructive/10"}`}>
+              <ShieldAlert className={`mt-0.5 h-5 w-5 shrink-0 ${n.kind === "account_unblocked" || n.kind === "post_unhidden" ? "text-emerald-700" : n.kind === "terms_updated" ? "text-foreground/70" : "text-destructive"}`} aria-hidden="true" />
               <div className="min-w-0 text-sm leading-relaxed">
                 {/* Chaque avis contient les éléments de l'art. 17 §3 du DSA : mesure et portée, faits, base, décision humaine, recours */}
                 {n.kind === "copyright_removed" ? (
@@ -128,9 +128,27 @@ function NotificationsPage() {
                         {t("moderation.noticeReasons")} {n.data.reasons.map((r) => (REASONS[r] ? t(REASONS[r]) : r)).join(", ")}
                       </p>
                     )}
+                    {n.data?.note && (
+                      <p className="text-foreground/70">
+                        {t("moderation.noticeWhyNote")} « {n.data.note} »
+                      </p>
+                    )}
                     <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
                     <Redress />
                   </>
+                ) : n.kind === "post_hidden" ? (
+                  <>
+                    <p className="font-semibold">{t("moderation.noticeHidden").replace("{title}", n.data?.title ?? "")}</p>
+                    {n.data?.note && (
+                      <p className="text-foreground/70">
+                        {t("moderation.noticeWhyNote")} « {n.data.note} »
+                      </p>
+                    )}
+                    <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
+                    <Redress />
+                  </>
+                ) : n.kind === "post_unhidden" ? (
+                  <p className="font-semibold">{t("moderation.noticeUnhidden").replace("{title}", n.data?.title ?? "")}</p>
                 ) : n.kind === "account_blocked" ? (
                   <>
                     <p className="font-semibold">{t("moderation.noticeBlocked")}</p>

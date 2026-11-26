@@ -180,6 +180,8 @@ export type Database = {
       }
       posts: {
         Row: {
+          hidden_at: string | null
+          hidden_reason: string | null
           cover_image: string | null
           created_at: string | null
           creator_id: string
@@ -200,6 +202,8 @@ export type Database = {
           views: number
         }
         Insert: {
+          hidden_at?: string | null
+          hidden_reason?: string | null
           cover_image?: string | null
           created_at?: string | null
           creator_id: string
@@ -220,6 +224,8 @@ export type Database = {
           views?: number
         }
         Update: {
+          hidden_at?: string | null
+          hidden_reason?: string | null
           cover_image?: string | null
           created_at?: string | null
           creator_id?: string

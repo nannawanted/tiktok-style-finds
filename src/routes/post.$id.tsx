@@ -137,6 +137,11 @@ function OutfitPage() {
         </button>
       </div>
 
+      {post.hidden_at && (
+        <p role="status" className="mb-4 rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+          {t("moderation.hiddenBanner")}
+        </p>
+      )}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:gap-12">
         <div className="fade-up md:sticky md:top-24 md:self-start">
           <DoubleTapLike

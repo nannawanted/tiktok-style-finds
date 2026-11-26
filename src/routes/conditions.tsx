@@ -166,7 +166,7 @@ function TermsPage() {
             objective et proportionnée.
           </li>
           <li>
-            <strong>Les mesures possibles</strong> : refus d'un contenu à l'envoi, suppression d'un look, d'une photo de
+            <strong>Les mesures possibles</strong> : refus d'un contenu à l'envoi, masquage d'un look (il n'est plus visible que par son créateur), suppression d'un look, d'une photo de
             profil ou d'une bannière, blocage d'un site dans les liens produits, avertissement, suspension d'un compte en
             cas de manquement grave ou répété. La personne concernée reçoit un message qui explique la mesure, sa raison,
             sa base et comment la contester.
@@ -469,7 +469,7 @@ function termsEn(): (LegalSection | false)[] {
             reviewed by a person, objectively and proportionately.
           </li>
           <li>
-            <strong>Possible measures</strong>: refusal of content on upload, removal of a look, profile picture or banner,
+            <strong>Possible measures</strong>: refusal of content on upload, hiding of a look (only its creator can still see it), removal of a look, profile picture or banner,
             blocking of a site in product links, warning, suspension of an account for serious or repeated violations. The
             person concerned receives a message explaining the measure, its reason, its basis and how to appeal.
           </li>

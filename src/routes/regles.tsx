@@ -218,6 +218,7 @@ function RulesPage() {
           <p>Selon la gravité et la répétition, nous pouvons :</p>
           <ul>
             <li>refuser un contenu à l'envoi (vérifications automatiques) ;</li>
+            <li>masquer un look (il n'est plus visible que par son créateur) ;</li>
             <li>supprimer un look, une photo de profil ou une bannière ;</li>
             <li>bloquer un site dans les liens produits ;</li>
             <li>donner un avertissement ;</li>
@@ -459,6 +460,7 @@ function rulesEn(): LegalSection[] {
           <p>Depending on how serious and repeated it is, we may:</p>
           <ul>
             <li>refuse content on upload (automated checks);</li>
+            <li>hide a look (only its creator can still see it);</li>
             <li>remove a look, a profile picture or a banner;</li>
             <li>block a site in product links;</li>
             <li>give a warning;</li>

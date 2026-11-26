@@ -273,6 +273,8 @@ export type OutfitDetail = {
     tags: string[];
     created_at: string | null;
     views: number;
+    /** Masqué par la modération (seul le créateur peut encore le voir) */
+    hidden_at: string | null;
   };
   products: {
     id: string;
@@ -292,7 +294,7 @@ export async function fetchOutfit(id: string): Promise<OutfitDetail | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const { data: post, error } = await supabase
     .from("posts")
-    .select("id, title, cover_image, tiktok_url, creator_id, creator_username, styles, tags, created_at, views")
+    .select("id, title, cover_image, tiktok_url, creator_id, creator_username, styles, tags, created_at, views, hidden_at")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;

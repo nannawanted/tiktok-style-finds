@@ -78,7 +78,7 @@ function DsaPage() {
       short: "Chaque mesure est expliquée à la personne concernée.",
       body: (
         <p>
-          Quand nous retirons un contenu ou suspendons un compte, la personne concernée reçoit un exposé des motifs
+          Quand nous retirons ou masquons un contenu, ou suspendons un compte, la personne concernée reçoit un exposé des motifs
           (article 17 du DSA) : la mesure prise et sa portée, les faits qui l'ont motivée, la base (loi ou{" "}
           <Link to="/regles">Règles de la communauté</Link>), le fait qu'elle a été décidée par une personne, et les voies
           de recours. Le fonctionnement de la modération est détaillé dans les{" "}
@@ -249,7 +249,7 @@ function dsaEn(): LegalSection[] {
       short: "Every measure is explained to the person concerned.",
       body: (
         <p>
-          When we remove content or suspend an account, the person concerned receives a statement of reasons (Article 17
+          When we remove or hide content, or suspend an account, the person concerned receives a statement of reasons (Article 17
           DSA): the measure taken and its scope, the facts on which it is based, the ground (law or{" "}
           <Link to="/regles">Community guidelines</Link>), the fact that it was decided by a person, and the available
           remedies. How moderation works is detailed in the <Link to="/conditions" hash="moderation">Terms of use</Link>.
