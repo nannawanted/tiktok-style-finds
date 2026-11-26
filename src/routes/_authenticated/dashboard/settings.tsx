@@ -1,3 +1,4 @@
+import { downloadMyData as downloadMyDataFile } from "@/lib/export-data";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,22 +49,10 @@ function Settings() {
   // RGPD : télécharger toutes ses données (fichier JSON)
   async function downloadMyData() {
     setExporting(true);
-    const { data, error } = await supabase.rpc("export_my_data" as never);
+    const ok = await downloadMyDataFile();
     setExporting(false);
-    if (error || !data) {
-      toast.error(t("settings.exportError"));
-      return;
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `wantedfashion-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    toast.success(t("settings.exportDone"));
+    if (ok) toast.success(t("settings.exportDone"));
+    else toast.error(t("settings.exportError"));
   }
 
   async function handleDeleteAccount() {

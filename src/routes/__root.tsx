@@ -24,6 +24,7 @@ import { TwoFactorGate } from "../components/TwoFactor";
 import { TermsGate } from "../components/TermsGate";
 import { NavProgress } from "../components/NavProgress";
 import { AuthPromptHost } from "../components/AuthPrompt";
+import { SuspendedGate } from "../components/SuspendedGate";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "../lib/site";
 import { CollectionPickerProvider } from "../components/vitrine/CollectionPicker";
 import { InterestsDialog } from "../components/vitrine/InterestsDialog";
@@ -142,6 +143,7 @@ function RootComponent() {
             <TwoFactorGate />
             <TermsGate />
             <AuthPromptHost />
+            <SuspendedGate />
             <InterestsDialog />
             <Toaster />
           </CollectionPickerProvider>
