@@ -491,7 +491,6 @@ export type Database = {
       }
       brands_public: {
         Row: {
-          commission_rate: number | null
           currency: string | null
           id: string | null
           name: string | null
@@ -499,7 +498,6 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
-          commission_rate?: number | null
           currency?: string | null
           id?: string | null
           name?: string | null
@@ -507,7 +505,6 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
-          commission_rate?: number | null
           currency?: string | null
           id?: string | null
           name?: string | null
