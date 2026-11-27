@@ -29,6 +29,21 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
+  // Vérification « fuite de données » en direct pendant la frappe, comme Google ou Apple
+  const [pwned, setPwned] = useState<boolean | null>(null);
+  useEffect(() => {
+    setPwned(null);
+    if (password.length < 8) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const res = await isPwnedPassword(password);
+      if (!cancelled) setPwned(res);
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [password]);
   const [username, setUsername] = useState("");
   const [birth, setBirth] = useState({ d: "", m: "", y: "" });
   const [loading, setLoading] = useState(false);
@@ -196,6 +211,9 @@ function SignupPage() {
             <ul id="password-rules" className="mt-1.5 space-y-0.5 text-xs">
               <Rule ok={password.length >= 8} active={password.length > 0} label={t("auth.pwRuleLength")} />
               {new TextEncoder().encode(password).length > 72 && <Rule ok={false} active label={t("auth.pwTooLong")} />}
+              {password.length >= 8 && pwned !== null && (
+                <Rule ok={!pwned} active label={pwned ? t("auth.pwnedPassword") : t("auth.pwRuleNotLeaked")} />
+              )}
               <li className="text-muted-foreground">{t("auth.pwRuleAny")}</li>
             </ul>
           </div>

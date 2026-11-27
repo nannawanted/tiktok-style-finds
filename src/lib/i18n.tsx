@@ -380,6 +380,7 @@ const dict = {
     checkYourEmail: { fr: "Vérifie ta boîte mail pour confirmer ton compte avant de te connecter.", en: "Check your inbox to confirm your account before signing in." },
     passwordHint: { fr: "8 caractères minimum.", en: "At least 8 characters." },
     pwRuleLength: { fr: "Au moins 8 caractères", en: "At least 8 characters" },
+    pwRuleNotLeaked: { fr: "Jamais apparu dans une fuite de données connue", en: "Never seen in a known data breach" },
     pwRuleAny: { fr: "Lettres, chiffres, symboles et espaces : tout est accepté", en: "Letters, numbers, symbols and spaces: everything is allowed" },
     pwTooLong: { fr: "72 caractères maximum", en: "72 characters maximum" },
     passwordConfirm: { fr: "Confirme le mot de passe", en: "Confirm password" },
