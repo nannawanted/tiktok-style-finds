@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkUploadedImage } from "@/lib/nsfw-check";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslation } from "@/lib/i18n";
-import { fetchCreatorProfile } from "@/lib/public-data";
+import { fetchCreatorProfile, fetchOutfits } from "@/lib/public-data";
+import { useQuery } from "@tanstack/react-query";
 import { styleLabelKey } from "@/lib/styles";
 import { absoluteUrl, clip, DEFAULT_OG_IMAGE, profilePath, SITE_NAME } from "@/lib/site";
 import { ShareButton } from "@/components/ShareButton";
@@ -87,8 +88,15 @@ function ProfileContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
-  const { creator, outfits } = Route.useLoaderData();
+  const { creator, outfits: publicOutfits } = Route.useLoaderData();
   const isOwner = user?.id === creator.id;
+  // Le créateur voit aussi ses looks masqués par la modération (avec un bandeau « Masqué »)
+  const ownLooks = useQuery({
+    queryKey: ["own-looks", creator.id],
+    enabled: isOwner,
+    queryFn: () => fetchOutfits({ creatorIds: [creator.id], sort: "latest", limit: 300 }),
+  });
+  const outfits = isOwner && ownLooks.data ? ownLooks.data : publicOutfits;
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState<{ kind: "avatars" | "banners"; file: File } | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);

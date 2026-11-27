@@ -26,6 +26,8 @@ export type OutfitCard = {
   cover_thumb?: string | null;
   cover_ratio?: number | null;
   cover_color?: string | null;
+  /** Masqué par la modération : seul le créateur le voit (RLS) */
+  hidden?: boolean;
 };
 
 export type CreatorCard = {
@@ -39,7 +41,7 @@ export type CreatorCard = {
   instagram_url: string | null;
 };
 
-const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, tiktok_url, styles, views, created_at, pinned_at, cover_thumb, cover_w, cover_h, cover_color, products(id)";
+const OUTFIT_COLUMNS = "id, title, cover_image, creator_username, creator_id, tiktok_url, styles, views, created_at, pinned_at, cover_thumb, cover_w, cover_h, cover_color, hidden_at, products(id)";
 
 type RawOutfit = {
   id: string;
@@ -56,6 +58,7 @@ type RawOutfit = {
   cover_w?: number | null;
   cover_h?: number | null;
   cover_color?: string | null;
+  hidden_at?: string | null;
 };
 
 /** Nettoie une recherche tapée par un visiteur (caractères spéciaux de l'API retirés). */
@@ -123,6 +126,7 @@ async function withAvatars(rows: RawOutfit[]): Promise<OutfitCard[]> {
     cover_thumb: r.cover_thumb ?? null,
     cover_ratio: r.cover_w && r.cover_h ? r.cover_w / r.cover_h : null,
     cover_color: r.cover_color ?? null,
+    hidden: !!r.hidden_at,
   }));
 }
 

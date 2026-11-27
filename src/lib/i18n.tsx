@@ -788,6 +788,7 @@ const dict = {
     noResult: { fr: "Aucune tenue pour ce style pour l'instant.", en: "No outfits in this style yet." },
   },
   card: {
+    hiddenBadge: { fr: "Masqué · toi seul le vois", en: "Hidden · only you can see it" },
     pieces: { fr: "pièces", en: "pieces" },
     piece: { fr: "pièce", en: "piece" },
     video: { fr: "Vidéo", en: "Video" },
@@ -1125,6 +1126,7 @@ const dict = {
     noticeRemoved: { fr: "Ton look « {title} » a été supprimé définitivement, sur tout le site, par la modération.", en: "Your look “{title}” was permanently removed from the whole site by moderation." },
     noticeBasis: { fr: "Base : nos Règles de la communauté et nos conditions d'utilisation (section « Modération des contenus »).", en: "Basis: our Community guidelines and our terms of use (“Content moderation” section)." },
     noticeHidden: { fr: "Ton look « {title} » a été masqué par la modération : il n'est plus visible par les autres, mais il n'est pas supprimé. Toi seul le vois encore.", en: "Your look “{title}” was hidden by moderation: others can no longer see it, but it isn't deleted. Only you can still see it." },
+    viewLook: { fr: "Voir le look", en: "View look" },
     noticeUnhidden: { fr: "Bonne nouvelle : ton look « {title} » est de nouveau visible par tout le monde.", en: "Good news: your look “{title}” is visible to everyone again." },
     noticeWhyNote: { fr: "Raison :", en: "Reason:" },
     hiddenBanner: { fr: "Ce look est masqué par la modération : toi seul le vois. Regarde tes notifications pour la raison.", en: "This look is hidden by moderation: only you can see it. Check your notifications for the reason." },

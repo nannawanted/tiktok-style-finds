@@ -398,7 +398,7 @@ export const REPORT_ALERT_THRESHOLD = 3;
 export type ModerationNotice = {
   id: string;
   kind: "post_removed" | "account_blocked" | "account_unblocked" | "copyright_removed" | "terms_updated" | "image_removed" | "illegal_removed" | "post_hidden" | "post_unhidden";
-  data: { title?: string; reasons?: string[]; strikes?: number; ref?: string; note?: string; reason?: string; work?: string; date?: string; bucket?: string } | null;
+  data: { title?: string; reasons?: string[]; strikes?: number; ref?: string; note?: string; reason?: string; work?: string; date?: string; bucket?: string; post?: string } | null;
   created_at: string;
   read_at: string | null;
 };

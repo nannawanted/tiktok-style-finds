@@ -145,10 +145,14 @@ function NotificationsPage() {
                       </p>
                     )}
                     <p className="text-foreground/70">{t("moderation.noticeBasis")}</p>
+                    <ViewLook id={n.data?.post} />
                     <Redress />
                   </>
                 ) : n.kind === "post_unhidden" ? (
-                  <p className="font-semibold">{t("moderation.noticeUnhidden").replace("{title}", n.data?.title ?? "")}</p>
+                  <>
+                    <p className="font-semibold">{t("moderation.noticeUnhidden").replace("{title}", n.data?.title ?? "")}</p>
+                    <ViewLook id={n.data?.post} />
+                  </>
                 ) : n.kind === "account_blocked" ? (
                   <>
                     <p className="font-semibold">{t("moderation.noticeBlocked")}</p>
@@ -322,5 +326,16 @@ function Redress() {
       <p className="mt-1 text-foreground/70">{t("moderation.redressHuman")}</p>
       <p className="text-foreground/70">{t("moderation.redress")}</p>
     </>
+  );
+}
+
+/** Bouton « Voir le look » sur un avis de modération (comme « Voir la publication » sur Instagram). */
+function ViewLook({ id }: { id?: string }) {
+  const { t } = useTranslation();
+  if (!id) return null;
+  return (
+    <Link to="/post/$id" params={{ id }} className="mt-1 inline-flex h-9 items-center rounded-full bg-ink px-4 text-[13px] font-semibold text-surface">
+      {t("moderation.viewLook")}
+    </Link>
   );
 }

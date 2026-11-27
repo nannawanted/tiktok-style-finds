@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 
 const DOUBLE_TAP_MS = 230;
 import { useQuickLike } from "./DoubleTapLike";
-import { Heart, Camera, Eye, Pin } from "lucide-react";
+import { Heart, Camera, Eye, EyeOff, Pin } from "lucide-react";
 import { compactCount } from "@/lib/views";
 import { VideoSourceIcon } from "./VideoSourceIcon";
 import { useTranslation } from "@/lib/i18n";
@@ -125,6 +125,13 @@ export function OutfitCard({
         >
           {outfit.cover_image && (
             <FadeInImage src={outfit.cover_thumb || outfit.cover_image} alt={outfit.title} eager={index < 4} ratio={outfit.cover_ratio} color={outfit.cover_color} />
+          )}
+          {outfit.hidden && (
+            <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center bg-ink/50 p-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-center text-xs font-bold text-foreground shadow-md">
+                <EyeOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {t("card.hiddenBadge")}
+              </span>
+            </div>
           )}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           {outfit.pieceCount > 0 && (
